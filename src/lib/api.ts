@@ -3,6 +3,10 @@ import axios from 'axios';
 import type {
   AiConfig,
   BossPostingResult,
+  ChatAnalysisResult,
+  ChatMessage,
+  ChatReply,
+  ChatSession,
   Client,
   ConflictRecord,
   ConflictStatus,
@@ -339,4 +343,65 @@ export const followupsApi = {
       }),
   createRecord: (body: Partial<FollowupRecord>) =>
     api.post<unknown, { data: FollowupRecord }>('/followups/records', body).then((r) => r.data),
+};
+
+// ===== 对话辅助 API（BOSS 实时对话） =====
+export interface ChatSessionQuery {
+  status?: 'active' | 'closed';
+  position_id?: string;
+  resume_id?: string;
+  keyword?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export const chatApi = {
+  // 会话列表
+  listSessions: (params: ChatSessionQuery = {}) =>
+    api
+      .get<unknown, { data: ChatSession[]; total: number }>('/chat/sessions', { params })
+      .then((r) => ({ data: r.data || [], total: r.total || 0 })),
+  // 会话详情（含所有消息 + 职位 + 简历）
+  getSession: (id: string) =>
+    api.get<unknown, { data: ChatSession }>(`/chat/sessions/${id}`).then((r) => r.data),
+  // 创建会话
+  createSession: (body: {
+    position_id: string;
+    resume_id?: string;
+    candidate_name?: string;
+    title?: string;
+  }) => api.post<unknown, { data: ChatSession }>('/chat/sessions', body).then((r) => r.data),
+  // 更新会话（绑定简历、关闭会话等）
+  patchSession: (
+    id: string,
+    body: { title?: string; status?: 'active' | 'closed'; resume_id?: string | null; candidate_name?: string }
+  ) => api.patch<unknown, { data: ChatSession }>(`/chat/sessions/${id}`, body).then((r) => r.data),
+  // 删除会话
+  removeSession: (id: string) => api.delete<unknown, { ok: boolean }>(`/chat/sessions/${id}`),
+  // 删除单条消息
+  removeMessage: (id: string) => api.delete<unknown, { ok: boolean }>(`/chat/messages/${id}`),
+  // AI 分析求职者最新消息（自动存为 candidate 消息 + 返回 3 套回复）
+  analyze: (sessionId: string, latestMessage: string) =>
+    api
+      .post<unknown, { data: ChatAnalysisResult; message: ChatMessage }>(
+        `/chat/sessions/${sessionId}/analyze`,
+        { latest_message: latestMessage }
+      )
+      .then((r) => ({ analysis: r.data, message: r.message })),
+  // 重新生成 AI 分析（不存新消息）
+  regenerate: (sessionId: string, candidateMessageId: string, latestMessage: string) =>
+    api
+      .post<unknown, { data: ChatAnalysisResult }>(`/chat/sessions/${sessionId}/regenerate`, {
+        candidate_message_id: candidateMessageId,
+        latest_message: latestMessage,
+      })
+      .then((r) => r.data),
+  // HR 选定回复并发送（自动存为 hr 消息）
+  sendReply: (sessionId: string, candidateMessageId: string, reply: ChatReply) =>
+    api
+      .post<unknown, { data: ChatMessage }>(`/chat/sessions/${sessionId}/send`, {
+        candidate_message_id: candidateMessageId,
+        reply,
+      })
+      .then((r) => r.data),
 };

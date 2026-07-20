@@ -200,6 +200,31 @@ CREATE TABLE IF NOT EXISTS ai_config (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- 对话会话表（BOSS 实时对话辅助）
+CREATE TABLE IF NOT EXISTS chat_sessions (
+  id TEXT PRIMARY KEY,
+  position_id TEXT NOT NULL REFERENCES positions(id),
+  resume_id TEXT REFERENCES resumes(id),          -- 可选，初次接触时可能没简历
+  owner_id TEXT NOT NULL REFERENCES users(id),
+  title TEXT,                                      -- 会话标题（自动生成：求职者名+职位名）
+  status TEXT NOT NULL DEFAULT 'active',           -- active / closed
+  candidate_name TEXT,                             -- 求职者显示名（没简历时用）
+  last_message_at TEXT,                            -- 最后消息时间，用于排序
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- 对话消息表
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id TEXT PRIMARY KEY,
+  session_id TEXT NOT NULL REFERENCES chat_sessions(id),
+  role TEXT NOT NULL,                              -- candidate / hr
+  content TEXT NOT NULL,
+  ai_analysis TEXT,                                -- JSON：求职者消息的 AI 分析结果
+  selected_reply TEXT,                             -- JSON：HR 选用的回复策略（含 strategy/content）
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- 索引
 CREATE INDEX IF NOT EXISTS idx_positions_status ON positions(status);
 CREATE INDEX IF NOT EXISTS idx_positions_created_by ON positions(created_by);
@@ -220,3 +245,8 @@ CREATE INDEX IF NOT EXISTS idx_followup_records_plan ON followup_records(plan_id
 CREATE INDEX IF NOT EXISTS idx_followup_records_employee ON followup_records(employee_id);
 CREATE INDEX IF NOT EXISTS idx_conflicts_status ON conflict_records(status);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_owner ON chat_sessions(owner_id);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_status ON chat_sessions(status);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_position ON chat_sessions(position_id);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_resume ON chat_sessions(resume_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON chat_messages(session_id);

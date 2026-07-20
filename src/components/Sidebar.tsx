@@ -9,6 +9,7 @@ import {
   CalendarClock,
   TrendingUp,
   AlertTriangle,
+  MessageCircle,
   Settings,
   X,
 } from 'lucide-react';
@@ -34,6 +35,7 @@ const adminMenus: MenuItem[] = [
   { to: '/clients', label: '客户公司', icon: Building2 },
   { to: '/resumes', label: '简历库', icon: FileText },
   { to: '/matches', label: '匹配管理', icon: GitCompareArrows },
+  { to: '/chat', label: '对话辅助', icon: MessageCircle },
   { to: '/followups', label: '跟进管理', icon: CalendarClock },
   { to: '/conversions', label: '转化跟踪', icon: TrendingUp },
   { to: '/conflicts', label: '撞单管理', icon: AlertTriangle },
@@ -46,6 +48,7 @@ const consultantMenus: MenuItem[] = [
   { to: '/positions', label: '职位库', icon: Briefcase },
   { to: '/resumes', label: '简历库', icon: FileText },
   { to: '/matches', label: '匹配管理', icon: GitCompareArrows },
+  { to: '/chat', label: '对话辅助', icon: MessageCircle },
   { to: '/followups', label: '跟进管理', icon: CalendarClock },
   { to: '/conversions', label: '转化跟踪', icon: TrendingUp },
   { to: '/settings', label: '设置', icon: Settings },

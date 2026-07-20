@@ -23,12 +23,13 @@ import { aiRouter } from './routes/ai.js';
 import { aiConfigRouter } from './routes/aiConfig.js';
 import { reportsRouter } from './routes/reports.js';
 import { guidelinesRouter } from './routes/guidelines.js';
+import { chatRouter } from './routes/chat.js';
 
 // 中间件
 import { errorHandler, notFoundHandler } from './middleware/error.js';
 import { logger } from './utils/logger.js';
 
-const PORT = Number(process.env.PORT) || 3001;
+const PORT = 3001;
 
 // 初始化种子数据
 seedDatabase();
@@ -71,6 +72,7 @@ app.use('/api/ai', aiRouter);
 app.use('/api/ai-config', aiConfigRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/guidelines', guidelinesRouter);
+app.use('/api/chat', chatRouter);
 
 // 404
 app.use(notFoundHandler);

@@ -308,3 +308,67 @@ export interface BossPostingResult {
     hooks: string[];     // 钩子
   }>;
 }
+
+// ===== 对话辅助（BOSS 实时对话） =====
+export type ChatSessionStatus = 'active' | 'closed';
+export type ChatMessageRole = 'candidate' | 'hr';
+
+export interface ChatSession {
+  id: string;
+  position_id: string;
+  resume_id?: string | null;
+  owner_id: string;
+  title?: string | null;
+  status: ChatSessionStatus;
+  candidate_name?: string | null;
+  last_message_at?: string | null;
+  created_at: string;
+  updated_at: string;
+  // 详情接口附带
+  position?: {
+    id: string;
+    title: string;
+    salary_min?: string | null;
+    salary_max?: string | null;
+    location?: string | null;
+  } | null;
+  resume?: {
+    id: string;
+    name: string;
+    current_company?: string | null;
+    current_title?: string | null;
+    skills?: string | null;
+    common_grounds?: CommonGrounds;
+  } | null;
+  messages?: ChatMessage[];
+}
+
+export interface ChatMessage {
+  id: string;
+  session_id: string;
+  role: ChatMessageRole;
+  content: string;
+  ai_analysis?: ChatAnalysisResult | null;
+  selected_reply?: ChatReply | null;
+  created_at: string;
+}
+
+// AI 分析结果
+export interface ChatAnalysisResult {
+  intent: string;
+  intentType: string;
+  riskLevel: 'low' | 'medium' | 'high';
+  riskReasons: string[];
+  emotion: string;
+  profileCategory: string;
+  strategy: string;
+  replies: ChatReply[];
+  nextStep: string;
+  conversionProbability: number;
+}
+
+export interface ChatReply {
+  strategyName: string;
+  content: string;
+  rationale: string;
+}

@@ -31,6 +31,9 @@ import PlanDetail from '@/pages/Followups/PlanDetail';
 
 import ConversionList from '@/pages/Conversions/ConversionList';
 
+import ChatList from '@/pages/Chat/ChatList';
+import ChatSessionPage from '@/pages/Chat/ChatSession';
+
 import Settings from '@/pages/Settings/Settings';
 import ProfileSettings from '@/pages/Settings/ProfileSettings';
 import TeamSettings from '@/pages/Settings/TeamSettings';
@@ -92,6 +95,10 @@ export default function App() {
             <Route path="/followups" element={<FollowupHome />} />
             <Route path="/followups/:id" element={<PlanDetail />} />
             <Route path="/conversions" element={<ConversionList />} />
+
+            {/* 对话辅助（BOSS 实时对话） */}
+            <Route path="/chat" element={<ChatList />} />
+            <Route path="/chat/:id" element={<ChatSessionPage />} />
 
             {/* 撞单管理（管理员） */}
             <Route

@@ -7,17 +7,41 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# 依赖与构建产物
 node_modules
 dist
 dist-ssr
 *.local
 
-# Editor directories and files
+# 数据库与上传文件（含敏感求职者数据）
+server/data/*.db
+server/data/*.db-journal
+server/data/*.db-wal
+server/data/*.db-shm
+server/uploads/*
+!server/uploads/.gitkeep
+
+# 源码打包产物
+*.zip
+recruit-tool-source.zip
+
+# PPT 生成产物（体积大，可按需重新生成）
+ppt/generated/
+ppt/output/
+ppt/rendered/
+ppt/montage*
+
+# 环境变量与本地配置
+.env
+.env.local
+.env.*.local
+*.local
+
+# 编辑器目录与文件
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
-.trae
 .workbuddy
 .claude
 *.suo
@@ -26,9 +50,12 @@ dist-ssr
 *.sln
 *.sw?
 
-# Deployment
-.env
-server/data
-server/uploads
-server/dist
-certbot
+# 操作系统临时文件
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# 部署脚本本地配置
+deploy.local.sh
+deploy.local.ps1
