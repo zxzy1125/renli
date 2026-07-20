@@ -1,7 +1,8 @@
-// 顶部栏：菜单按钮、当前用户、退出登录
+// 顶部栏：菜单按钮、通知铃铛、当前用户、退出登录
 import { Menu, LogOut, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { NotificationBell } from '@/components/NotificationToast';
 
 interface TopBarProps {
   onToggleSidebar: () => void;
@@ -41,8 +42,10 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
         </div>
       </div>
 
-      {/* 右侧用户信息 */}
-      <div className="relative" ref={ref}>
+      {/* 右侧：通知铃铛 + 用户信息 */}
+      <div className="flex items-center gap-1">
+        <NotificationBell />
+        <div className="relative" ref={ref}>
         <button
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
@@ -79,6 +82,7 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
             </button>
           </div>
         )}
+      </div>
       </div>
     </header>
   );

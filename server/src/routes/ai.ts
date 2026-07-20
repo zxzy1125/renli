@@ -229,23 +229,40 @@ aiRouter.post('/polish', asyncHandler(async (req, res) => {
 }));
 
 // POST /api/ai/generate-boss-posting（全员）
+// 支持可选 style 参数：指定单个风格时只生成该风格的文案
 aiRouter.post('/generate-boss-posting', asyncHandler(async (req, res) => {
-  const { position_id, industry, city } = req.body ?? {};
+  const { position_id, industry, city, style } = req.body ?? {};
   if (!position_id) throw new ApiError(400, 'position_id 不能为空');
   const position = findPositionById(String(position_id));
   if (!position) throw new ApiError(404, '职位不存在');
-  const result = await callByPromptKey('generateBossPosting', {
-    position_data: JSON.stringify({
-      title: position.title,
-      requirements: position.requirements,
-      jd: position.jd,
-      salaryMin: position.salary_min,
-      salaryMax: position.salary_max,
-      location: position.location,
-      keywords: position.keywords,
-    }),
-    industry: industry ?? '',
-    city: city ?? position.location ?? '',
+  const positionData = JSON.stringify({
+    title: position.title,
+    requirements: position.requirements,
+    jd: position.jd,
+    salaryMin: position.salary_min,
+    salaryMax: position.salary_max,
+    location: position.location,
+    keywords: position.keywords,
   });
-  res.json({ data: result });
+  const industryVal = industry ?? '';
+  const cityVal = city ?? position.location ?? '';
+
+  if (style) {
+    // 单风格重新生成
+    const result = await callByPromptKey('generateBossPostingSingle', {
+      position_data: positionData,
+      industry: industryVal,
+      city: cityVal,
+      style: String(style),
+    });
+    res.json({ data: result });
+  } else {
+    // 全部 3 套
+    const result = await callByPromptKey('generateBossPosting', {
+      position_data: positionData,
+      industry: industryVal,
+      city: cityVal,
+    });
+    res.json({ data: result });
+  }
 }));

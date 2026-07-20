@@ -27,7 +27,7 @@ import type {
   User,
 } from '@/types';
 
-const api = axios.create({ baseURL: '/api', timeout: 60000 });
+const api = axios.create({ baseURL: '/api', timeout: 120000 });
 
 // 请求拦截：自动注入 Bearer Token
 api.interceptors.request.use((config) => {
@@ -212,12 +212,13 @@ export const aiApi = {
     api.post<unknown, { data: unknown }>('/ai/parse-position', { raw_text }),
   parseResume: (raw_text: string) =>
     api.post<unknown, { data: unknown }>('/ai/parse-resume', { raw_text }),
-  generateBossPosting: (position_id: string, industry?: string, city?: string) =>
+  generateBossPosting: (position_id: string, industry?: string, city?: string, style?: string) =>
     api
       .post<unknown, { data: BossPostingResult }>('/ai/generate-boss-posting', {
         position_id,
         industry,
         city,
+        style,
       })
       .then((r) => r.data),
   matchAnalysis: (position_id: string, resume_id: string) =>

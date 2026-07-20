@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
+import NotificationToast from './NotificationToast';
 import { useAuthStore } from '@/store/authStore';
 
 export default function Layout() {
@@ -22,6 +23,7 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+      <NotificationToast />
     </div>
   );
 }

@@ -37,7 +37,7 @@ export function parseAIJson(content: string): any {
   return JSON.parse(cleaned);
 }
 
-// 基础 chat 调用（OpenAI 兼容协议）
+// 基础 chat 调用（OpenAI 兼容协议，流式请求避免上游超时 502）
 export async function callAI(
   messages: ChatMessage[],
   options?: { temperature?: number; timeoutMs?: number }
@@ -47,16 +47,17 @@ export async function callAI(
     throw new Error('AI 未配置 API Key，请联系管理员在设置中配置');
   }
   const baseUrl = cfg.base_url.replace(/\/$/, '');
-  // OpenAI 兼容协议：POST {base_url}/chat/completions
   const url = `${baseUrl}/chat/completions`;
   const body = {
     model: cfg.model,
     messages,
     temperature: options?.temperature ?? cfg.temperature,
+    stream: true,
   };
-  const timeoutMs = options?.timeoutMs ?? 60000;
+  const timeoutMs = options?.timeoutMs ?? 120000;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  logger.info(`[AI] 请求 ${url}  model=${cfg.model}  timeout=${timeoutMs}ms  stream=true`);
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -67,13 +68,42 @@ export async function callAI(
       body: JSON.stringify(body),
       signal: controller.signal,
     });
+    logger.info(`[AI] 响应 status=${response.status}`);
     if (!response.ok) {
       const text = await response.text();
+      logger.error(`[AI] 错误响应体: ${text.slice(0, 500)}`);
       throw new Error(`AI 调用失败: HTTP ${response.status} ${text.slice(0, 200)}`);
     }
-    const data = await response.json() as any;
-    const content = data?.choices?.[0]?.message?.content;
+    // 流式读取 SSE，拼接完整内容
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    let content = '';
+    let buffer = '';
+    let rawChunks = ''; // 诊断用
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith('data:')) continue;
+        const data = trimmed.slice(5).trim();
+        if (data === '[DONE]') continue;
+        try {
+          const chunk = JSON.parse(data);
+          const delta = chunk?.choices?.[0]?.delta?.content;
+          if (delta) content += delta;
+          // 记录原始 chunk 用于诊断
+          if (!rawChunks && !delta) rawChunks = JSON.stringify(chunk).slice(0, 500);
+        } catch {
+          // 跳过解析失败的 chunk
+        }
+      }
+    }
     if (!content) {
+      if (rawChunks) logger.error(`[AI] 内容为空，首个 chunk: ${rawChunks}`);
       throw new Error('AI 返回内容为空');
     }
     return content;

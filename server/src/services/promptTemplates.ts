@@ -676,6 +676,46 @@ export const GENERATE_BOSS_POSTING_PROMPT = {
 6. 输出必须是合法 JSON`,
 };
 
+// 提示词 9b：BOSS 岗位发布文案 — 单风格重新生成
+export const GENERATE_BOSS_POSTING_SINGLE_PROMPT = {
+  system: buildConstrainedSystem('你是 BOSS 直聘资深运营专家，深谙"模糊化引发咨询"的发布技巧。'),
+  user: `你的核心理念：BOSS 岗位文案不能太详细（求职者一眼看透就不会咨询），也不能太模糊（没人感兴趣）。要做到"看了想问，问了想来"。
+
+【已录入的详细职位信息】
+{position_data}
+
+【客户公司所在行业】
+{industry}
+
+【岗位发布城市】
+{city}
+
+【指定风格】
+{style}
+
+你的任务：基于详细职位，按指定风格生成 1 套 BOSS 发布文案，包含岗位名称和岗位描述。
+
+风格说明：
+- 诱惑型：突出福利待遇和工作轻松，适合吸引想跳槽的在职者。可用"轻松文员/双休行政/不销售客服"等带吸引词的名称，把福利和工作轻松放第一位，工作内容写得很轻。
+- 神秘型：信息留白多，激发求职者好奇咨询。可用"高薪诚聘/急招/热门岗位"等模糊但吸睛的名称，信息留白最多，用"具体详聊"等话术引发咨询。
+- 专业型：正式岗位名+清晰但留有余地的工作内容，吸引精准求职者。用规范岗位名（如"客户服务专员/业务助理"），工作内容相对清晰但保留关键信息留白。
+
+输出 JSON：
+{
+  "posting": {
+    "style": "{style}",
+    "jobTitle": "岗位名称（≤15字，要有吸引力，可带网络热词或定位词，但必须与岗位方向相关）",
+    "jobDescription": "岗位描述（80-150字，要求见下）"
+  }
+}
+
+岗位描述写作铁律：
+1. **模糊化原则**：不写出客户公司真实名称；不写出完整工作内容（要让求职者想问"具体做什么"）；可暗示行业但不点破
+2. **吸引力原则**：必须突出 2-3 个钩子卖点；必须有 1 个数字；必须让求职者产生"这个岗位适合我"的感觉
+3. **禁止**：严禁出现违法劳动法表述；严禁出现客户公司真实名称；严禁虚假承诺；严禁岗位描述超过 150 字；严禁岗位名出现"中介""代招"字样
+4. 输出必须是合法 JSON`,
+};
+
 // 提示词 10：BOSS 实时对话辅助（基于求职者简历 + 咨询职位，分析求职者最新回复并生成回复话术）
 export const CHAT_ASSIST_PROMPT = {
   system: buildConstrainedSystem('你是 BOSS 直聘资深招聘顾问，正在协助 HR 实时回复求职者的消息。你的目标是帮 HR 高效回复，达成转化入职。'),
@@ -751,6 +791,7 @@ export const PROMPT_TEMPLATES: Record<string, { system: string; user: string }> 
   concernPitch: CONCERN_PITCH_PROMPT,
   polish: POLISH_PROMPT,
   generateBossPosting: GENERATE_BOSS_POSTING_PROMPT,
+  generateBossPostingSingle: GENERATE_BOSS_POSTING_SINGLE_PROMPT,
   chatAssist: CHAT_ASSIST_PROMPT,
 };
 

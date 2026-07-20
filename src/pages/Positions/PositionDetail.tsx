@@ -20,6 +20,12 @@ import {
 import dayjs from 'dayjs';
 import { positionsApi, clientsApi, aiApi, getErrorMsg } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
+import {
+  useBossPostingStore,
+  extractPostings,
+  type BossPosting,
+  type BossPostingTask,
+} from '@/store/bossPostingStore';
 import type { Client, Position } from '@/types';
 import Loading from '@/components/Loading';
 import MarkdownView from '@/components/MarkdownView';
@@ -31,12 +37,6 @@ import {
   PRIORITY_OPTIONS,
   getOptionLabel,
 } from './constants';
-
-interface BossPosting {
-  style: string;
-  title: string;
-  content: string;
-}
 
 export default function PositionDetail() {
   const { id } = useParams<{ id: string }>();
@@ -52,9 +52,57 @@ export default function PositionDetail() {
 
   // BOSS 文案弹窗
   const [bossOpen, setBossOpen] = useState(false);
-  const [bossLoading, setBossLoading] = useState(false);
-  const [bossError, setBossError] = useState('');
-  const [postings, setPostings] = useState<BossPosting[]>([]);
+  const [bossTask, setBossTask] = useState<BossPostingTask | null>(null);
+
+  const startGeneration = useBossPostingStore((s) => s.startGeneration);
+  const tasks = useBossPostingStore((s) => s.tasks);
+  const pendingViewTaskId = useBossPostingStore((s) => s.pendingViewTaskId);
+  const setPendingView = useBossPostingStore((s) => s.setPendingView);
+  const replacePosting = useBossPostingStore((s) => s.replacePosting);
+  const setStyleRegenerating = useBossPostingStore((s) => s.setStyleRegenerating);
+
+  // 从通知跳来时，自动打开弹窗
+  useEffect(() => {
+    if (pendingViewTaskId) {
+      const task = tasks.find((t) => t.id === pendingViewTaskId);
+      if (task && task.positionId === id) {
+        setBossTask(task);
+        setBossOpen(true);
+        setPendingView(null);
+      }
+    }
+  }, [pendingViewTaskId, tasks, id, setPendingView]);
+
+  // 同步后台任务状态到弹窗
+  useEffect(() => {
+    if (bossTask) {
+      const latest = tasks.find((t) => t.id === bossTask.id);
+      if (latest && latest !== bossTask) {
+        setBossTask(latest);
+      }
+    }
+  }, [tasks, bossTask]);
+
+  const handleGenerateBoss = () => {
+    if (!position) return;
+    startGeneration(
+      position.id,
+      position.title,
+      client?.industry,
+      position.location ?? undefined
+    );
+    // 不再自动弹窗，生成完成后右下角弹窗通知
+  };
+
+  // 该职位是否有正在生成中的任务
+  const generatingTask = tasks.find(
+    (t) => t.positionId === id && t.status === 'generating'
+  );
+
+  // 该职位最近一次已完成的生成结果
+  const latestCompleted = tasks
+    .filter((t) => t.positionId === id && t.status === 'completed')
+    .sort((a, b) => b.createdAt - a.createdAt)[0];
 
   useEffect(() => {
     if (!id) return;
@@ -86,48 +134,6 @@ export default function PositionDetail() {
       cancelled = true;
     };
   }, [id]);
-
-  const handleGenerateBoss = async () => {
-    if (!position) return;
-    setBossOpen(true);
-    setBossLoading(true);
-    setBossError('');
-    setPostings([]);
-    try {
-      const res = await aiApi.generateBossPosting(
-        position.id,
-        client?.industry,
-        position.location ?? undefined
-      );
-      // 兼容多种返回结构
-      const data = (res as { data?: unknown }).data ?? res;
-      let arr: BossPosting[] = [];
-      if (Array.isArray(data)) {
-        arr = data as BossPosting[];
-      } else if (data && typeof data === 'object') {
-        const obj = data as Record<string, unknown>;
-        if (Array.isArray(obj.postings)) arr = obj.postings as BossPosting[];
-        else if (Array.isArray((obj as { results?: unknown }).results))
-          arr = (obj as { results: BossPosting[] }).results;
-        else {
-          // 尝试解析 string
-          const candidate = (obj as { content?: unknown }).content;
-          if (typeof candidate === 'string') {
-            arr = safeParsePostings(candidate);
-          } else {
-            arr = [{ style: '生成结果', title: position.title, content: JSON.stringify(data, null, 2) }];
-          }
-        }
-      } else if (typeof data === 'string') {
-        arr = safeParsePostings(data);
-      }
-      setPostings(arr);
-    } catch (err) {
-      setBossError(getErrorMsg(err));
-    } finally {
-      setBossLoading(false);
-    }
-  };
 
   if (loading) return <Loading className="py-20" />;
   if (error) {
@@ -195,11 +201,37 @@ export default function PositionDetail() {
           <button
             type="button"
             onClick={handleGenerateBoss}
-            className="btn-ai flex items-center gap-1"
+            disabled={!!generatingTask}
+            className={`btn-ai flex items-center gap-1 ${generatingTask ? 'opacity-70 cursor-wait' : ''}`}
           >
-            <Sparkles className="w-4 h-4" />
-            生成 BOSS 发布文案
+            <Sparkles className={`w-4 h-4 ${generatingTask ? 'animate-pulse' : ''}`} />
+            {generatingTask ? '生成中...' : '生成 BOSS 发布文案'}
           </button>
+          {generatingTask && (
+            <button
+              type="button"
+              onClick={() => {
+                setBossTask(generatingTask);
+                setBossOpen(true);
+              }}
+              className="btn-ghost flex items-center gap-1 text-forest-600"
+            >
+              <Sparkles className="w-4 h-4 animate-pulse text-ochre-500" />
+              查看生成进度
+            </button>
+          )}
+          {latestCompleted && (
+            <button
+              type="button"
+              onClick={() => {
+                setBossTask(latestCompleted);
+                setBossOpen(true);
+              }}
+              className="btn-ghost flex items-center gap-1 text-ochre-700"
+            >
+              查看上次生成结果
+            </button>
+          )}
           <button
             type="button"
             disabled
@@ -295,24 +327,56 @@ export default function PositionDetail() {
         onClose={() => setBossOpen(false)}
         size="lg"
       >
-        {bossLoading ? (
+        {bossTask?.status === 'generating' ? (
           <div className="py-8 text-center text-sm text-forest-500">
             <Sparkles className="w-6 h-6 mx-auto mb-2 animate-pulse text-ochre-500" />
-            AI 正在生成 3 套文案（诱惑型/神秘型/专业型）...
+            AI 正在后台生成 3 套文案（诱惑型/神秘型/专业型）...
+            <p className="text-xs text-forest-400 mt-2">您可以安全离开此页面，完成后会收到通知</p>
           </div>
-        ) : bossError ? (
+        ) : bossTask?.status === 'error' ? (
           <div className="px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
-            {bossError}
+            {bossTask.error}
           </div>
-        ) : (
+        ) : bossTask?.status === 'completed' ? (
           <div className="space-y-3">
-            {postings.map((p, i) => (
-              <BossPostingCard key={i} posting={p} />
-            ))}
-            {postings.length === 0 && (
+            {bossTask.postings.map((p, i) => {
+              const isRegen = (bossTask.regeneratingStyles ?? []).includes(p.style);
+              return (
+                <BossPostingCard
+                  key={`${p.style}-${i}`}
+                  posting={p}
+                  regenerating={isRegen}
+                  onRegenerate={async () => {
+                    if (!bossTask || !position) return;
+                    const style = p.style;
+                    setStyleRegenerating(bossTask.id, style, true);
+                    try {
+                      const res = await aiApi.generateBossPosting(
+                        position.id,
+                        client?.industry,
+                        position.location ?? undefined,
+                        style
+                      );
+                      const data = (res as { data?: unknown }).data ?? res;
+                      const extracted = extractPostings(data, position.title);
+                      if (extracted.length > 0) {
+                        replacePosting(bossTask.id, style, extracted[0]);
+                      }
+                    } catch {
+                      // ignore
+                    } finally {
+                      setStyleRegenerating(bossTask.id, style, false);
+                    }
+                  }}
+                />
+              );
+            })}
+            {bossTask.postings.length === 0 && (
               <p className="text-sm text-forest-400 text-center py-4">暂无内容</p>
             )}
           </div>
+        ) : (
+          <p className="text-sm text-forest-400 text-center py-4">暂无内容</p>
         )}
       </Modal>
     </div>
@@ -345,7 +409,15 @@ function InfoRow({
 }
 
 // BOSS 文案卡片
-function BossPostingCard({ posting }: { posting: BossPosting }) {
+function BossPostingCard({
+  posting,
+  onRegenerate,
+  regenerating,
+}: {
+  posting: BossPosting;
+  onRegenerate?: () => void;
+  regenerating?: boolean;
+}) {
   const [copied, setCopied] = useState(false);
   const styleMap: Record<string, string> = {
     tempting: '诱惑型',
@@ -382,14 +454,27 @@ function BossPostingCard({ posting }: { posting: BossPosting }) {
         <span className="text-xs font-medium text-ochre-700 px-2 py-0.5 rounded bg-ochre-50 border border-ochre-100">
           {label}
         </span>
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="text-xs text-forest-600 hover:text-forest-800 flex items-center gap-1"
-        >
-          {copied ? <Check className="w-3.5 h-3.5 text-forest-600" /> : <Copy className="w-3.5 h-3.5" />}
-          {copied ? '已复制' : '一键复制'}
-        </button>
+        <div className="flex items-center gap-2">
+          {onRegenerate && (
+            <button
+              type="button"
+              onClick={onRegenerate}
+              disabled={regenerating}
+              className={`text-xs text-forest-600 hover:text-forest-800 flex items-center gap-1 ${regenerating ? 'opacity-60 cursor-wait' : ''}`}
+            >
+              <Sparkles className={`w-3.5 h-3.5 ${regenerating ? 'animate-pulse text-ochre-500' : ''}`} />
+              {regenerating ? '重新生成中...' : '重新生成'}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="text-xs text-forest-600 hover:text-forest-800 flex items-center gap-1"
+          >
+            {copied ? <Check className="w-3.5 h-3.5 text-forest-600" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? '已复制' : '一键复制'}
+          </button>
+        </div>
       </div>
       <div className="p-3">
         <div className="font-serif text-base font-semibold text-forest-800 mb-2">
@@ -401,20 +486,4 @@ function BossPostingCard({ posting }: { posting: BossPosting }) {
       </div>
     </div>
   );
-}
-
-// 尝试从字符串里解析出 postings 数组
-function safeParsePostings(text: string): BossPosting[] {
-  try {
-    const parsed = JSON.parse(text);
-    if (Array.isArray(parsed)) return parsed as BossPosting[];
-    if (parsed && typeof parsed === 'object') {
-      const obj = parsed as Record<string, unknown>;
-      if (Array.isArray(obj.postings)) return obj.postings as BossPosting[];
-    }
-  } catch {
-    // 不是 JSON，直接当单条文案展示
-    return [{ style: '生成结果', title: 'BOSS 发布文案', content: text }];
-  }
-  return [{ style: '生成结果', title: 'BOSS 发布文案', content: text }];
 }
