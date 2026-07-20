@@ -1,0 +1,55 @@
+services:
+  # ============================================================
+  #  Backend - Express API server (port 3001, internal only)
+  # ============================================================
+  backend:
+    build:
+      context: .
+      target: backend
+    container_name: recruit-backend
+    restart: unless-stopped
+    volumes:
+      # SQLite database persistence
+      - app-data:/app/server/data
+      # Uploaded files persistence
+      - app-uploads:/app/server/uploads
+    environment:
+      - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET:-trae-recruit-secret-key-2026}
+    expose:
+      - "3001"
+    networks:
+      - recruit-net
+
+  # ============================================================
+  #  Caddy - Reverse proxy + static files + automatic HTTPS
+  # ============================================================
+  caddy:
+    build:
+      context: .
+      target: caddy
+    container_name: recruit-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+      - ACME_AGREE=true
+    depends_on:
+      - backend
+    networks:
+      - recruit-net
+
+volumes:
+  app-data:
+  app-uploads:
+  caddy_data:
+  caddy_config:
+
+networks:
+  recruit-net:
+    driver: bridge

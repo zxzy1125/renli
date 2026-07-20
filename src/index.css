@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  color: #15302a;
+  background-color: #fdfbf7;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #fdfbf7;
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #faf6ec;
+}
+::-webkit-scrollbar-thumb {
+  background: #bbd7c9;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8fbaa6;
+}
+
+/* AI 按钮渐变 */
+@layer components {
+  .btn-ai {
+    @apply bg-gradient-to-r from-ai-from to-ai-to text-white font-medium px-4 py-2 rounded-lg shadow-sm hover:shadow-md hover:brightness-110 transition-all;
+  }
+  .btn-primary {
+    @apply bg-forest-600 text-white font-medium px-4 py-2 rounded-lg hover:bg-forest-700 transition-colors;
+  }
+  .btn-secondary {
+    @apply bg-cream-100 text-forest-700 font-medium px-4 py-2 rounded-lg hover:bg-cream-200 transition-colors border border-forest-200;
+  }
+  .btn-danger {
+    @apply bg-risk-600 text-white font-medium px-4 py-2 rounded-lg hover:bg-risk-700 transition-colors;
+  }
+  .btn-ghost {
+    @apply text-forest-600 font-medium px-3 py-2 rounded-lg hover:bg-forest-50 transition-colors;
+  }
+  .card {
+    @apply bg-white rounded-xl shadow-card border border-forest-100;
+  }
+  .input {
+    @apply w-full px-3 py-2 rounded-lg border border-forest-200 bg-white focus:outline-none focus:ring-2 focus:ring-forest-400 focus:border-transparent transition;
+  }
+  .label {
+    @apply block text-sm font-medium text-forest-700 mb-1;
+  }
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+  }
+}
+
+/* Markdown 渲染 */
+.markdown-body h1 { @apply text-xl font-bold text-forest-800 mt-4 mb-2; }
+.markdown-body h2 { @apply text-lg font-bold text-forest-800 mt-4 mb-2; }
+.markdown-body h3 { @apply text-base font-semibold text-forest-700 mt-3 mb-1; }
+.markdown-body p { @apply my-2 text-sm text-forest-800 leading-relaxed; }
+.markdown-body ul { @apply list-disc pl-5 my-2 text-sm text-forest-800; }
+.markdown-body ol { @apply list-decimal pl-5 my-2 text-sm text-forest-800; }
+.markdown-body li { @apply my-1; }
+.markdown-body code { @apply bg-cream-100 text-ochre-700 px-1 py-0.5 rounded text-sm font-mono; }
+.markdown-body pre { @apply bg-forest-900 text-cream-50 p-3 rounded-lg overflow-x-auto my-2; }
+.markdown-body pre code { @apply bg-transparent text-current p-0; }
+.markdown-body strong { @apply font-semibold text-forest-900; }
+.markdown-body blockquote { @apply border-l-4 border-ochre-300 pl-3 italic text-forest-600 my-2; }

@@ -1,0 +1,36 @@
+# Main site
+# Caddy automatically obtains & renews Let's Encrypt SSL certificates
+# When DOMAIN=localhost, Caddy serves HTTP only (no SSL)
+{$DOMAIN} {
+	# Gzip compression
+	encode gzip
+
+	# Serve frontend static files from /srv
+	root * /srv
+
+	# SPA fallback: unmatched routes return index.html
+	try_files {path} /index.html
+
+	# Static file server
+	file_server
+
+	# Reverse proxy: forward /api/* to backend Express server
+	reverse_proxy /api/* backend:3001 {
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+	}
+
+	# Security headers
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+
+	# Cache static assets (Vite uses content hashes in filenames)
+	@assets {
+		path /assets/*
+	}
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+}
