@@ -9,6 +9,7 @@ import {
   Save,
   X,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import { resumesApi, aiApi, getErrorMsg } from '@/lib/api';
 import type { CommonGrounds, Resume, RiskWarning } from '@/types';
@@ -83,6 +84,7 @@ export default function ResumeForm() {
   const [inputMode, setInputMode] = useState<InputMode>('paste');
   const [parsing, setParsing] = useState(false);
   const [parseMsg, setParseMsg] = useState('');
+  const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // 撞单提示
@@ -144,12 +146,15 @@ export default function ResumeForm() {
 
   const handleUpload = async (file: File) => {
     setError('');
+    setUploading(true);
     try {
       const res = await resumesApi.upload(file);
       update('raw_text', res.text);
       setParseMsg(`已上传文件「${res.filename}」，可点击 AI 解析自动填表`);
     } catch (err) {
       setError(getErrorMsg(err));
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -471,16 +476,27 @@ export default function ResumeForm() {
                   onChange={(e) => {
                     const f = e.target.files?.[0];
                     if (f) handleUpload(f);
+                    e.target.value = '';
                   }}
                 />
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
-                  className="w-full border-2 border-dashed border-forest-200 rounded-lg py-8 text-center text-forest-500 hover:bg-forest-50"
+                  disabled={uploading}
+                  className="w-full border-2 border-dashed border-forest-200 rounded-lg py-8 text-center text-forest-500 hover:bg-forest-50 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <Upload className="w-6 h-6 mx-auto mb-2" />
-                  <div className="text-sm">点击上传文件（.txt / .xlsx / .csv）</div>
-                  <div className="text-xs text-forest-400 mt-1">支持 .txt、.xlsx、.xls、.csv 自动提取文本</div>
+                  {uploading ? (
+                    <>
+                      <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-forest-400" />
+                      <div className="text-sm text-forest-500">文件上传中，请稍候…</div>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-6 h-6 mx-auto mb-2" />
+                      <div className="text-sm">点击上传文件（.txt / .xlsx / .csv）</div>
+                      <div className="text-xs text-forest-400 mt-1">支持 .txt、.xlsx、.xls、.csv 自动提取文本</div>
+                    </>
+                  )}
                 </button>
               </div>
             )}
