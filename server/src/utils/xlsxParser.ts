@@ -14,7 +14,8 @@ export function isExcelFile(filename: string): boolean {
  * 多 sheet 时按 sheet 名分段拼接。
  */
 export function parseExcelFile(filePath: string): string {
-  const wb = XLSX.readFile(filePath, { type: 'file' });
+  const buf = fs.readFileSync(filePath);
+  const wb = XLSX.read(buf, { type: 'buffer' });
   const parts: string[] = [];
 
   for (const sheetName of wb.SheetNames) {
