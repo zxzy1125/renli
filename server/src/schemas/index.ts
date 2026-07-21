@@ -21,7 +21,7 @@ export const createPositionSchema = z.object({
   bonus: z.string().max(2000).nullable().optional(),
   keywords: z.array(z.string()).default([]),
   raw_text: z.string().nullable().optional(),
-  ai_meta: z.record(z.unknown()).nullable().optional(),
+  ai_meta: z.record(z.string(), z.unknown()).nullable().optional(),
   source_filename: z.string().max(255).nullable().optional(),
   source_ext: z.string().max(20).nullable().optional(),
 });
@@ -53,7 +53,7 @@ export const createResumeSchema = z.object({
   candidate_status: z.enum(['looking', 'unemployed', 'passive', 'not_now']).default('passive'),
   expected_onboard_date: z.string().nullable().optional(),
   tags: z.array(z.string()).default([]),
-  common_grounds: z.record(z.string()).optional(),
+  common_grounds: z.record(z.string(), z.string()).optional(),
   risk_warning: z.object({
     isRisky: z.boolean(),
     reasons: z.array(z.string()),
@@ -104,7 +104,7 @@ export function validateBody<T extends z.ZodType>(schema: T) {
       next();
     } catch (err) {
       if (err instanceof z.ZodError) {
-        const message = err.errors.map(e => e.message).join('; ');
+        const message = err.issues.map(e => e.message).join('; ');
         next(new ApiError(400, message));
       } else {
         next(err);
@@ -120,7 +120,7 @@ export function validateQuery<T extends z.ZodType>(schema: T) {
       next();
     } catch (err) {
       if (err instanceof z.ZodError) {
-        const message = err.errors.map(e => e.message).join('; ');
+        const message = err.issues.map(e => e.message).join('; ');
         next(new ApiError(400, message));
       } else {
         next(err);
