@@ -54,6 +54,9 @@ export interface Position {
   bonus?: string | null;
   keywords: string[]; // JSON
   raw_text?: string | null;
+  ai_meta?: Record<string, unknown> | null; // JSON：AI 解析的完整原始结果
+  source_filename?: string | null;
+  source_ext?: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;

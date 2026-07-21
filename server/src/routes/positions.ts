@@ -6,7 +6,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { asyncHandler, ApiError } from '../middleware/error.js';
-import { isExcelFile, parseExcelFile } from '../utils/xlsxParser.js';
 import {
   listPositions,
   findPositionById,
@@ -15,6 +14,7 @@ import {
   updatePositionStatus,
   deletePosition,
 } from '../repositories/positionRepo.js';
+import { parseFileToText } from '../utils/fileParser.js';
 
 export const positionsRouter = Router();
 
@@ -36,14 +36,18 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB（Excel/带图 Word 可能较大）
   fileFilter: (_req, file, cb) => {
-    const allowed = ['.txt', '.pdf', '.docx', '.doc', '.xlsx', '.xls', '.csv'];
+    const allowed = [
+      '.txt', '.pdf', '.docx', '.doc',
+      '.xlsx', '.xlsm', '.xls', '.csv',
+      '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp',
+    ];
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowed.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error('暂不支持该格式，请粘贴文本'));
+      cb(new Error('暂不支持该格式，支持 .txt/.pdf/.docx/.xlsx/.xls/.csv/.jpg/.png 等'));
     }
   },
 });
@@ -92,6 +96,9 @@ positionsRouter.post('/', requireAdmin, asyncHandler(async (req, res) => {
     bonus: b.bonus ?? null,
     keywords: Array.isArray(b.keywords) ? b.keywords : [],
     raw_text: b.raw_text ?? null,
+    ai_meta: b.ai_meta ?? null,
+    source_filename: b.source_filename ?? null,
+    source_ext: b.source_ext ?? null,
     created_by: req.user!.id,
   });
   res.status(201).json({ data: p });
@@ -121,6 +128,9 @@ positionsRouter.put('/:id', requireAdmin, asyncHandler(async (req, res) => {
     bonus: b.bonus,
     keywords: Array.isArray(b.keywords) ? b.keywords : undefined,
     raw_text: b.raw_text,
+    ai_meta: b.ai_meta,
+    source_filename: b.source_filename,
+    source_ext: b.source_ext,
   });
   res.json({ data: updated });
 }));
@@ -143,17 +153,43 @@ positionsRouter.delete('/:id', requireAdmin, asyncHandler(async (req, res) => {
   res.json({ ok: true });
 }));
 
-// POST /api/positions/upload（文件上传）
+// POST /api/positions/upload（文件上传，支持 .txt / .pdf / .docx / .xlsx / .xls / .csv / .jpg / .png 等）
 positionsRouter.post('/upload', upload.single('file'), asyncHandler(async (req, res) => {
   if (!req.file) throw new ApiError(400, '请上传文件');
-  const ext = path.extname(req.file.originalname).toLowerCase();
-  if (ext === '.txt') {
-    const text = fs.readFileSync(req.file.path, 'utf-8');
-    res.json({ data: { text, filename: req.file.originalname } });
-  } else if (isExcelFile(req.file.originalname)) {
-    const text = parseExcelFile(req.file.path);
-    res.json({ data: { text, filename: req.file.originalname } });
-  } else {
-    res.status(400).json({ error: '暂不支持该格式，请粘贴文本或上传 .txt/.xlsx/.csv' });
+  // 临时文件读完即删，避免 uploads 目录无限累积
+  try {
+    const parsed = await parseFileToText(req.file.path, req.file.originalname);
+    res.json({
+      data: {
+        text: parsed.text,
+        filename: parsed.meta.filename,
+        ext: parsed.meta.ext,
+        mime: parsed.meta.mime,
+        charCount: parsed.meta.charCount,
+        sheetCount: parsed.meta.sheetCount,
+        imageCount: parsed.meta.imageCount,
+        attachmentCount: parsed.meta.attachmentCount,
+        // 返回图片资产给前端，AI 解析时一起回传
+        images: parsed.images.map((img) => ({
+          name: img.name,
+          mime: img.mime,
+          base64: img.base64,
+          source: img.source,
+        })),
+        // 附件元信息（前端只展示，不参与 AI 调用）
+        attachments: parsed.attachments.map((att) => ({
+          name: att.name,
+          ext: att.ext,
+          mime: att.mime,
+          size: att.size,
+          source: att.source,
+        })),
+      },
+    });
+  } catch (err: any) {
+    throw new ApiError(400, err?.message || '文件解析失败');
+  } finally {
+    // 无论成功失败都删掉临时文件
+    try { fs.unlinkSync(req.file.path); } catch { /* ignore */ }
   }
 }));

@@ -3,10 +3,23 @@ import { getAiConfig } from '../repositories/aiAnalysisRepo.js';
 import { PROMPT_TEMPLATES, fillTemplate } from './promptTemplates.js';
 import { logger } from '../utils/logger.js';
 
-// AI 消息格式
+// 多模态消息内容：可由文本段和图片段组成
+// OpenAI 协议：content 可以是 string，也可以是 [{type:'text',text:...},{type:'image_url',image_url:{url:'data:image/png;base64,...'}}]
+export type MessageContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string; detail?: 'auto' | 'low' | 'high' } };
+
+// AI 消息格式（content 既支持纯文本也支持多模态数组）
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
-  content: string;
+  content: string | MessageContentPart[];
+}
+
+// 单张图片资产（与 utils/fileParser.ts 中的 ParsedImage 对齐）
+export interface ChatImage {
+  name: string;
+  mime: string;
+  base64: string;
 }
 
 // 从 ai_config 表读取配置
@@ -38,9 +51,15 @@ export function parseAIJson(content: string): any {
 }
 
 // 基础 chat 调用（OpenAI 兼容协议，流式请求避免上游超时 502）
+// - messages: ChatMessage[]，content 可为纯文本或多模态数组
+// - options.images: 可选图片资产数组，会作为 image_url 段追加到 user 消息末尾
 export async function callAI(
   messages: ChatMessage[],
-  options?: { temperature?: number; timeoutMs?: number }
+  options?: {
+    temperature?: number;
+    timeoutMs?: number;
+    images?: ChatImage[];
+  }
 ): Promise<string> {
   const cfg = getConfig();
   if (!cfg.api_key) {
@@ -48,13 +67,37 @@ export async function callAI(
   }
   const baseUrl = cfg.base_url.replace(/\/$/, '');
   const url = `${baseUrl}/chat/completions`;
+
+  // 如果有图片资产，把所有图片以 image_url 段追加到 user 消息末尾
+  let finalMessages = messages;
+  const imgs = options?.images ?? [];
+  if (imgs.length > 0) {
+    finalMessages = messages.map((m) => {
+      if (m.role !== 'user') return m;
+      const textPart = typeof m.content === 'string' ? m.content : '';
+      const parts: MessageContentPart[] = [];
+      if (textPart) parts.push({ type: 'text', text: textPart });
+      for (const img of imgs) {
+        parts.push({
+          type: 'image_url',
+          image_url: {
+            url: `data:${img.mime};base64,${img.base64}`,
+            detail: 'auto',
+          },
+        });
+      }
+      return { role: m.role, content: parts } as ChatMessage;
+    });
+  }
+
   const body = {
     model: cfg.model,
-    messages,
+    messages: finalMessages,
     temperature: options?.temperature ?? cfg.temperature,
     stream: true,
   };
-  const timeoutMs = options?.timeoutMs ?? 120000;
+  // 多模态调用通常更慢，给更长默认超时
+  const timeoutMs = options?.timeoutMs ?? (imgs.length > 0 ? 120000 : 60000);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   logger.info(`[AI] 请求 ${url}  model=${cfg.model}  timeout=${timeoutMs}ms  stream=true`);
@@ -121,7 +164,7 @@ export async function callAI(
 // 调用 AI 并容错解析 JSON
 export async function callAIJson<T = any>(
   messages: ChatMessage[],
-  options?: { temperature?: number; timeoutMs?: number }
+  options?: { temperature?: number; timeoutMs?: number; images?: ChatImage[] }
 ): Promise<T> {
   const content = await callAI(messages, options);
   try {
@@ -136,7 +179,7 @@ export async function callAIJson<T = any>(
 export async function callByPromptKey(
   promptKey: string,
   variables: Record<string, string>,
-  options?: { temperature?: number; timeoutMs?: number }
+  options?: { temperature?: number; timeoutMs?: number; images?: ChatImage[] }
 ): Promise<any> {
   // 优先用数据库中的自定义提示词，回退到代码默认
   const cfg = getAiConfig();

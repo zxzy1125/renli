@@ -52,6 +52,9 @@ export interface Position {
   bonus?: string | null;
   keywords: string[];
   raw_text?: string | null;
+  ai_meta?: Record<string, unknown> | null;
+  source_filename?: string | null;
+  source_ext?: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;

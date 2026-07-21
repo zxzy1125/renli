@@ -9,6 +9,9 @@ import {
   Save,
   X,
   Loader2,
+  FileText,
+  AlertTriangle,
+  CheckCircle2,
 } from 'lucide-react';
 import { positionsApi, clientsApi, aiApi, getErrorMsg } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
@@ -23,6 +26,33 @@ import {
 } from './constants';
 
 type InputMode = 'paste' | 'upload';
+
+interface AiMeta {
+  clientCompany?: string;
+  salaryUnit?: string;
+  highlights?: string[];
+  confidence?: number;
+  uncertainFields?: string[];
+  rawTextSummary?: string;
+  [k: string]: unknown;
+}
+
+// 上传文件后保留的图片资产（用于多模态 AI 解析）
+interface UploadImage {
+  name: string;
+  mime: string;
+  base64: string;
+  source: string;
+}
+
+// 上传文件后保留的附件元信息（仅展示用）
+interface UploadAttachment {
+  name: string;
+  ext: string;
+  mime: string;
+  size: number;
+  source: string;
+}
 
 interface FormState {
   title: string;
@@ -43,6 +73,9 @@ interface FormState {
   bonus: string;
   keywords: string[];
   raw_text: string;
+  ai_meta: AiMeta | null;
+  source_filename: string;
+  source_ext: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -64,6 +97,9 @@ const EMPTY_FORM: FormState = {
   bonus: '',
   keywords: [],
   raw_text: '',
+  ai_meta: null,
+  source_filename: '',
+  source_ext: '',
 };
 
 export default function PositionForm() {
@@ -85,6 +121,15 @@ export default function PositionForm() {
   const [parseMsg, setParseMsg] = useState('');
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // 上传后保留的图片资产和附件元信息（用于多模态 AI 调用 + UI 展示）
+  const [uploadImages, setUploadImages] = useState<UploadImage[]>([]);
+  const [uploadAttachments, setUploadAttachments] = useState<UploadAttachment[]>([]);
+  const [uploadMeta, setUploadMeta] = useState<{
+    sheetCount: number;
+    imageCount: number;
+    attachmentCount: number;
+  } | null>(null);
 
   // 权限校验：仅管理员
   useEffect(() => {
@@ -126,6 +171,9 @@ export default function PositionForm() {
           bonus: p.bonus || '',
           keywords: p.keywords || [],
           raw_text: p.raw_text || '',
+          ai_meta: (p.ai_meta as AiMeta | null) ?? null,
+          source_filename: p.source_filename || '',
+          source_ext: p.source_ext || '',
         });
       } catch (err) {
         setError(getErrorMsg(err));
@@ -154,8 +202,32 @@ export default function PositionForm() {
     setUploading(true);
     try {
       const res = await positionsApi.upload(file);
-      update('raw_text', res.text);
-      setParseMsg(`已上传文件「${res.filename}」，可点击 AI 解析自动填表`);
+      // 一起更新 raw_text 和源文件元信息（供后端存档/详情页展示）
+      setForm((f) => ({
+        ...f,
+        raw_text: res.text,
+        source_filename: res.filename,
+        source_ext: res.ext,
+        // 切换文件后旧的 AI 解析结果作废
+        ai_meta: null,
+      }));
+      // 保留图片资产 + 附件元信息，AI 解析时一并回传
+      setUploadImages(res.images ?? []);
+      setUploadAttachments(res.attachments ?? []);
+      setUploadMeta({
+        sheetCount: res.sheetCount ?? 0,
+        imageCount: res.imageCount ?? 0,
+        attachmentCount: res.attachmentCount ?? 0,
+      });
+      const bits: string[] = [`${res.ext}，${res.charCount} 字符`];
+      if (res.sheetCount > 0) bits.push(`${res.sheetCount} 个工作表`);
+      if (res.imageCount > 0) bits.push(`${res.imageCount} 张图片`);
+      if (res.attachmentCount > 0) bits.push(`${res.attachmentCount} 个嵌入附件`);
+      setParseMsg(
+        `已上传文件「${res.filename}」（${bits.join('，')}），可点击 AI 解析自动填表${
+          res.imageCount > 0 ? '（图片将一并交给 AI 多模态识别）' : ''
+        }`
+      );
     } catch (err) {
       setError(getErrorMsg(err));
     } finally {
@@ -164,7 +236,7 @@ export default function PositionForm() {
   };
 
   const handleParse = async () => {
-    if (!form.raw_text.trim()) {
+    if (!form.raw_text.trim() && uploadImages.length === 0) {
       setError('请先粘贴或上传职位原文');
       return;
     }
@@ -172,11 +244,16 @@ export default function PositionForm() {
     setParseMsg('');
     setError('');
     try {
-      const res = await aiApi.parsePosition(form.raw_text);
+      // 把上传时拿到的图片资产一起传给 AI（多模态）
+      const imgs = uploadImages.length > 0
+        ? uploadImages.map((i) => ({ name: i.name, mime: i.mime, base64: i.base64 }))
+        : undefined;
+      const res = await aiApi.parsePosition(form.raw_text, imgs);
       const data = (res as { data?: Record<string, unknown> }).data ?? (res as Record<string, unknown>);
-      // 仅填充空字段
-      setForm((f) => mergeParseResult(f, data));
-      setParseMsg('AI 解析完成，已自动填充表单空字段，请核对后保存');
+      // 完整消费所有 AI 字段：填充表单空字段 + 保存 AI 完整结果到 ai_meta
+      setForm((f) => mergeParseResult(f, data, clients));
+      const extra = uploadImages.length > 0 ? `（含 ${uploadImages.length} 张图片多模态识别）` : '';
+      setParseMsg(`AI 解析完成${extra}，已自动填充表单空字段，请核对后保存`);
     } catch (err) {
       setError(getErrorMsg(err));
     } finally {
@@ -217,6 +294,9 @@ export default function PositionForm() {
         bonus: form.bonus || null,
         keywords: form.keywords,
         raw_text: form.raw_text || null,
+        ai_meta: form.ai_meta || null,
+        source_filename: form.source_filename || null,
+        source_ext: form.source_ext || null,
       };
       if (isEdit && id) {
         await positionsApi.update(id, payload);
@@ -461,11 +541,12 @@ export default function PositionForm() {
                 <input
                   ref={fileRef}
                   type="file"
-                  accept=".txt,.pdf,.doc,.docx,.xlsx,.xls,.csv"
+                  accept=".txt,.pdf,.doc,.docx,.xlsx,.xlsm,.xls,.csv,.jpg,.jpeg,.png,.gif,.bmp,.webp"
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
                     if (f) handleUpload(f);
+                    // 清空 input value 让同一文件可重复选择
                     e.target.value = '';
                   }}
                 />
@@ -483,11 +564,87 @@ export default function PositionForm() {
                   ) : (
                     <>
                       <Upload className="w-6 h-6 mx-auto mb-2" />
-                      <div className="text-sm">点击上传文件（.txt / .xlsx / .csv）</div>
-                      <div className="text-xs text-forest-400 mt-1">支持 .txt、.xlsx、.xls、.csv 自动提取文本</div>
+                      <div className="text-sm">点击上传文件</div>
+                      <div className="text-xs text-forest-400 mt-1">
+                        支持 .txt / .pdf / .docx / .xlsx / .xls / .csv / .jpg / .png 等
+                      </div>
+                      <div className="text-xs text-forest-400 mt-0.5">
+                        自动提取文本 + Excel 多工作表 + Word/Excel 嵌入附件 + 图片多模态识别
+                      </div>
                     </>
                   )}
                 </button>
+                {form.source_filename && (
+                  <div className="mt-2 flex items-center gap-1.5 text-xs text-forest-600 bg-forest-50 px-2 py-1.5 rounded">
+                    <FileText className="w-3.5 h-3.5" />
+                    <span className="truncate">原文件：{form.source_filename}</span>
+                    <span className="text-forest-400">（{form.source_ext}）</span>
+                  </div>
+                )}
+
+                {/* 上传解析后展示：工作表/图片/附件统计 */}
+                {uploadMeta && (uploadMeta.sheetCount > 0 || uploadMeta.imageCount > 0 || uploadMeta.attachmentCount > 0) && (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+                    {uploadMeta.sheetCount > 0 && (
+                      <span className="px-1.5 py-0.5 rounded bg-ochre-50 text-ochre-700 border border-ochre-100">
+                        {uploadMeta.sheetCount} 个工作表
+                      </span>
+                    )}
+                    {uploadMeta.imageCount > 0 && (
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100">
+                        {uploadMeta.imageCount} 张图片（将交给 AI 多模态识别）
+                      </span>
+                    )}
+                    {uploadMeta.attachmentCount > 0 && (
+                      <span className="px-1.5 py-0.5 rounded bg-cream-100 text-forest-700 border border-forest-100">
+                        {uploadMeta.attachmentCount} 个嵌入附件
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* 上传的图片缩略图预览 */}
+                {uploadImages.length > 0 && (
+                  <div className="mt-2 grid grid-cols-4 gap-2">
+                    {uploadImages.map((img, i) => (
+                      <div
+                        key={`${img.name}-${i}`}
+                        className="relative border border-forest-100 rounded overflow-hidden bg-cream-50"
+                        title={`${img.name}（${img.source}）`}
+                      >
+                        <img
+                          src={`data:${img.mime};base64,${img.base64}`}
+                          alt={img.name}
+                          className="w-full h-20 object-cover"
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 bg-forest-900/70 text-cream-50 text-[10px] px-1 py-0.5 truncate">
+                          {img.name}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 嵌入附件清单 */}
+                {uploadAttachments.length > 0 && (
+                  <div className="mt-2 text-xs">
+                    <div className="text-forest-500 mb-1">嵌入附件清单：</div>
+                    <ul className="space-y-0.5">
+                      {uploadAttachments.map((att, i) => (
+                        <li
+                          key={`${att.name}-${i}`}
+                          className="flex items-center gap-1.5 text-forest-600"
+                        >
+                          <FileText className="w-3 h-3 text-forest-400" />
+                          <span className="truncate">{att.name}</span>
+                          <span className="text-forest-400">
+                            （{att.ext}，{(att.size / 1024).toFixed(1)} KB，来源 {att.source}）
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
 
@@ -495,7 +652,7 @@ export default function PositionForm() {
               <button
                 type="button"
                 onClick={handleParse}
-                disabled={parsing || !form.raw_text.trim()}
+                disabled={parsing || (!form.raw_text.trim() && uploadImages.length === 0)}
                 className="btn-ai flex items-center gap-1 disabled:opacity-50"
               >
                 <Sparkles className="w-4 h-4" />
@@ -505,6 +662,11 @@ export default function PositionForm() {
                 <span className="text-xs text-forest-500">{parseMsg}</span>
               )}
             </div>
+
+            {/* AI 解析结果摘要 */}
+            {form.ai_meta && (
+              <AiMetaPanel meta={form.ai_meta} />
+            )}
           </div>
 
           <div className="card p-5">
@@ -592,8 +754,13 @@ function Field({
   );
 }
 
-// AI 解析结果合并：只填空字段
-function mergeParseResult(form: FormState, data: Record<string, unknown>): FormState {
+// AI 解析结果合并：只填空字段（用户已填的不覆盖），同时把 AI 完整结果存到 ai_meta，
+// 并尝试用 clientCompany 反向匹配 client_id（若用户未关联客户公司且能在客户列表找到对应名称）
+function mergeParseResult(
+  form: FormState,
+  data: Record<string, unknown>,
+  clients: Client[] = []
+): FormState {
   const next = { ...form };
   const setIfEmpty = (key: keyof FormState, value: unknown) => {
     if (value === undefined || value === null) return;
@@ -614,6 +781,7 @@ function mergeParseResult(form: FormState, data: Record<string, unknown>): FormS
       (next[key] as string) = s;
     }
   };
+
   // 兼容 snake_case 和 camelCase
   setIfEmpty('title', data.title);
   setIfEmpty('department', data.department);
@@ -630,5 +798,115 @@ function mergeParseResult(form: FormState, data: Record<string, unknown>): FormS
   setIfEmpty('requirements', data.requirements);
   setIfEmpty('bonus', data.bonus);
   setIfEmpty('keywords', data.keywords);
+
+  // 反向匹配客户公司：若 form.client_id 为空且 AI 给出了 clientCompany，
+  // 尝试在客户列表里按名称匹配（包含/等于都算）
+  const clientCompany = pickString(data.clientCompany ?? data.client_company);
+  if (!next.client_id && clientCompany) {
+    const matched = clients.find(
+      (c) => c.name === clientCompany || c.name.includes(clientCompany) || clientCompany.includes(c.name)
+    );
+    if (matched) next.client_id = matched.id;
+  }
+
+  // 保存 AI 完整结果到 ai_meta（详情页表格化展示用）
+  next.ai_meta = {
+    clientCompany,
+    salaryUnit: pickString(data.salaryUnit ?? data.salary_unit),
+    highlights: pickStringArray(data.highlights),
+    confidence: typeof data.confidence === 'number' ? data.confidence : undefined,
+    uncertainFields: pickStringArray(data.uncertainFields ?? data.uncertain_fields),
+    rawTextSummary: pickString(data.rawTextSummary ?? data.raw_text_summary),
+  };
   return next;
+}
+
+function pickString(v: unknown): string {
+  if (v === undefined || v === null) return '';
+  return String(v).trim();
+}
+
+function pickStringArray(v: unknown): string[] {
+  if (Array.isArray(v)) return v.map(String).filter(Boolean);
+  if (typeof v === 'string' && v.trim()) return [v.trim()];
+  return [];
+}
+
+// AI 解析结果摘要面板：显示 confidence、uncertainFields、highlights、rawTextSummary
+function AiMetaPanel({ meta }: { meta: AiMeta }) {
+  const confidence = typeof meta.confidence === 'number' ? meta.confidence : null;
+  const uncertain = meta.uncertainFields ?? [];
+  const highlights = meta.highlights ?? [];
+  const summary = meta.rawTextSummary ?? '';
+  const clientCompany = meta.clientCompany ?? '';
+  const salaryUnit = meta.salaryUnit ?? '';
+
+  // 置信度颜色：>=0.85 绿色 / 0.7-0.85 黄色 / <0.7 红色
+  const confLevel =
+    confidence === null ? 'unknown' :
+    confidence >= 0.85 ? 'high' :
+    confidence >= 0.7 ? 'medium' : 'low';
+  const confColor =
+    confLevel === 'high' ? 'text-emerald-600 bg-emerald-50 border-emerald-100' :
+    confLevel === 'medium' ? 'text-amber-600 bg-amber-50 border-amber-100' :
+    confLevel === 'low' ? 'text-risk-600 bg-risk-50 border-risk-100' :
+    'text-forest-500 bg-forest-50 border-forest-100';
+
+  return (
+    <div className="mt-3 border border-forest-100 rounded-lg p-3 bg-cream-50 space-y-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs font-semibold text-forest-700">AI 解析结果</span>
+        {confidence !== null && (
+          <span className={`text-xs px-2 py-0.5 rounded border ${confColor}`}>
+            置信度 {(confidence * 100).toFixed(0)}%
+          </span>
+        )}
+        {clientCompany && (
+          <span className="text-xs text-forest-500">
+            客户公司：<span className="text-forest-700">{clientCompany}</span>
+          </span>
+        )}
+        {salaryUnit && (
+          <span className="text-xs text-forest-500">
+            薪资单位：<span className="text-forest-700">{salaryUnit}</span>
+          </span>
+        )}
+      </div>
+
+      {summary && (
+        <div className="text-xs text-forest-600 bg-white rounded p-2 border border-forest-100">
+          <span className="font-medium text-forest-700">原文摘要：</span>
+          {summary}
+        </div>
+      )}
+
+      {highlights.length > 0 && (
+        <div className="text-xs">
+          <div className="font-medium text-forest-700 mb-1 flex items-center gap-1">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+            职位亮点
+          </div>
+          <ul className="list-disc list-inside text-forest-600 space-y-0.5">
+            {highlights.map((h, i) => (
+              <li key={i}>{h}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {uncertain.length > 0 && (
+        <div className="text-xs">
+          <div className="font-medium text-amber-700 mb-1 flex items-center gap-1">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            不确定字段（需人工核对）
+          </div>
+          <ul className="list-disc list-inside text-amber-700 space-y-0.5">
+            {uncertain.map((u, i) => (
+              <li key={i}>{u}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
 }

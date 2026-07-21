@@ -132,7 +132,18 @@ export const positionsApi = {
     const fd = new FormData();
     fd.append('file', file);
     return api
-      .post<unknown, { data: { text: string; filename: string } }>('/positions/upload', fd, {
+      .post<unknown, { data: {
+        text: string;
+        filename: string;
+        ext: string;
+        mime: string;
+        charCount: number;
+        sheetCount: number;
+        imageCount: number;
+        attachmentCount: number;
+        images: Array<{ name: string; mime: string; base64: string; source: string }>;
+        attachments: Array<{ name: string; ext: string; mime: string; size: number; source: string }>;
+      } }>('/positions/upload', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       .then((r) => r.data);
@@ -208,8 +219,8 @@ export const reportsApi = {
 
 // ===== AI 调用 API（员工/管理员） =====
 export const aiApi = {
-  parsePosition: (raw_text: string) =>
-    api.post<unknown, { data: unknown }>('/ai/parse-position', { raw_text }),
+  parsePosition: (raw_text: string, images?: Array<{ name: string; mime: string; base64: string }>) =>
+    api.post<unknown, { data: unknown }>('/ai/parse-position', { raw_text, images }),
   parseResume: (raw_text: string) =>
     api.post<unknown, { data: unknown }>('/ai/parse-resume', { raw_text }),
   generateBossPosting: (position_id: string, industry?: string, city?: string, style?: string) =>

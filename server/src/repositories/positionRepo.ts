@@ -22,6 +22,9 @@ interface PositionRow {
   bonus: string | null;
   keywords: string | null;
   raw_text: string | null;
+  ai_meta: string | null;
+  source_filename: string | null;
+  source_ext: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -30,6 +33,11 @@ interface PositionRow {
 function parseArray(val: string | null): string[] {
   if (!val) return [];
   try { return JSON.parse(val); } catch { return []; }
+}
+
+function parseJson(val: string | null): Record<string, unknown> | null {
+  if (!val) return null;
+  try { return JSON.parse(val); } catch { return null; }
 }
 
 function toPosition(row: PositionRow): Position {
@@ -53,6 +61,9 @@ function toPosition(row: PositionRow): Position {
     bonus: row.bonus,
     keywords: parseArray(row.keywords),
     raw_text: row.raw_text,
+    ai_meta: parseJson(row.ai_meta),
+    source_filename: row.source_filename,
+    source_ext: row.source_ext,
     created_by: row.created_by,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -118,6 +129,9 @@ export interface CreatePositionInput {
   bonus?: string | null;
   keywords?: string[];
   raw_text?: string | null;
+  ai_meta?: Record<string, unknown> | null;
+  source_filename?: string | null;
+  source_ext?: string | null;
   created_by: string;
 }
 
@@ -127,8 +141,9 @@ export function createPosition(input: CreatePositionInput): Position {
       id, title, client_id, department, location, headcount,
       salary_min, salary_max, experience, education, job_type, work_mode,
       priority, status, jd, requirements, bonus, keywords, raw_text,
+      ai_meta, source_filename, source_ext,
       created_by, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
   `).run(
     input.id,
     input.title,
@@ -149,6 +164,9 @@ export function createPosition(input: CreatePositionInput): Position {
     input.bonus ?? null,
     input.keywords ? JSON.stringify(input.keywords) : null,
     input.raw_text ?? null,
+    input.ai_meta ? JSON.stringify(input.ai_meta) : null,
+    input.source_filename ?? null,
+    input.source_ext ?? null,
     input.created_by
   );
   const p = findPositionById(input.id);
@@ -175,6 +193,9 @@ export interface UpdatePositionInput {
   bonus?: string | null;
   keywords?: string[];
   raw_text?: string | null;
+  ai_meta?: Record<string, unknown> | null;
+  source_filename?: string | null;
+  source_ext?: string | null;
 }
 
 export function updatePosition(id: string, input: UpdatePositionInput): Position | null {
@@ -199,6 +220,9 @@ export function updatePosition(id: string, input: UpdatePositionInput): Position
   if (input.bonus !== undefined) setField('bonus', input.bonus);
   if (input.keywords !== undefined) setField('keywords', input.keywords ? JSON.stringify(input.keywords) : null);
   if (input.raw_text !== undefined) setField('raw_text', input.raw_text);
+  if (input.ai_meta !== undefined) setField('ai_meta', input.ai_meta ? JSON.stringify(input.ai_meta) : null);
+  if (input.source_filename !== undefined) setField('source_filename', input.source_filename);
+  if (input.source_ext !== undefined) setField('source_ext', input.source_ext);
   if (fields.length === 0) return findPositionById(id);
   fields.push("updated_at = datetime('now')");
   values.push(id);

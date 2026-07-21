@@ -1,4 +1,4 @@
-// 职位详情页：基本信息 + JD/要求/加分项 + 折叠原文 + 生成 BOSS 文案按钮
+// 职位详情页：基本信息 + JD/要求/加分项 + AI 解析结果表格 + 折叠原文 + 生成 BOSS 文案按钮
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
@@ -16,6 +16,10 @@ import {
   MapPin,
   Briefcase,
   Calendar,
+  FileText,
+  AlertTriangle,
+  CheckCircle2,
+  Sparkle,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { positionsApi, clientsApi, aiApi, getErrorMsg } from '@/lib/api';
@@ -35,6 +39,7 @@ import {
   JOB_TYPE_OPTIONS,
   WORK_MODE_OPTIONS,
   PRIORITY_OPTIONS,
+  POSITION_STATUS_OPTIONS,
   getOptionLabel,
 } from './constants';
 
@@ -293,6 +298,9 @@ export default function PositionDetail() {
             </section>
           )}
 
+          {/* AI 解析结果（结构化表格） */}
+          <AiResultTable position={position} client={client} />
+
           {/* 折叠原文 */}
           {position.raw_text && (
             <section className="card p-5">
@@ -301,8 +309,15 @@ export default function PositionDetail() {
                 onClick={() => setRawOpen((v) => !v)}
                 className="w-full flex items-center justify-between text-left"
               >
-                <span className="font-serif text-base font-semibold text-forest-700">
-                  原始文本（raw_text）
+                <span className="font-serif text-base font-semibold text-forest-700 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-forest-400" />
+                  原始文本
+                  {position.source_filename && (
+                    <span className="text-xs text-forest-500 font-normal">
+                      （来源：{position.source_filename}
+                      {position.source_ext ? ` · ${position.source_ext}` : ''}）
+                    </span>
+                  )}
                 </span>
                 {rawOpen ? (
                   <ChevronDown className="w-4 h-4 text-forest-400" />
@@ -485,5 +500,282 @@ function BossPostingCard({
         </div>
       </div>
     </div>
+  );
+}
+
+// AI 解析结果表格：把 ai_meta + 源文件信息以结构化表格呈现
+interface AiMetaShape {
+  clientCompany?: string;
+  salaryUnit?: string;
+  highlights?: string[];
+  confidence?: number;
+  uncertainFields?: string[];
+  rawTextSummary?: string;
+  [k: string]: unknown;
+}
+
+function AiResultTable({
+  position,
+  client,
+}: {
+  position: Position;
+  client?: Client | null;
+}) {
+  // 没有任何 AI 解析结果或源文件，不渲染该区块
+  const aiMeta = (position.ai_meta as AiMetaShape | null) ?? null;
+  const hasSourceFile = !!(position.source_filename || position.source_ext);
+  if (!aiMeta && !hasSourceFile) return null;
+
+  const confidence = typeof aiMeta?.confidence === 'number' ? aiMeta.confidence : null;
+  const confidencePct =
+    confidence !== null ? `${Math.round(confidence * 100)}%` : '—';
+  const confidenceColor =
+    confidence === null
+      ? 'text-forest-500'
+      : confidence >= 0.85
+      ? 'text-emerald-600'
+      : confidence >= 0.6
+      ? 'text-ochre-600'
+      : 'text-risk-600';
+
+  const highlights = Array.isArray(aiMeta?.highlights)
+    ? (aiMeta!.highlights as string[]).filter(Boolean)
+    : [];
+  const uncertainFields = Array.isArray(aiMeta?.uncertainFields)
+    ? (aiMeta!.uncertainFields as string[]).filter(Boolean)
+    : [];
+
+  const rows: Array<{ label: string; value: React.ReactNode; mono?: boolean }> = [];
+  if (aiMeta?.clientCompany) {
+    rows.push({
+      label: '客户公司（AI 识别）',
+      value: aiMeta.clientCompany,
+    });
+  }
+  if (client?.name) {
+    rows.push({
+      label: '关联客户公司',
+      value: client.name,
+    });
+  }
+  if (aiMeta?.salaryUnit) {
+    rows.push({
+      label: '薪资单位',
+      value: aiMeta.salaryUnit,
+      mono: true,
+    });
+  }
+  if (position.salary_min || position.salary_max) {
+    const s = [position.salary_min, position.salary_max].filter(Boolean).join(' - ');
+    rows.push({
+      label: '薪资范围',
+      value: s,
+      mono: true,
+    });
+  }
+  if (position.headcount) {
+    rows.push({
+      label: '招聘人数',
+      value: `${position.headcount} 人`,
+    });
+  }
+  if (position.experience) {
+    rows.push({
+      label: '经验要求',
+      value: position.experience,
+    });
+  }
+  if (position.education) {
+    rows.push({
+      label: '学历要求',
+      value: position.education,
+    });
+  }
+  if (position.job_type) {
+    rows.push({
+      label: '职位类型',
+      value: getOptionLabel(JOB_TYPE_OPTIONS, position.job_type),
+    });
+  }
+  if (position.work_mode) {
+    rows.push({
+      label: '工作模式',
+      value: getOptionLabel(WORK_MODE_OPTIONS, position.work_mode),
+    });
+  }
+  if (position.location) {
+    rows.push({
+      label: '工作地点',
+      value: position.location,
+    });
+  }
+  if (position.department) {
+    rows.push({
+      label: '所在部门',
+      value: position.department,
+    });
+  }
+  if (position.priority) {
+    rows.push({
+      label: '优先级',
+      value: getOptionLabel(PRIORITY_OPTIONS, position.priority),
+    });
+  }
+  if (position.status) {
+    rows.push({
+      label: '状态',
+      value: getOptionLabel(POSITION_STATUS_OPTIONS, position.status),
+    });
+  }
+  rows.push({
+    label: 'AI 置信度',
+    value: (
+      <span className={`inline-flex items-center gap-1 font-medium ${confidenceColor}`}>
+        {confidence !== null && confidence >= 0.85 && (
+          <CheckCircle2 className="w-3.5 h-3.5" />
+        )}
+        {confidence !== null && confidence < 0.6 && (
+          <AlertTriangle className="w-3.5 h-3.5" />
+        )}
+        {confidencePct}
+      </span>
+    ),
+  });
+  if (position.source_filename) {
+    rows.push({
+      label: '源文件名',
+      value: (
+        <span className="inline-flex items-center gap-1.5">
+          <FileText className="w-3.5 h-3.5 text-forest-400" />
+          {position.source_filename}
+          {position.source_ext && (
+            <span className="text-xs text-forest-400">（{position.source_ext}）</span>
+          )}
+        </span>
+      ),
+    });
+  }
+  if (position.keywords && position.keywords.length > 0) {
+    rows.push({
+      label: '关键词',
+      value: (
+        <div className="flex flex-wrap gap-1 justify-end">
+          {position.keywords.map((k, i) => (
+            <span
+              key={`${k}-${i}`}
+              className="text-xs px-1.5 py-0.5 rounded bg-cream-100 text-forest-700 border border-forest-100"
+            >
+              {k}
+            </span>
+          ))}
+        </div>
+      ),
+    });
+  }
+
+  return (
+    <section className="card p-5">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-serif text-lg font-semibold text-forest-800 flex items-center gap-2">
+          <Sparkle className="w-4 h-4 text-ochre-500" />
+          AI 解析结果
+        </h2>
+        {confidence !== null && (
+          <span
+            className={`text-xs px-2 py-0.5 rounded-full border ${
+              confidence >= 0.85
+                ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
+                : confidence >= 0.6
+                ? 'bg-ochre-50 border-ochre-100 text-ochre-700'
+                : 'bg-risk-50 border-risk-100 text-risk-700'
+            }`}
+          >
+            置信度 {confidencePct}
+          </span>
+        )}
+      </div>
+
+      {/* 主表格：所有字段以两列表格展示 */}
+      <div className="overflow-x-auto rounded-lg border border-forest-100">
+        <table className="w-full text-sm">
+          <tbody>
+            {rows.map((r, i) => (
+              <tr
+                key={r.label}
+                className={i % 2 === 0 ? 'bg-cream-50' : 'bg-white'}
+              >
+                <th
+                  scope="row"
+                  className="text-left font-medium text-forest-600 px-3 py-2 align-top w-1/3 whitespace-nowrap"
+                >
+                  {r.label}
+                </th>
+                <td
+                  className={`px-3 py-2 text-forest-800 ${
+                    r.mono ? 'font-mono' : ''
+                  }`}
+                >
+                  {r.value}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* 职位亮点 */}
+      {highlights.length > 0 && (
+        <div className="mt-4">
+          <h3 className="text-sm font-semibold text-forest-700 mb-2 flex items-center gap-1.5">
+            <Sparkle className="w-3.5 h-3.5 text-ochre-500" />
+            职位亮点
+          </h3>
+          <ul className="space-y-1">
+            {highlights.map((h, i) => (
+              <li
+                key={i}
+                className="text-sm text-forest-700 flex items-start gap-2"
+              >
+                <span className="mt-1.5 w-1 h-1 rounded-full bg-ochre-500 shrink-0" />
+                <span>{h}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 不确定字段警告 */}
+      {uncertainFields.length > 0 && (
+        <div className="mt-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100">
+          <div className="text-sm font-semibold text-risk-700 flex items-center gap-1.5 mb-1">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            以下字段 AI 不确定，请人工核对
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {uncertainFields.map((f, i) => (
+              <span
+                key={i}
+                className="text-xs px-1.5 py-0.5 rounded bg-white text-risk-700 border border-risk-100"
+              >
+                {f}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 原文摘要 */}
+      {aiMeta?.rawTextSummary && (
+        <div className="mt-4">
+          <h3 className="text-sm font-semibold text-forest-700 mb-2 flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5 text-forest-400" />
+            AI 原文摘要
+          </h3>
+          <p className="text-sm text-forest-600 leading-relaxed bg-cream-50 border border-forest-100 rounded-lg px-3 py-2">
+            {aiMeta.rawTextSummary}
+          </p>
+        </div>
+      )}
+    </section>
   );
 }

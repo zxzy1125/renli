@@ -14,13 +14,21 @@ export const aiRouter = Router();
 
 aiRouter.use(requireAuth);
 
-// POST /api/ai/parse-position（管理员）
+// POST /api/ai/parse-position（管理员，支持多模态）
+// body: { raw_text: string, images?: [{ name, mime, base64 }] }
 aiRouter.post('/parse-position', requireAdmin, asyncHandler(async (req, res) => {
-  const { raw_text } = req.body ?? {};
+  const { raw_text, images } = req.body ?? {};
   if (!raw_text) throw new ApiError(400, 'raw_text 不能为空');
+  // 校验图片资产格式，防止脏数据进入 AI 调用
+  const safeImages = Array.isArray(images)
+    ? images
+        .filter((img: any) => img && typeof img.base64 === 'string' && typeof img.mime === 'string')
+        .map((img: any) => ({ name: String(img.name || 'image'), mime: String(img.mime), base64: String(img.base64) }))
+        .slice(0, 12) // 服务端再设一次上限，避免前端发太多
+    : [];
   const result = await callByPromptKey('parsePosition', {
     raw_text: String(raw_text),
-  });
+  }, safeImages.length > 0 ? { images: safeImages, timeoutMs: 120000 } : undefined);
   res.json({ data: result });
 }));
 

@@ -46,6 +46,9 @@ CREATE TABLE IF NOT EXISTS positions (
   bonus TEXT,
   keywords TEXT,        -- JSON 数组
   raw_text TEXT,
+  ai_meta TEXT,         -- JSON：AI 解析的完整原始结果（highlights/confidence/uncertainFields/clientCompany/salaryUnit 等）
+  source_filename TEXT, -- 上传时的原文件名（粘贴录入为 NULL）
+  source_ext TEXT,      -- 上传文件扩展名（.txt / .pdf / .docx）
   created_by TEXT NOT NULL REFERENCES users(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))

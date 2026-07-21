@@ -106,7 +106,9 @@ function buildConstrainedSystem(role: string): string {
 // 提示词 1：职位文件解析
 export const PARSE_POSITION_PROMPT = {
   system: BASE_SYSTEM,
-  user: `你是资深 HR 助手。任务：从用户提供的职位描述原文中，精准提取结构化字段。
+  user: `你是资深 HR 助手。任务：从用户提供的职位描述原文中，精准、完整地提取结构化字段。原文可能来自 .txt / .pdf / .docx / .xlsx / .csv / 图片 文件，已经过文本提取，可能含有少量格式残渣（如多余空行、页眉页脚、Excel 多 sheet 拼接标记），需要你智能识别。
+
+**多模态识别**：本条用户消息可能附带 1~N 张图片（来自原文件嵌入图片、扫描件、或独立上传的图片），你必须把图片中的文字信息一并识别，整合到下方对应字段。识别图片中的：标题、表格内容、JD、要求、薪资数字、地点等所有可见文字。图片和文本信息冲突时优先采信图片中明确写出的数字/术语。
 
 【职位原文】
 {raw_text}
@@ -114,30 +116,41 @@ export const PARSE_POSITION_PROMPT = {
 输出 JSON：
 {
   "title": "职位名称（如不明确，根据职责推断）",
-  "clientCompany": "客户公司名（如原文未提，留空）",
-  "department": "所属部门（如未提，留空）",
-  "salaryMin": "薪资下限（数字字符串，如 '30'，单位 K）",
+  "clientCompany": "客户公司名（如原文未提，留空字符串）",
+  "department": "所属部门（如未提，留空字符串）",
+  "salaryMin": "薪资下限（数字字符串，如 '30'，单位 K；提取不到留空字符串）",
   "salaryMax": "薪资上限（数字字符串，如 '50'）",
-  "salaryUnit": "K / W / 元/月",
-  "experience": "经验要求（如 '3-5年'）",
-  "education": "学历要求（如 '本科及以上'）",
-  "location": "工作地点",
-  "jobType": "fulltime / parttime / intern / contract",
-  "workMode": "onsite / remote / hybrid",
-  "responsibilities": "岗位职责（保留原文要点，整理为 Markdown 列表）",
-  "requirements": "任职要求（保留原文要点，整理为 Markdown 列表）",
-  "highlights": "职位亮点（从原文提炼 3-5 条；原文未提则基于行业常识推断）",
-  "keywords": ["关键词标签（5-10个）"],
+  "salaryUnit": "K / W / 元/月 / 元/天（按原文实际单位，原文未提默认 K）",
+  "experience": "经验要求（如 '3-5年'；原文未提留空字符串）",
+  "education": "学历要求（如 '本科及以上'；原文未提留空字符串）",
+  "location": "工作地点（原文未提留空字符串）",
+  "headcount": "招聘人数（数字字符串，如 '2'；原文未提留空字符串）",
+  "jobType": "必须从枚举中选一个：full_time / part_time / intern / outsourcing（注意是下划线，不是 fulltime）",
+  "workMode": "必须从枚举中选一个：onsite / remote / hybrid",
+  "priority": "必须从枚举中选一个：high / medium / low（按薪资/紧急程度/HC 数判断，默认 medium）",
+  "responsibilities": "岗位职责（保留原文每一条要点，整理为 Markdown 有序列表，禁止合并、禁止丢失原文任何一条职责）",
+  "requirements": "任职要求（保留原文每一条要点，整理为 Markdown 有序列表，禁止合并、禁止丢失原文任何一条要求）",
+  "bonus": "加分项（如原文有'加分项/优先/Preferred'部分则整理为 Markdown 列表；没有则留空字符串）",
+  "highlights": ["职位亮点 3-5 条（每条 ≤30 字，要具体到薪资数字/技术栈/团队规模等，禁止'发展空间大''团队氛围好'这种废话）"],
+  "keywords": ["关键词标签 5-10 个（技术栈/业务领域/级别，如 'React'/'高并发'/'SaaS'/'高级'）"],
   "confidence": 0.85,
-  "uncertainFields": ["把握不大的字段说明"]
+  "uncertainFields": ["把握不大的字段说明（confidence < 0.85 时必须列出，说明哪个字段不确定及原因）"],
+  "rawTextSummary": "用 1-2 句话总结原文核心信息（职位名 + 薪资 + 关键技能要求），便于人工快速核对"
 }
 
-铁律：
-1. 原文没明说的字段不要瞎编，留空或标注 uncertain
-2. responsibilities 和 requirements 必须保留原文的具体信息，不能泛化
-3. highlights 必须有"吸引力"，不能写"公司发展良好"这种废话
-4. confidence < 0.7 时必须在 uncertainFields 中说明哪些字段不确定
-5. 输出必须是合法 JSON`,
+铁律（违反即失败）：
+1. **完整性优先**：responsibilities / requirements 必须保留原文每一条信息（含图片中的），宁多勿少。如果原文有 8 条要求，输出必须有 8 条，禁止合并或省略
+2. 原文没明说的字段不要瞎编，留空字符串并在 uncertainFields 中说明
+3. jobType / workMode / priority 必须从枚举中选，禁止自创值（如 'fulltime' '合同工'等都不对）
+4. salaryMin / salaryMax 必须是纯数字字符串，不带单位（'30' 而非 '30K'）；如原文只给一个数（如 '月薪 20K'），下限和上限都填这个数
+5. highlights 必须有"吸引力"且具体，禁止"公司发展良好""团队氛围好""晋升空间大"这类套话
+6. confidence 取值：原文信息齐全且明确 = 0.9+；部分字段需推断 = 0.7-0.85；大量字段靠猜 = <0.7
+7. confidence < 0.85 时，uncertainFields 必须非空，逐项说明哪些字段不确定及依据
+8. keywords 必须覆盖原文核心技术栈和业务关键词，便于后续匹配检索
+9. rawTextSummary 必须输出，作为人工核对入口
+10. 输出必须是合法 JSON，不要包裹 markdown 代码块
+11. **Excel 多 sheet 处理**：原文可能含「========== [Excel 工作表：xxx] ==========」分隔的多 sheet 文本，必须把所有 sheet 信息整合到对应字段，不要漏掉任一 sheet
+12. **图片识别**：若用户消息附带图片，必须把图片内文字纳入解析，绝不能因为信息在图片中就忽略；如图片为表格，按表格行列结构识别后整合到 responsibilities/requirements 等字段`,
 };
 
 // 提示词 2：简历文件解析
