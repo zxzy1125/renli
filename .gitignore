@@ -37,6 +37,9 @@ ppt/montage*
 .env.*.local
 *.local
 
+# Agent 本地配置（含服务器地址和账号密码，勿提交）
+agent/config.json
+
 # 编辑器目录与文件
 .vscode/*
 !.vscode/extensions.json

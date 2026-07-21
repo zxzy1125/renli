@@ -34,6 +34,8 @@ import ConversionList from '@/pages/Conversions/ConversionList';
 import ChatList from '@/pages/Chat/ChatList';
 import ChatSessionPage from '@/pages/Chat/ChatSession';
 
+import BossAutoPage from '@/pages/BossAuto/BossAutoPage';
+
 import Settings from '@/pages/Settings/Settings';
 import ProfileSettings from '@/pages/Settings/ProfileSettings';
 import TeamSettings from '@/pages/Settings/TeamSettings';
@@ -99,6 +101,9 @@ export default function App() {
             {/* 对话辅助（BOSS 实时对话） */}
             <Route path="/chat" element={<ChatList />} />
             <Route path="/chat/:id" element={<ChatSessionPage />} />
+
+            {/* Boss 直聘自动化 */}
+            <Route path="/boss-auto" element={<BossAutoPage />} />
 
             {/* 撞单管理（管理员） */}
             <Route

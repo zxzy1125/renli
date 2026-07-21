@@ -417,3 +417,60 @@ export const chatApi = {
       })
       .then((r) => r.data),
 };
+
+// ===== Boss 自动化 API =====
+export interface BossAutoStatus {
+  connected: boolean;        // Chrome 是否已连接
+  agentOnline: boolean;      // 本地 Agent 是否在线
+  agentUser?: { name: string } | null;  // Agent 登录的代招助手用户
+  bossUser: { uid: string; name: string } | null;
+  message: string;
+}
+
+export interface BossTaskStatus {
+  isRunning: boolean;
+  shouldStop: boolean;
+  result: {
+    total: number;
+    success: number;
+    failed: number;
+    browsed: number;
+    stopped: boolean;
+    stopReason?: string;
+    startedAt: string;
+    finishedAt: string;
+  } | null;
+}
+
+export interface BossTodayStat {
+  sayHello: number;
+  followUp: number;
+  reply: number;
+  browse: number;
+  aiChat: number;
+}
+
+export const bossAutoApi = {
+  getStatus: () =>
+    api.get<unknown, BossAutoStatus>('/boss-auto/status'),
+  connect: () =>
+    api.post<unknown, { ok: boolean; bossUser: any; message: string }>('/boss-auto/connect'),
+  disconnect: () =>
+    api.post<unknown, { ok: boolean }>('/boss-auto/disconnect'),
+  startSayHello: (body: {
+    city?: string;
+    jobId?: string;
+    template?: string;
+    maxCount?: number;
+    browseRatio?: number;
+  }) =>
+    api.post<unknown, { ok: boolean; message: string }>('/boss-auto/say-hello/start', body),
+  stopSayHello: () =>
+    api.post<unknown, { ok: boolean; message: string }>('/boss-auto/say-hello/stop'),
+  getTaskStatus: () =>
+    api.get<unknown, BossTaskStatus>('/boss-auto/task/status'),
+  getTodayStat: () =>
+    api.get<unknown, BossTodayStat>('/boss-auto/stat/today'),
+  getLogs: (params: { action?: string; limit?: number; offset?: number } = {}) =>
+    api.get<unknown, any[]>('/boss-auto/logs', { params }),
+};

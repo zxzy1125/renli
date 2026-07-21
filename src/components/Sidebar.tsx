@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   MessageCircle,
   Settings,
+  Bot,
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -38,6 +39,7 @@ const adminMenus: MenuItem[] = [
   { to: '/chat', label: '对话辅助', icon: MessageCircle },
   { to: '/followups', label: '跟进管理', icon: CalendarClock },
   { to: '/conversions', label: '转化跟踪', icon: TrendingUp },
+  { to: '/boss-auto', label: 'Boss自动化', icon: Bot },
   { to: '/conflicts', label: '撞单管理', icon: AlertTriangle },
   { to: '/settings', label: '设置', icon: Settings },
 ];
@@ -51,6 +53,7 @@ const consultantMenus: MenuItem[] = [
   { to: '/chat', label: '对话辅助', icon: MessageCircle },
   { to: '/followups', label: '跟进管理', icon: CalendarClock },
   { to: '/conversions', label: '转化跟踪', icon: TrendingUp },
+  { to: '/boss-auto', label: 'Boss自动化', icon: Bot },
   { to: '/settings', label: '设置', icon: Settings },
 ];
 

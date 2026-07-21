@@ -253,3 +253,77 @@ CREATE INDEX IF NOT EXISTS idx_chat_sessions_status ON chat_sessions(status);
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_position ON chat_sessions(position_id);
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_resume ON chat_sessions(resume_id);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON chat_messages(session_id);
+
+-- ===== Boss 自动化相关表（阶段一新增） =====
+
+-- Boss 自动化配置表
+CREATE TABLE IF NOT EXISTS boss_config (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  boss_username TEXT,
+  max_daily_hello INTEGER NOT NULL DEFAULT 50,
+  work_start_time TEXT NOT NULL DEFAULT '09:00',
+  work_end_time TEXT NOT NULL DEFAULT '18:00',
+  is_running INTEGER NOT NULL DEFAULT 0,
+  cookie_json TEXT,
+  last_active_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Boss 岗位自动化配置表
+CREATE TABLE IF NOT EXISTS boss_post_config (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  position_id TEXT REFERENCES positions(id),
+  encrypt_job_id TEXT NOT NULL,
+  city TEXT,
+  filter_json TEXT,
+  say_hello_template TEXT,
+  follow_up_template TEXT,
+  ai_knowledge TEXT,
+  max_hello_times INTEGER NOT NULL DEFAULT 50,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Boss 候选人消息记录表
+CREATE TABLE IF NOT EXISTS boss_messages (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  boss_user_id TEXT,
+  candidate_id TEXT,
+  candidate_name TEXT,
+  direction TEXT NOT NULL,
+  content TEXT,
+  msg_type TEXT NOT NULL DEFAULT 'text',
+  sent_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Boss 操作行为日志表（防封号追溯）
+CREATE TABLE IF NOT EXISTS boss_action_logs (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  action TEXT NOT NULL,
+  target TEXT,
+  detail TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Boss 自动化运行统计表
+CREATE TABLE IF NOT EXISTS boss_stat_daily (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  d_date TEXT NOT NULL,
+  say_hello_times INTEGER NOT NULL DEFAULT 0,
+  follow_up_times INTEGER NOT NULL DEFAULT 0,
+  reply_times INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_boss_config_user ON boss_config(user_id);
+CREATE INDEX IF NOT EXISTS idx_boss_post_config_user ON boss_post_config(user_id);
+CREATE INDEX IF NOT EXISTS idx_boss_messages_user ON boss_messages(user_id);
+CREATE INDEX IF NOT EXISTS idx_boss_messages_candidate ON boss_messages(candidate_id);
+CREATE INDEX IF NOT EXISTS idx_boss_action_logs_user ON boss_action_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_boss_stat_daily_user_date ON boss_stat_daily(user_id, d_date);

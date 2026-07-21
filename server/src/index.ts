@@ -4,6 +4,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import fs from 'node:fs';
 import path from 'node:path';
+import http from 'node:http';
+import { WebSocketServer } from 'ws';
 
 // 引入数据库初始化（执行 schema + seed）
 import './db/index.js';
@@ -24,6 +26,10 @@ import { aiConfigRouter } from './routes/aiConfig.js';
 import { reportsRouter } from './routes/reports.js';
 import { guidelinesRouter } from './routes/guidelines.js';
 import { chatRouter } from './routes/chat.js';
+import { bossAutoRouter } from './routes/boss-auto.js';
+
+// Boss 自动化：Agent WebSocket 服务
+import { setupAgentWebSocket } from './boss/agent-ws.js';
 
 // 中间件
 import { errorHandler, notFoundHandler } from './middleware/error.js';
@@ -73,16 +79,22 @@ app.use('/api/ai-config', aiConfigRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/guidelines', guidelinesRouter);
 app.use('/api/chat', chatRouter);
+app.use('/api/boss-auto', bossAutoRouter);
 
 // 404
 app.use(notFoundHandler);
 // 错误处理
 app.use(errorHandler);
 
-// 启动服务器
-app.listen(PORT, () => {
+// 启动服务器（同时挂载 WebSocket Server 用于本地 Agent 连接）
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server, path: '/boss-agent' });
+setupAgentWebSocket(wss);
+
+server.listen(PORT, () => {
   logger.info(`招聘辅助后端服务已启动，监听端口 ${PORT}`);
   logger.info(`健康检查: http://localhost:${PORT}/api/health`);
+  logger.info(`Boss Agent WebSocket: ws://localhost:${PORT}/boss-agent`);
 });
 
 // 处理未捕获异常

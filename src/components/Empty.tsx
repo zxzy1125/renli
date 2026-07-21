@@ -1,8 +1,15 @@
 import { cn } from '@/lib/utils'
 
 // Empty component
-export default function Empty() {
+interface EmptyProps {
+  description?: string;
+  className?: string;
+}
+
+export default function Empty({ description, className }: EmptyProps) {
   return (
-    <div className={cn('flex h-full items-center justify-center')}>Empty</div>
+    <div className={cn('flex h-full items-center justify-center text-forest-400 text-sm', className)}>
+      {description || '暂无数据'}
+    </div>
   )
 }
