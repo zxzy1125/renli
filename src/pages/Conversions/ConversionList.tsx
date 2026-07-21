@@ -499,8 +499,9 @@ function AdminReports({ onToast }: { onToast: (msg: string) => void }) {
           reportsApi.clientSummary(),
         ]);
         if (!cancelled) {
-          setEmpRows((emp || []) as Record<string, unknown>[]);
-          setClientRows((cli || []) as Record<string, unknown>[]);
+          // 兜底：确保一定是数组（API 返回 null/对象时降级为空数组，避免 .map 报错）
+          setEmpRows(Array.isArray(emp) ? (emp as Record<string, unknown>[]) : []);
+          setClientRows(Array.isArray(cli) ? (cli as Record<string, unknown>[]) : []);
         }
       } catch (err) {
         if (!cancelled) {

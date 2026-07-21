@@ -222,10 +222,14 @@ export const aiConfigApi = {
 };
 
 // ===== 报表 API（管理员） =====
+// 注意：响应拦截器已自动解包 axios 的 res.data，所以 api.get 返回的就是后端响应体 {data: ...}
+// 这里再 .then(r => r.data) 解包内层 data 字段，让调用方直接拿到数组
 export const reportsApi = {
-  funnel: () => api.get<unknown, { data: FunnelStage[] }>('/reports/funnel'),
-  employeePerformance: () => api.get<unknown, { data: unknown[] }>('/reports/employee-performance'),
-  clientSummary: () => api.get<unknown, { data: unknown[] }>('/reports/client-summary'),
+  funnel: () => api.get<unknown, { data: FunnelStage[] }>('/reports/funnel').then((r) => r.data),
+  employeePerformance: () =>
+    api.get<unknown, { data: unknown[] }>('/reports/employee-performance').then((r) => r.data ?? []),
+  clientSummary: () =>
+    api.get<unknown, { data: unknown[] }>('/reports/client-summary').then((r) => r.data ?? []),
 };
 
 // ===== AI 调用 API（员工/管理员） =====

@@ -111,7 +111,8 @@ export default function Dashboard() {
         if (isAdmin) {
           try {
             const funnelData = await reportsApi.funnel();
-            if (!cancelled) setFunnel(funnelData.data || []);
+            // reportsApi.funnel 已解包内层 data 字段，直接拿到 FunnelStage[]
+            if (!cancelled) setFunnel(Array.isArray(funnelData) ? funnelData : []);
           } catch (e) {
             // 忽略漏斗错误
             console.warn('funnel load failed', getErrorMsg(e));

@@ -12,10 +12,24 @@ export interface VersionEntry {
 }
 
 // 当前版本（取版本历史首条）
-export const CURRENT_VERSION = '0.3.0';
+export const CURRENT_VERSION = '0.3.1';
 
 // 版本历史（新版本在前面）
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '0.3.1',
+    date: '2026-07-21',
+    title: '转化跟踪页面修复 + 版本更新展示',
+    type: 'fix',
+    changes: [
+      '修复转化跟踪页面（/conversions）打开报错"e.map is not a function"的问题',
+      '原因：reportsApi 返回的是 {data: [...]} 对象，未解包内层数组直接传给 .map 调用',
+      '修复方式：reportsApi 三个方法统一 .then(r => r.data ?? []) 解包内层数组',
+      '增加 Array.isArray 兜底防御，API 异常返回 null/对象时降级为空数组，避免页面白屏',
+      '新增版本更新页面（/settings/version），时间线展示版本迭代记录',
+      '侧边栏底部版本号改为动态读取，每次发版自动更新',
+    ],
+  },
   {
     version: '0.3.0',
     date: '2026-07-21',
