@@ -1,8 +1,8 @@
 // 职位库列表
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Plus, Eye, Pencil, Trash2, MapPin, Users, Wallet, Building2 } from 'lucide-react';
-import { positionsApi, clientsApi, getErrorMsg } from '@/lib/api';
+import { positionsApi, clientsApi } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import type { Client, Position } from '@/types';
 import Loading from '@/components/Loading';
@@ -10,6 +10,7 @@ import Empty from '@/components/Empty';
 import Pagination from '@/components/Pagination';
 import StatusBadge from '@/components/StatusBadge';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { useListPage, useDeleteHandler } from '@/hooks/useListPage';
 import { POSITION_STATUS_OPTIONS, JOB_TYPE_OPTIONS, getOptionLabel } from './constants';
 
 const PAGE_SIZE = 12;
@@ -19,68 +20,29 @@ export default function PositionList() {
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === 'admin';
 
-  const [list, setList] = useState<Position[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  // 使用通用列表 Hook
+  const {
+    list, total, page, setPage, pageSize,
+    keyword, setKeyword, statusFilter, setStatusFilter,
+    loading, error, setError, fetchList, handleSearch,
+  } = useListPage<Position>({
+    fetchApi: positionsApi.list,
+    defaultPageSize: PAGE_SIZE,
+  });
+
+  // 客户公司列表
   const [clients, setClients] = useState<Client[]>([]);
-  // 客户公司 ID → 名称
   const clientMap = new Map(clients.map((c) => [c.id, c.name]));
 
-  // 删除确认
-  const [toDelete, setToDelete] = useState<Position | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  const fetchList = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await positionsApi.list({
-        keyword: keyword || undefined,
-        status: statusFilter || undefined,
-        page,
-        pageSize: PAGE_SIZE,
-      });
-      setList(res.data || []);
-      setTotal(res.total || 0);
-    } catch (err) {
-      setError(getErrorMsg(err));
-    } finally {
-      setLoading(false);
-    }
-  }, [keyword, statusFilter, page]);
-
-  // 拉客户公司列表（用于把 client_id 映射成名称）
   useEffect(() => {
     clientsApi.list().then(setClients).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    fetchList();
-  }, [fetchList]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
-    fetchList();
-  };
-
-  const handleDelete = async () => {
-    if (!toDelete) return;
-    setDeleting(true);
-    try {
-      await positionsApi.remove(toDelete.id);
-      setToDelete(null);
-      await fetchList();
-    } catch (err) {
-      setError(getErrorMsg(err));
-    } finally {
-      setDeleting(false);
-    }
-  };
+  // 使用通用删除 Hook
+  const { toDelete, setToDelete, deleting, handleDelete } = useDeleteHandler<Position>(
+    positionsApi.remove,
+    fetchList
+  );
 
   return (
     <div className="px-6 py-6 max-w-7xl mx-auto">

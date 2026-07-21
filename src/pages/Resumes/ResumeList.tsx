@@ -1,5 +1,4 @@
 // 简历库列表
-import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -12,7 +11,7 @@ import {
   Wallet,
   Building2,
 } from 'lucide-react';
-import { resumesApi, getErrorMsg } from '@/lib/api';
+import { resumesApi } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import type { Resume } from '@/types';
 import Loading from '@/components/Loading';
@@ -21,6 +20,7 @@ import Pagination from '@/components/Pagination';
 import StatusBadge from '@/components/StatusBadge';
 import { RiskBadge } from '@/components/RiskBadge';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { useListPage, useDeleteHandler } from '@/hooks/useListPage';
 import { CANDIDATE_STATUS_OPTIONS, getOptionLabel } from './constants';
 
 const PAGE_SIZE = 12;
@@ -30,59 +30,28 @@ export default function ResumeList() {
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === 'admin';
 
-  const [list, setList] = useState<Resume[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const [toDelete, setToDelete] = useState<Resume | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  const fetchList = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await resumesApi.list({
-        keyword: keyword || undefined,
-        candidate_status: statusFilter || undefined,
-        page,
-        pageSize: PAGE_SIZE,
+  // 使用通用列表 Hook（注意：简历 API 用 candidate_status 字段）
+  const {
+    list, total, page, setPage, pageSize,
+    keyword, setKeyword, statusFilter, setStatusFilter,
+    loading, error, fetchList, handleSearch,
+  } = useListPage<Resume>({
+    fetchApi: (params) => {
+      // 将 status 映射为 candidate_status
+      const { status, ...rest } = params;
+      return resumesApi.list({
+        ...rest,
+        candidate_status: status,
       });
-      setList(res.data || []);
-      setTotal(res.total || 0);
-    } catch (err) {
-      setError(getErrorMsg(err));
-    } finally {
-      setLoading(false);
-    }
-  }, [keyword, statusFilter, page]);
+    },
+    defaultPageSize: PAGE_SIZE,
+  });
 
-  useEffect(() => {
-    fetchList();
-  }, [fetchList]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
-    fetchList();
-  };
-
-  const handleDelete = async () => {
-    if (!toDelete) return;
-    setDeleting(true);
-    try {
-      await resumesApi.remove(toDelete.id);
-      setToDelete(null);
-      await fetchList();
-    } catch (err) {
-      setError(getErrorMsg(err));
-    } finally {
-      setDeleting(false);
-    }
-  };
+  // 使用通用删除 Hook
+  const { toDelete, setToDelete, deleting, handleDelete } = useDeleteHandler<Resume>(
+    resumesApi.remove,
+    fetchList
+  );
 
   return (
     <div className="px-6 py-6 max-w-7xl mx-auto">

@@ -1,6 +1,19 @@
 // 简历数据访问层
 import { db } from '../db/index.js';
 import type { Resume } from '../types/index.js';
+import {
+  parseArray,
+  parseJson,
+  findById,
+  deleteById,
+  buildUpdateSQL,
+  buildPaginatedQuery,
+  buildLikeSearch,
+  buildWhereClause,
+  type FieldMap,
+  type PaginatedQuery,
+  type PaginatedResult,
+} from './base.js';
 
 interface ResumeRow {
   id: string;
@@ -34,14 +47,10 @@ interface ResumeRow {
   updated_at: string;
 }
 
-function parseArray(val: string | null): string[] {
-  if (!val) return [];
-  try { return JSON.parse(val); } catch { return []; }
-}
-
-function parseObject(val: string | null, fallback: any): any {
-  if (!val) return fallback;
-  try { return JSON.parse(val); } catch { return fallback; }
+// 带默认值的 JSON 解析
+function parseObjectWithDefault(val: string | null, fallback: any): any {
+  const parsed = parseJson(val);
+  return parsed ?? fallback;
 }
 
 function toResume(row: ResumeRow): Resume {
@@ -69,8 +78,8 @@ function toResume(row: ResumeRow): Resume {
     candidate_status: row.candidate_status,
     expected_onboard_date: row.expected_onboard_date,
     tags: parseArray(row.tags),
-    common_grounds: parseObject(row.common_grounds, {}),
-    risk_warning: parseObject(row.risk_warning, { isRisky: false, reasons: [] }),
+    common_grounds: parseObjectWithDefault(row.common_grounds, {}),
+    risk_warning: parseObjectWithDefault(row.risk_warning, { isRisky: false, reasons: [] }),
     remark: row.remark,
     owner_id: row.owner_id,
     created_at: row.created_at,
@@ -79,42 +88,45 @@ function toResume(row: ResumeRow): Resume {
 }
 
 export function findResumeById(id: string): Resume | null {
-  const row = db.prepare('SELECT * FROM resumes WHERE id = ?').get(id) as ResumeRow | undefined;
-  return row ? toResume(row) : null;
+  return findById('resumes', id, toResume);
 }
 
-export interface ResumeQuery {
+export interface ResumeQuery extends PaginatedQuery {
   keyword?: string;
-  owner_id?: string; // 仅查某员工
+  owner_id?: string;
   candidate_status?: string;
-  page?: number;
-  pageSize?: number;
 }
 
-export function listResumes(query: ResumeQuery = {}): { data: Resume[]; total: number } {
-  const where: string[] = [];
-  const params: any[] = [];
-  if (query.owner_id) {
-    where.push('owner_id = ?');
-    params.push(query.owner_id);
-  }
-  if (query.keyword) {
-    where.push('(name LIKE ? OR current_company LIKE ? OR current_title LIKE ? OR skills LIKE ? OR tags LIKE ?)');
-    const kw = `%${query.keyword}%`;
-    params.push(kw, kw, kw, kw, kw);
-  }
-  if (query.candidate_status) {
-    where.push('candidate_status = ?');
-    params.push(query.candidate_status);
-  }
-  const whereSql = where.length > 0 ? 'WHERE ' + where.join(' AND ') : '';
-  const page = query.page ?? 1;
-  const pageSize = query.pageSize ?? 20;
-  const offset = (page - 1) * pageSize;
-  const totalRow = db.prepare(`SELECT COUNT(*) as cnt FROM resumes ${whereSql}`).get(...params) as { cnt: number };
-  const rows = db.prepare(`SELECT * FROM resumes ${whereSql} ORDER BY created_at DESC LIMIT ? OFFSET ?`)
-    .all(...params, pageSize, offset) as ResumeRow[];
-  return { data: rows.map(toResume), total: totalRow.cnt };
+export function listResumes(query: ResumeQuery = {}): PaginatedResult<Resume> {
+  return buildPaginatedQuery(
+    'resumes',
+    query,
+    (q) => {
+      const conditions: Array<{ field: string; operator?: string; value: any } | null> = [];
+      
+      // 所有者筛选
+      if (q.owner_id) {
+        conditions.push({ field: 'owner_id', value: q.owner_id });
+      }
+      
+      // 关键词搜索
+      const likeSearch = buildLikeSearch(
+        ['name', 'current_company', 'current_title', 'skills', 'tags'],
+        q.keyword || ''
+      );
+      if (likeSearch) {
+        conditions.push({ field: `(${likeSearch.clause})`, value: likeSearch.params });
+      }
+      
+      // 候选人状态筛选
+      if (q.candidate_status) {
+        conditions.push({ field: 'candidate_status', value: q.candidate_status });
+      }
+      
+      return buildWhereClause(conditions);
+    },
+    toResume
+  );
 }
 
 // 通过 phone_hash 查询
@@ -248,42 +260,40 @@ export interface UpdateResumeInput {
   remark?: string | null;
 }
 
+// 字段映射配置
+const resumeFieldMap: FieldMap<UpdateResumeInput> = {
+  name: (v) => v,
+  age: (v) => v ?? null,
+  education: (v) => v ?? null,
+  current_company: (v) => v ?? null,
+  current_title: (v) => v ?? null,
+  work_experience: (v) => v ?? null,
+  skills: (v) => v ?? null,
+  projects: (v) => v ?? null,
+  expectation: (v) => v ?? null,
+  expected_city: (v) => v ?? null,
+  raw_text: (v) => v ?? null,
+  source: (v) => v ?? null,
+  phone_masked: (v) => v ?? null,
+  phone_hash: (v) => v ?? null,
+  email_masked: (v) => v ?? null,
+  email_original: (v) => v ?? null,
+  has_wechat: (v) => v,
+  wechat_id: (v) => v ?? null,
+  contact_preference: (v) => v ?? null,
+  candidate_status: (v) => v ?? null,
+  expected_onboard_date: (v) => v ?? null,
+  tags: (v) => v ? JSON.stringify(v) : null,
+  common_grounds: (v) => v ? JSON.stringify(v) : null,
+  risk_warning: (v) => v ? JSON.stringify(v) : null,
+  remark: (v) => v ?? null,
+};
+
 export function updateResume(id: string, input: UpdateResumeInput): Resume | null {
-  const fields: string[] = [];
-  const values: any[] = [];
-  const setField = (col: string, val: any) => { fields.push(`${col} = ?`); values.push(val); };
-  if (input.name !== undefined) setField('name', input.name);
-  if (input.age !== undefined) setField('age', input.age);
-  if (input.education !== undefined) setField('education', input.education);
-  if (input.current_company !== undefined) setField('current_company', input.current_company);
-  if (input.current_title !== undefined) setField('current_title', input.current_title);
-  if (input.work_experience !== undefined) setField('work_experience', input.work_experience);
-  if (input.skills !== undefined) setField('skills', input.skills);
-  if (input.projects !== undefined) setField('projects', input.projects);
-  if (input.expectation !== undefined) setField('expectation', input.expectation);
-  if (input.expected_city !== undefined) setField('expected_city', input.expected_city);
-  if (input.raw_text !== undefined) setField('raw_text', input.raw_text);
-  if (input.source !== undefined) setField('source', input.source);
-  if (input.phone_masked !== undefined) setField('phone_masked', input.phone_masked);
-  if (input.phone_hash !== undefined) setField('phone_hash', input.phone_hash);
-  if (input.email_masked !== undefined) setField('email_masked', input.email_masked);
-  if (input.email_original !== undefined) setField('email_original', input.email_original);
-  if (input.has_wechat !== undefined) setField('has_wechat', input.has_wechat);
-  if (input.wechat_id !== undefined) setField('wechat_id', input.wechat_id);
-  if (input.contact_preference !== undefined) setField('contact_preference', input.contact_preference);
-  if (input.candidate_status !== undefined) setField('candidate_status', input.candidate_status);
-  if (input.expected_onboard_date !== undefined) setField('expected_onboard_date', input.expected_onboard_date);
-  if (input.tags !== undefined) setField('tags', input.tags ? JSON.stringify(input.tags) : null);
-  if (input.common_grounds !== undefined) setField('common_grounds', input.common_grounds ? JSON.stringify(input.common_grounds) : null);
-  if (input.risk_warning !== undefined) setField('risk_warning', input.risk_warning ? JSON.stringify(input.risk_warning) : null);
-  if (input.remark !== undefined) setField('remark', input.remark);
-  if (fields.length === 0) return findResumeById(id);
-  fields.push("updated_at = datetime('now')");
-  values.push(id);
-  db.prepare(`UPDATE resumes SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+  buildUpdateSQL('resumes', id, input, resumeFieldMap);
   return findResumeById(id);
 }
 
 export function deleteResume(id: string): void {
-  db.prepare('DELETE FROM resumes WHERE id = ?').run(id);
+  deleteById('resumes', id);
 }

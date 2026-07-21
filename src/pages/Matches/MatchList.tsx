@@ -1,15 +1,15 @@
 // 匹配列表页：搜索 + 状态筛选 + 表格列表 + 分页
-import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Plus, Eye, Trash2 } from 'lucide-react';
 import dayjs from 'dayjs';
-import { matchesApi, getErrorMsg } from '@/lib/api';
+import { matchesApi } from '@/lib/api';
 import type { Match, MatchStatus } from '@/types';
 import Loading from '@/components/Loading';
 import Empty from '@/components/Empty';
 import Pagination from '@/components/Pagination';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { RiskBadge } from '@/components/RiskBadge';
+import { useListPage, useDeleteHandler } from '@/hooks/useListPage';
 import {
   MATCH_STATUS_LABELS,
   scoreColorClass,
@@ -25,60 +25,21 @@ const STATUS_OPTIONS: { value: MatchStatus; label: string }[] = (
 export default function MatchList() {
   const navigate = useNavigate();
 
-  const [list, setList] = useState<Match[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  // 使用通用列表 Hook
+  const {
+    list, total, page, setPage, pageSize,
+    keyword, setKeyword, statusFilter, setStatusFilter,
+    loading, error, fetchList, handleSearch,
+  } = useListPage<Match>({
+    fetchApi: matchesApi.list,
+    defaultPageSize: PAGE_SIZE,
+  });
 
-  // 删除确认
-  const [toDelete, setToDelete] = useState<Match | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  const fetchList = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await matchesApi.list({
-        keyword: keyword || undefined,
-        status: statusFilter || undefined,
-        page,
-        pageSize: PAGE_SIZE,
-      });
-      setList(res.data || []);
-      setTotal(res.total || 0);
-    } catch (err) {
-      setError(getErrorMsg(err));
-    } finally {
-      setLoading(false);
-    }
-  }, [keyword, statusFilter, page]);
-
-  useEffect(() => {
-    fetchList();
-  }, [fetchList]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
-    fetchList();
-  };
-
-  const handleDelete = async () => {
-    if (!toDelete) return;
-    setDeleting(true);
-    try {
-      await matchesApi.remove(toDelete.id);
-      setToDelete(null);
-      await fetchList();
-    } catch (err) {
-      setError(getErrorMsg(err));
-    } finally {
-      setDeleting(false);
-    }
-  };
+  // 使用通用删除 Hook
+  const { toDelete, setToDelete, deleting, handleDelete } = useDeleteHandler<Match>(
+    matchesApi.remove,
+    fetchList
+  );
 
   return (
     <div className="px-6 py-6 max-w-7xl mx-auto">

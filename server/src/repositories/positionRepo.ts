@@ -1,6 +1,19 @@
 // 职位数据访问层
 import { db } from '../db/index.js';
 import type { Position } from '../types/index.js';
+import {
+  parseArray,
+  parseJson,
+  findById,
+  deleteById,
+  buildUpdateSQL,
+  buildPaginatedQuery,
+  buildLikeSearch,
+  buildWhereClause,
+  type FieldMap,
+  type PaginatedQuery,
+  type PaginatedResult,
+} from './base.js';
 
 interface PositionRow {
   id: string;
@@ -30,16 +43,7 @@ interface PositionRow {
   updated_at: string;
 }
 
-function parseArray(val: string | null): string[] {
-  if (!val) return [];
-  try { return JSON.parse(val); } catch { return []; }
-}
-
-function parseJson(val: string | null): Record<string, unknown> | null {
-  if (!val) return null;
-  try { return JSON.parse(val); } catch { return null; }
-}
-
+// 行映射器
 function toPosition(row: PositionRow): Position {
   return {
     id: row.id,
@@ -71,42 +75,45 @@ function toPosition(row: PositionRow): Position {
 }
 
 export function findPositionById(id: string): Position | null {
-  const row = db.prepare('SELECT * FROM positions WHERE id = ?').get(id) as PositionRow | undefined;
-  return row ? toPosition(row) : null;
+  return findById('positions', id, toPosition);
 }
 
-export interface PositionQuery {
+export interface PositionQuery extends PaginatedQuery {
   keyword?: string;
   status?: string;
   client_id?: string;
-  page?: number;
-  pageSize?: number;
 }
 
-export function listPositions(query: PositionQuery = {}): { data: Position[]; total: number } {
-  const where: string[] = [];
-  const params: any[] = [];
-  if (query.keyword) {
-    where.push('(title LIKE ? OR jd LIKE ? OR requirements LIKE ? OR keywords LIKE ?)');
-    const kw = `%${query.keyword}%`;
-    params.push(kw, kw, kw, kw);
-  }
-  if (query.status) {
-    where.push('status = ?');
-    params.push(query.status);
-  }
-  if (query.client_id) {
-    where.push('client_id = ?');
-    params.push(query.client_id);
-  }
-  const whereSql = where.length > 0 ? 'WHERE ' + where.join(' AND ') : '';
-  const page = query.page ?? 1;
-  const pageSize = query.pageSize ?? 20;
-  const offset = (page - 1) * pageSize;
-  const totalRow = db.prepare(`SELECT COUNT(*) as cnt FROM positions ${whereSql}`).get(...params) as { cnt: number };
-  const rows = db.prepare(`SELECT * FROM positions ${whereSql} ORDER BY created_at DESC LIMIT ? OFFSET ?`)
-    .all(...params, pageSize, offset) as PositionRow[];
-  return { data: rows.map(toPosition), total: totalRow.cnt };
+export function listPositions(query: PositionQuery = {}): PaginatedResult<Position> {
+  return buildPaginatedQuery(
+    'positions',
+    query,
+    (q) => {
+      const conditions: Array<{ field: string; operator?: string; value: any } | null> = [];
+      
+      // 关键词搜索
+      const likeSearch = buildLikeSearch(
+        ['title', 'jd', 'requirements', 'keywords'],
+        q.keyword || ''
+      );
+      if (likeSearch) {
+        conditions.push({ field: `(${likeSearch.clause})`, value: likeSearch.params });
+      }
+      
+      // 状态筛选
+      if (q.status) {
+        conditions.push({ field: 'status', value: q.status });
+      }
+      
+      // 客户筛选
+      if (q.client_id) {
+        conditions.push({ field: 'client_id', value: q.client_id });
+      }
+      
+      return buildWhereClause(conditions);
+    },
+    toPosition
+  );
 }
 
 export interface CreatePositionInput {
@@ -198,43 +205,41 @@ export interface UpdatePositionInput {
   source_ext?: string | null;
 }
 
+// 字段映射配置
+const positionFieldMap: FieldMap<UpdatePositionInput> = {
+  title: (v) => v,
+  client_id: (v) => v ?? null,
+  department: (v) => v ?? null,
+  location: (v) => v ?? null,
+  headcount: (v) => v ?? null,
+  salary_min: (v) => v ?? null,
+  salary_max: (v) => v ?? null,
+  experience: (v) => v ?? null,
+  education: (v) => v ?? null,
+  job_type: (v) => v ?? null,
+  work_mode: (v) => v ?? null,
+  priority: (v) => v ?? null,
+  status: (v) => v,
+  jd: (v) => v ?? null,
+  requirements: (v) => v ?? null,
+  bonus: (v) => v ?? null,
+  keywords: (v) => v ? JSON.stringify(v) : null,
+  raw_text: (v) => v ?? null,
+  ai_meta: (v) => v ? JSON.stringify(v) : null,
+  source_filename: (v) => v ?? null,
+  source_ext: (v) => v ?? null,
+};
+
 export function updatePosition(id: string, input: UpdatePositionInput): Position | null {
-  const fields: string[] = [];
-  const values: any[] = [];
-  const setField = (col: string, val: any) => { fields.push(`${col} = ?`); values.push(val); };
-  if (input.title !== undefined) setField('title', input.title);
-  if (input.client_id !== undefined) setField('client_id', input.client_id);
-  if (input.department !== undefined) setField('department', input.department);
-  if (input.location !== undefined) setField('location', input.location);
-  if (input.headcount !== undefined) setField('headcount', input.headcount);
-  if (input.salary_min !== undefined) setField('salary_min', input.salary_min);
-  if (input.salary_max !== undefined) setField('salary_max', input.salary_max);
-  if (input.experience !== undefined) setField('experience', input.experience);
-  if (input.education !== undefined) setField('education', input.education);
-  if (input.job_type !== undefined) setField('job_type', input.job_type);
-  if (input.work_mode !== undefined) setField('work_mode', input.work_mode);
-  if (input.priority !== undefined) setField('priority', input.priority);
-  if (input.status !== undefined) setField('status', input.status);
-  if (input.jd !== undefined) setField('jd', input.jd);
-  if (input.requirements !== undefined) setField('requirements', input.requirements);
-  if (input.bonus !== undefined) setField('bonus', input.bonus);
-  if (input.keywords !== undefined) setField('keywords', input.keywords ? JSON.stringify(input.keywords) : null);
-  if (input.raw_text !== undefined) setField('raw_text', input.raw_text);
-  if (input.ai_meta !== undefined) setField('ai_meta', input.ai_meta ? JSON.stringify(input.ai_meta) : null);
-  if (input.source_filename !== undefined) setField('source_filename', input.source_filename);
-  if (input.source_ext !== undefined) setField('source_ext', input.source_ext);
-  if (fields.length === 0) return findPositionById(id);
-  fields.push("updated_at = datetime('now')");
-  values.push(id);
-  db.prepare(`UPDATE positions SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+  buildUpdateSQL('positions', id, input, positionFieldMap);
   return findPositionById(id);
 }
 
 export function updatePositionStatus(id: string, status: string): Position | null {
-  db.prepare("UPDATE positions SET status = ?, updated_at = datetime('now') WHERE id = ?").run(status, id);
+  buildUpdateSQL('positions', id, { status }, { status: (v) => v });
   return findPositionById(id);
 }
 
 export function deletePosition(id: string): void {
-  db.prepare('DELETE FROM positions WHERE id = ?').run(id);
+  deleteById('positions', id);
 }
