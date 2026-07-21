@@ -3,14 +3,13 @@ import { Router } from 'express';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { asyncHandler, ApiError } from '../middleware/error.js';
 import { getAiConfig, updateAiConfig } from '../repositories/aiAnalysisRepo.js';
-import { testAIConnection } from '../services/aiService.js';
+import { testAIConnection, testMultimodalConnection } from '../services/aiService.js';
 import { PROMPT_TEMPLATES } from '../services/promptTemplates.js';
 
 export const aiConfigRouter = Router();
-
 aiConfigRouter.use(requireAuth);
 
-// GET /api/ai-config（管理员看完整，员工看不到 - 直接拒绝）
+// GET /api/ai-config（仅管理员）
 aiConfigRouter.get('/', requireAdmin, (_req, res) => {
   const cfg = getAiConfig();
   if (!cfg) throw new ApiError(404, 'AI 配置不存在');
@@ -18,23 +17,33 @@ aiConfigRouter.get('/', requireAdmin, (_req, res) => {
 });
 
 // PUT /api/ai-config（管理员）
+// 支持文本模型字段和多模态模型字段（mm_*）
 aiConfigRouter.put('/', requireAdmin, asyncHandler(async (req, res) => {
-  const { provider, api_key, base_url, model, temperature, prompts } = req.body ?? {};
+  const {
+    provider, api_key, base_url, model, temperature, prompts,
+    // 多模态字段
+    mm_enabled, mm_provider, mm_api_key, mm_base_url, mm_model,
+  } = req.body ?? {};
   const updated = updateAiConfig({
-    provider,
-    api_key,
-    base_url,
-    model,
+    provider, api_key, base_url, model,
     temperature: temperature !== undefined ? Number(temperature) : undefined,
     prompts,
+    mm_enabled: mm_enabled !== undefined ? Number(mm_enabled) : undefined,
+    mm_provider, mm_api_key, mm_base_url, mm_model,
   });
   if (!updated) throw new ApiError(404, 'AI 配置不存在');
   res.json({ data: updated });
 }));
 
-// POST /api/ai-config/test（测试连接）
+// POST /api/ai-config/test（测试文本模型连接）
 aiConfigRouter.post('/test', requireAdmin, asyncHandler(async (_req, res) => {
   const result = await testAIConnection();
+  res.json({ data: result });
+}));
+
+// POST /api/ai-config/test-multimodal（测试多模态模型连接）
+aiConfigRouter.post('/test-multimodal', requireAdmin, asyncHandler(async (_req, res) => {
+  const result = await testMultimodalConnection();
   res.json({ data: result });
 }));
 

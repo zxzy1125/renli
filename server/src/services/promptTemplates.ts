@@ -161,6 +161,8 @@ export const PARSE_RESUME_PROMPT = {
 【简历原文】
 {raw_text}
 
+**多模态识别**：本条用户消息可能附带 1~N 张图片（来自原文件嵌入图片、扫描件、或独立上传的图片），你必须把图片中的文字信息一并识别，整合到下方对应字段。如图片为表格，按表格行列结构识别后整合到 workExperience/projects/skills 等字段。
+
 输出 JSON：
 {
   "name": "姓名",
@@ -201,7 +203,8 @@ export const PARSE_RESUME_PROMPT = {
 5. riskWarning 字段必须输出，isRisky=true 时 reasons 必须非空
 6. commonGrounds 用于后续破冰话术生成，必须尽力挖掘（无则留空字符串）
 7. remark 必须严格按格式输出，方便员工复制使用
-8. 输出必须是合法 JSON`,
+8. 输出必须是合法 JSON
+9. **图片识别**：若用户消息附带图片，必须把图片内文字纳入解析，绝不能因为信息在图片中就忽略；如图片为证件/证书/作品截图，需把可识别信息整合到对应字段`,
 };
 
 // 提示词 3：匹配分析

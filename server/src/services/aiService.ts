@@ -31,6 +31,29 @@ function getConfig() {
   return cfg;
 }
 
+// 解析多模态调用时实际使用的配置：
+// 当 mm_enabled=1 且 mm_model 非空时，用 mm_* 系列字段（空字段回退到文本模型字段）
+// 否则回退到文本模型字段
+function resolveMultimodalConfig(cfg: ReturnType<typeof getAiConfig>) {
+  if (!cfg) return null;
+  const useMM = cfg.mm_enabled === 1 && !!cfg.mm_model;
+  if (!useMM) {
+    return { apiKey: cfg.api_key, baseUrl: cfg.base_url, model: cfg.model, isMultimodal: false };
+  }
+  return {
+    apiKey: cfg.mm_api_key || cfg.api_key,   // 空则回退到文本 key
+    baseUrl: cfg.mm_base_url || cfg.base_url, // 空则回退到文本 base_url
+    model: cfg.mm_model,
+    isMultimodal: true,
+  };
+}
+
+// 是否启用了独立的多模态配置（供外部判断展示用）
+export function isMultimodalConfigured(): boolean {
+  const cfg = getAiConfig();
+  return !!cfg && cfg.mm_enabled === 1 && !!cfg.mm_model;
+}
+
 // 容错 JSON 解析（提取 ```json 代码块、去注释等）
 export function parseAIJson(content: string): any {
   let cleaned = content.trim();
@@ -53,6 +76,7 @@ export function parseAIJson(content: string): any {
 // 基础 chat 调用（OpenAI 兼容协议，流式请求避免上游超时 502）
 // - messages: ChatMessage[]，content 可为纯文本或多模态数组
 // - options.images: 可选图片资产数组，会作为 image_url 段追加到 user 消息末尾
+//   当有图片时，若 ai_config.mm_enabled=1 且 mm_model 非空，自动切换到多模态模型配置
 export async function callAI(
   messages: ChatMessage[],
   options?: {
@@ -62,15 +86,22 @@ export async function callAI(
   }
 ): Promise<string> {
   const cfg = getConfig();
-  if (!cfg.api_key) {
-    throw new Error('AI 未配置 API Key，请联系管理员在设置中配置');
+  const imgs = options?.images ?? [];
+  // 有图片时尝试用多模态配置（mm_* 字段空则回退到文本模型字段）
+  const mm = resolveMultimodalConfig(cfg);
+  const useMultimodal = imgs.length > 0 && mm?.isMultimodal;
+  const apiKey = useMultimodal ? mm!.apiKey : cfg.api_key;
+  const baseUrlRaw = useMultimodal ? mm!.baseUrl : cfg.base_url;
+  const model = useMultimodal ? mm!.model : cfg.model;
+
+  if (!apiKey) {
+    throw new Error(useMultimodal ? '多模态 AI 未配置 API Key' : 'AI 未配置 API Key，请联系管理员在设置中配置');
   }
-  const baseUrl = cfg.base_url.replace(/\/$/, '');
+  const baseUrl = baseUrlRaw.replace(/\/$/, '');
   const url = `${baseUrl}/chat/completions`;
 
   // 如果有图片资产，把所有图片以 image_url 段追加到 user 消息末尾
   let finalMessages = messages;
-  const imgs = options?.images ?? [];
   if (imgs.length > 0) {
     finalMessages = messages.map((m) => {
       if (m.role !== 'user') return m;
@@ -91,7 +122,7 @@ export async function callAI(
   }
 
   const body = {
-    model: cfg.model,
+    model,
     messages: finalMessages,
     temperature: options?.temperature ?? cfg.temperature,
     stream: true,
@@ -100,13 +131,14 @@ export async function callAI(
   const timeoutMs = options?.timeoutMs ?? (imgs.length > 0 ? 120000 : 60000);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
-  logger.info(`[AI] 请求 ${url}  model=${cfg.model}  timeout=${timeoutMs}ms  stream=true`);
+  const tag = useMultimodal ? '[AI/MM]' : '[AI]';
+  logger.info(`${tag} 请求 ${url}  model=${model}  imgs=${imgs.length}  timeout=${timeoutMs}ms  stream=true`);
   try {
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${cfg.api_key}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify(body),
       signal: controller.signal,
@@ -214,6 +246,40 @@ export async function testAIConnection(): Promise<{ ok: boolean; message: string
       { temperature: 0, timeoutMs: 15000 }
     );
     return { ok: true, message: `连接成功，模型响应: ${content.slice(0, 50)}`, model: cfg.model };
+  } catch (err: any) {
+    return { ok: false, message: err.message };
+  }
+}
+
+// 测试多模态 AI 连接（用一张 1x1 红点 PNG 测试视觉能力）
+export async function testMultimodalConnection(): Promise<{ ok: boolean; message: string; model?: string }> {
+  try {
+    const cfg = getConfig();
+    if (cfg.mm_enabled !== 1 || !cfg.mm_model) {
+      return { ok: false, message: '未启用独立多模态配置（mm_enabled=0 或 mm_model 为空）' };
+    }
+    const mm = resolveMultimodalConfig(cfg);
+    if (!mm?.apiKey) {
+      return { ok: false, message: '多模态 API Key 未配置（mm_api_key 和 api_key 均为空）' };
+    }
+    // 1x1 红点 PNG（base64）
+    const redDotBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+    const content = await callAI(
+      [
+        { role: 'system', content: '你是视觉测试助手。' },
+        { role: 'user', content: '请回复"OK"。' },
+      ],
+      {
+        temperature: 0,
+        timeoutMs: 30000,
+        images: [{ name: 'test.png', mime: 'image/png', base64: redDotBase64 }],
+      }
+    );
+    return {
+      ok: true,
+      message: `多模态连接成功，模型 ${mm.model} 响应: ${content.slice(0, 50)}`,
+      model: mm.model,
+    };
   } catch (err: any) {
     return { ok: false, message: err.message };
   }

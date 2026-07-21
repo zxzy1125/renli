@@ -200,6 +200,13 @@ CREATE TABLE IF NOT EXISTS ai_config (
   model TEXT NOT NULL DEFAULT 'glm-4-plus',
   temperature REAL NOT NULL DEFAULT 0.7,
   prompts TEXT,        -- JSON
+  -- 多模态模型配置（文件解析有图片时自动切换）
+  -- 留空时回退到上方文本模型，即用同一个模型处理文本和图片
+  mm_enabled INTEGER NOT NULL DEFAULT 0,       -- 0=不启用独立多模态配置，1=启用
+  mm_provider TEXT NOT NULL DEFAULT '',        -- 多模态服务商（可不同于文本模型）
+  mm_api_key TEXT NOT NULL DEFAULT '',         -- 多模态 API Key（空则回退到 api_key）
+  mm_base_url TEXT NOT NULL DEFAULT '',        -- 多模态 base_url（空则回退到 base_url）
+  mm_model TEXT NOT NULL DEFAULT '',           -- 多模态模型名，如 glm-4v-plus / qwen-vl-max / gpt-4o
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

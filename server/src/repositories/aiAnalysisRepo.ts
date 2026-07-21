@@ -77,6 +77,11 @@ interface ConfigRow {
   model: string;
   temperature: number;
   prompts: string | null;
+  mm_enabled: number;
+  mm_provider: string;
+  mm_api_key: string;
+  mm_base_url: string;
+  mm_model: string;
   updated_at: string;
 }
 
@@ -89,6 +94,11 @@ function toConfig(row: ConfigRow): AiConfig {
     model: row.model,
     temperature: row.temperature,
     prompts: parseAny(row.prompts, {}),
+    mm_enabled: row.mm_enabled ?? 0,
+    mm_provider: row.mm_provider ?? '',
+    mm_api_key: row.mm_api_key ?? '',
+    mm_base_url: row.mm_base_url ?? '',
+    mm_model: row.mm_model ?? '',
     updated_at: row.updated_at,
   };
 }
@@ -105,6 +115,12 @@ export interface UpdateAiConfigInput {
   model?: string;
   temperature?: number;
   prompts?: Record<string, { system: string; user: string }>;
+  // 多模态字段
+  mm_enabled?: number;
+  mm_provider?: string;
+  mm_api_key?: string;
+  mm_base_url?: string;
+  mm_model?: string;
 }
 
 export function updateAiConfig(input: UpdateAiConfigInput): AiConfig | null {
@@ -118,6 +134,11 @@ export function updateAiConfig(input: UpdateAiConfigInput): AiConfig | null {
   if (input.model !== undefined) { fields.push('model = ?'); values.push(input.model); }
   if (input.temperature !== undefined) { fields.push('temperature = ?'); values.push(input.temperature); }
   if (input.prompts !== undefined) { fields.push('prompts = ?'); values.push(JSON.stringify(input.prompts)); }
+  if (input.mm_enabled !== undefined) { fields.push('mm_enabled = ?'); values.push(input.mm_enabled); }
+  if (input.mm_provider !== undefined) { fields.push('mm_provider = ?'); values.push(input.mm_provider); }
+  if (input.mm_api_key !== undefined) { fields.push('mm_api_key = ?'); values.push(input.mm_api_key); }
+  if (input.mm_base_url !== undefined) { fields.push('mm_base_url = ?'); values.push(input.mm_base_url); }
+  if (input.mm_model !== undefined) { fields.push('mm_model = ?'); values.push(input.mm_model); }
   if (fields.length === 0) return existing;
   fields.push("updated_at = datetime('now')");
   values.push(existing.id);

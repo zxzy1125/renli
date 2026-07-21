@@ -137,6 +137,12 @@ export interface AiConfig {
   model: string;
   temperature: number;
   prompts: Record<string, { system: string; user: string }>;
+  // 多模态模型配置（文件解析有图片时自动切换）
+  mm_enabled: number;        // 0/1
+  mm_provider: string;
+  mm_api_key: string;        // 空则回退到 api_key
+  mm_base_url: string;       // 空则回退到 base_url
+  mm_model: string;          // 如 glm-4v-plus / qwen-vl-max / gpt-4o
   updated_at: string;
 }
 

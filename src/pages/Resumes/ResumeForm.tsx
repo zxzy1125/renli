@@ -10,6 +10,7 @@ import {
   X,
   AlertTriangle,
   Loader2,
+  FileText,
 } from 'lucide-react';
 import { resumesApi, aiApi, getErrorMsg } from '@/lib/api';
 import type { CommonGrounds, Resume, RiskWarning } from '@/types';
@@ -19,6 +20,14 @@ import Modal from '@/components/Modal';
 import { CANDIDATE_STATUS_OPTIONS, CONTACT_PREFERENCE_OPTIONS } from './constants';
 
 type InputMode = 'paste' | 'upload';
+
+// 上传文件后保留的图片资产（用于多模态 AI 解析）
+interface UploadImage {
+  name: string;
+  mime: string;
+  base64: string;
+  source: string;
+}
 
 interface FormState {
   name: string;
@@ -87,6 +96,15 @@ export default function ResumeForm() {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // 上传后保留的图片资产和上传元信息（用于多模态 AI 调用 + UI 展示）
+  const [uploadImages, setUploadImages] = useState<UploadImage[]>([]);
+  const [uploadMeta, setUploadMeta] = useState<{
+    filename: string;
+    ext: string;
+    charCount: number;
+    imageCount: number;
+  } | null>(null);
+
   // 撞单提示
   const [conflictTip, setConflictTip] = useState<string | null>(null);
 
@@ -150,7 +168,21 @@ export default function ResumeForm() {
     try {
       const res = await resumesApi.upload(file);
       update('raw_text', res.text);
-      setParseMsg(`已上传文件「${res.filename}」，可点击 AI 解析自动填表`);
+      // 保留图片资产 + 上传元信息，AI 解析时一并回传
+      setUploadImages(res.images ?? []);
+      setUploadMeta({
+        filename: res.filename,
+        ext: res.ext,
+        charCount: res.charCount,
+        imageCount: res.imageCount,
+      });
+      const bits: string[] = [`${res.ext}，${res.charCount} 字符`];
+      if (res.imageCount > 0) bits.push(`${res.imageCount} 张图片`);
+      setParseMsg(
+        `已上传文件「${res.filename}」（${bits.join('，')}），可点击 AI 解析自动填表${
+          res.imageCount > 0 ? '（图片将一并交给 AI 多模态识别）' : ''
+        }`
+      );
     } catch (err) {
       setError(getErrorMsg(err));
     } finally {
@@ -159,7 +191,7 @@ export default function ResumeForm() {
   };
 
   const handleParse = async () => {
-    if (!form.raw_text.trim()) {
+    if (!form.raw_text.trim() && uploadImages.length === 0) {
       setError('请先粘贴或上传简历原文');
       return;
     }
@@ -167,10 +199,15 @@ export default function ResumeForm() {
     setParseMsg('');
     setError('');
     try {
-      const res = await aiApi.parseResume(form.raw_text);
+      // 把上传时拿到的图片资产一起传给 AI（多模态）
+      const imgs = uploadImages.length > 0
+        ? uploadImages.map((i) => ({ name: i.name, mime: i.mime, base64: i.base64 }))
+        : undefined;
+      const res = await aiApi.parseResume(form.raw_text, imgs);
       const data = (res as { data?: Record<string, unknown> }).data ?? (res as Record<string, unknown>);
       setForm((f) => mergeParseResult(f, data));
-      setParseMsg('AI 解析完成，已自动填充表单空字段，请核对后保存');
+      const extra = uploadImages.length > 0 ? `（含 ${uploadImages.length} 张图片多模态识别）` : '';
+      setParseMsg(`AI 解析完成${extra}，已自动填充表单空字段，请核对后保存`);
     } catch (err) {
       setError(getErrorMsg(err));
     } finally {
@@ -471,7 +508,7 @@ export default function ResumeForm() {
                 <input
                   ref={fileRef}
                   type="file"
-                  accept=".txt,.pdf,.doc,.docx,.xlsx,.xls,.csv"
+                  accept=".txt,.pdf,.doc,.docx,.xlsx,.xls,.csv,.jpg,.jpeg,.png,.gif,.bmp,.webp"
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
@@ -493,11 +530,54 @@ export default function ResumeForm() {
                   ) : (
                     <>
                       <Upload className="w-6 h-6 mx-auto mb-2" />
-                      <div className="text-sm">点击上传文件（.txt / .xlsx / .csv）</div>
-                      <div className="text-xs text-forest-400 mt-1">支持 .txt、.xlsx、.xls、.csv 自动提取文本</div>
+                      <div className="text-sm">点击上传文件</div>
+                      <div className="text-xs text-forest-400 mt-1">
+                        支持 .txt / .pdf / .docx / .xlsx / .xls / .csv / .jpg / .png 等
+                      </div>
+                      <div className="text-xs text-forest-400 mt-0.5">
+                        自动提取文本 + Excel 多工作表 + 图片多模态识别
+                      </div>
                     </>
                   )}
                 </button>
+
+                {/* 上传后展示：原文件信息和图片统计 */}
+                {uploadMeta && (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-forest-50 text-forest-700 border border-forest-100">
+                      <FileText className="w-3 h-3" />
+                      {uploadMeta.filename}
+                      <span className="text-forest-400">（{uploadMeta.ext}，{uploadMeta.charCount} 字符）</span>
+                    </span>
+                    {uploadMeta.imageCount > 0 && (
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100">
+                        {uploadMeta.imageCount} 张图片（将交给 AI 多模态识别）
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* 上传的图片缩略图预览 */}
+                {uploadImages.length > 0 && (
+                  <div className="mt-2 grid grid-cols-4 gap-2">
+                    {uploadImages.map((img, i) => (
+                      <div
+                        key={`${img.name}-${i}`}
+                        className="relative border border-forest-100 rounded overflow-hidden bg-cream-50"
+                        title={`${img.name}（${img.source}）`}
+                      >
+                        <img
+                          src={`data:${img.mime};base64,${img.base64}`}
+                          alt={img.name}
+                          className="w-full h-20 object-cover"
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 bg-forest-900/70 text-cream-50 text-[10px] px-1 py-0.5 truncate">
+                          {img.name}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -505,7 +585,7 @@ export default function ResumeForm() {
               <button
                 type="button"
                 onClick={handleParse}
-                disabled={parsing || !form.raw_text.trim()}
+                disabled={parsing || (!form.raw_text.trim() && uploadImages.length === 0)}
                 className="btn-ai flex items-center gap-1 disabled:opacity-50"
               >
                 <Sparkles className="w-4 h-4" />

@@ -172,7 +172,17 @@ export const resumesApi = {
     const fd = new FormData();
     fd.append('file', file);
     return api
-      .post<unknown, { data: { text: string; filename: string } }>('/resumes/upload', fd, {
+      .post<unknown, {
+        data: {
+          text: string;
+          filename: string;
+          ext: string;
+          mime: string;
+          charCount: number;
+          imageCount: number;
+          images: Array<{ name: string; mime: string; base64: string; source: string }>;
+        };
+      }>('/resumes/upload', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       .then((r) => r.data);
@@ -208,6 +218,7 @@ export const aiConfigApi = {
   update: (body: Partial<AiConfig>) =>
     api.put<unknown, { data: AiConfig }>('/ai-config', body).then((r) => r.data),
   test: () => api.post<unknown, { data: unknown }>('/ai-config/test'),
+  testMultimodal: () => api.post<unknown, { data: unknown }>('/ai-config/test-multimodal'),
 };
 
 // ===== 报表 API（管理员） =====
@@ -221,8 +232,8 @@ export const reportsApi = {
 export const aiApi = {
   parsePosition: (raw_text: string, images?: Array<{ name: string; mime: string; base64: string }>) =>
     api.post<unknown, { data: unknown }>('/ai/parse-position', { raw_text, images }),
-  parseResume: (raw_text: string) =>
-    api.post<unknown, { data: unknown }>('/ai/parse-resume', { raw_text }),
+  parseResume: (raw_text: string, images?: Array<{ name: string; mime: string; base64: string }>) =>
+    api.post<unknown, { data: unknown }>('/ai/parse-resume', { raw_text, images }),
   generateBossPosting: (position_id: string, industry?: string, city?: string, style?: string) =>
     api
       .post<unknown, { data: BossPostingResult }>('/ai/generate-boss-posting', {

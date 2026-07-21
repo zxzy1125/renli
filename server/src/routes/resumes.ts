@@ -16,6 +16,7 @@ import {
 import { maskPhone, hashPhone, maskEmail } from '../utils/crypto.js';
 import { isExcelFile, parseExcelFile } from '../utils/xlsxParser.js';
 import { detectAndCreateConflicts } from '../services/conflictService.js';
+import { parseFileToText } from '../utils/fileParser.js';
 
 export const resumesRouter = Router();
 
@@ -39,7 +40,7 @@ const upload = multer({
   storage,
   limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const allowed = ['.txt', '.pdf', '.docx', '.doc', '.xlsx', '.xls', '.csv'];
+    const allowed = ['.txt', '.pdf', '.docx', '.doc', '.xlsx', '.xls', '.csv', '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowed.includes(ext)) {
       cb(null, true);
@@ -235,17 +236,37 @@ resumesRouter.delete('/:id', asyncHandler(async (req, res) => {
   res.json({ ok: true });
 }));
 
-// POST /api/resumes/upload（multer 上传文件，提取文本）
+// POST /api/resumes/upload（multer 上传文件，提取文本 + 图片资产）
+// 支持 .txt/.pdf/.docx/.xlsx/.xls/.csv/.jpg/.png 等
+// 返回 { text, filename, ext, mime, charCount, imageCount, images }
+// 前端拿到 images 后，调用 /api/ai/parse-resume 时一起传入，AI 会自动切换多模态模型
 resumesRouter.post('/upload', upload.single('file'), asyncHandler(async (req, res) => {
   if (!req.file) throw new ApiError(400, '请上传文件');
   const ext = path.extname(req.file.originalname).toLowerCase();
-  if (ext === '.txt') {
-    const text = fs.readFileSync(req.file.path, 'utf-8');
-    res.json({ data: { text, filename: req.file.originalname } });
-  } else if (isExcelFile(req.file.originalname)) {
-    const text = parseExcelFile(req.file.path);
-    res.json({ data: { text, filename: req.file.originalname } });
-  } else {
-    res.status(400).json({ error: '暂不支持该格式，请粘贴文本或上传 .txt/.xlsx/.csv' });
+  try {
+    // 统一用 fileParser 处理所有格式（含 PDF/DOCX/Excel/图片，提取文本 + 嵌入图片资产）
+    const parsed = await parseFileToText(req.file.path, req.file.originalname);
+    res.json({
+      data: {
+        text: parsed.text,
+        filename: req.file.originalname,
+        ext,
+        mime: req.file.mimetype,
+        charCount: parsed.text.length,
+        imageCount: parsed.images.length,
+        // 图片资产（base64，不含 data: 前缀），前端原样透传给 /api/ai/parse-resume
+        images: parsed.images.map((img) => ({
+          name: img.name + img.ext,
+          mime: img.mime,
+          base64: img.base64,
+          source: img.source,
+        })),
+      },
+    });
+  } catch (err: any) {
+    res.status(400).json({ error: err?.message || '文件解析失败' });
+  } finally {
+    // 无论成功失败都删除临时文件
+    try { fs.unlinkSync(req.file.path); } catch { /* ignore */ }
   }
 }));
