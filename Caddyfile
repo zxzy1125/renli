@@ -18,7 +18,7 @@
 	}
 	header @assets Cache-Control "public, max-age=31536000, immutable"
 
-	# Handle API requests
+	# Handle API requests first
 	handle /api/* {
 		reverse_proxy backend:3001 {
 			header_up X-Real-IP {remote_host}
@@ -31,7 +31,10 @@
 	root * /srv
 
 	# SPA fallback: unmatched routes return index.html
-	try_files {path} /index.html
+	@notApi {
+		not path /api/*
+	}
+	try_files @notApi {path} /index.html
 
 	# Static file server
 	file_server
