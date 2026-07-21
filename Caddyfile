@@ -19,13 +19,12 @@
 	header @assets Cache-Control "public, max-age=31536000, immutable"
 
 	# Handle API requests
-	@isApi {
-		path /api/*
-	}
-	reverse_proxy @isApi backend:3001 {
-		header_up X-Real-IP {remote_host}
-		header_up X-Forwarded-For {remote_host}
-		header_up X-Forwarded-Proto {scheme}
+	handle /api/* {
+		reverse_proxy backend:3001 {
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+		}
 	}
 
 	# Serve frontend static files from /srv
