@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CURRENT_VERSION } from '@/versionHistory';
 
 interface SidebarProps {
   role: 'admin' | 'consultant' | undefined;
@@ -129,7 +130,7 @@ export default function Sidebar({ role, open, onClose }: SidebarProps) {
 
         {/* 底部版本信息 */}
         <div className="px-5 py-3 text-xs text-cream-50/40 border-t border-forest-700">
-          v0.1.0 · 公测版
+          v{CURRENT_VERSION} · 公测版
         </div>
       </aside>
     </>

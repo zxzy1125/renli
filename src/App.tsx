@@ -41,6 +41,7 @@ import ProfileSettings from '@/pages/Settings/ProfileSettings';
 import TeamSettings from '@/pages/Settings/TeamSettings';
 import AIConfig from '@/pages/Settings/AIConfig';
 import Guidelines from '@/pages/Settings/Guidelines';
+import VersionLog from '@/pages/Settings/VersionLog';
 
 export default function App() {
   const { token, user, initialized, fetchMe } = useAuthStore();
@@ -136,6 +137,7 @@ export default function App() {
                 }
               />
               <Route path="guidelines" element={<Guidelines />} />
+              <Route path="version" element={<VersionLog />} />
             </Route>
           </Route>
 
