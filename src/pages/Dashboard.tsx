@@ -126,13 +126,13 @@ export default function Dashboard() {
           ]);
           if (!cancelled) {
             if (funnelRes.status === 'fulfilled') {
-              setFunnel(Array.isArray(funnelRes.value) ? funnelRes.value : []);
+              setFunnel(Array.isArray(funnelRes.value) ? funnelRes.value as FunnelStage[] : []);
             }
             if (trendsRes.status === 'fulfilled') {
-              setTrends(Array.isArray(trendsRes.value) ? trendsRes.value : []);
+              setTrends(Array.isArray(trendsRes.value) ? trendsRes.value as { month: string; matches: number; conversions: number }[] : []);
             }
             if (perfRes.status === 'fulfilled') {
-              setEmployeePerformance(Array.isArray(perfRes.value) ? perfRes.value : []);
+              setEmployeePerformance(Array.isArray(perfRes.value) ? perfRes.value as { name: string; matches: number; onboard: number }[] : []);
             }
           }
         }

@@ -149,7 +149,7 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
                         className="w-full text-left px-3 py-2 hover:bg-forest-50 dark:hover:bg-forest-700 transition text-sm"
                       >
                         <span className="font-medium text-forest-800 dark:text-cream-100">{p.title}</span>
-                        <span className="ml-2 text-forest-400 text-xs">{p.client?.name}</span>
+                        {p.location && <span className="ml-2 text-forest-400 text-xs">{p.location}</span>}
                       </button>
                     ))}
                   </div>
