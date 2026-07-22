@@ -1,5 +1,5 @@
 // 匹配详情页：匹配报告 + 状态流转 + 18 条话术矩阵 + 审核区
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -144,36 +144,39 @@ export default function MatchDetail() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  // 生成全部 18 条话术
+  // 生成全部 18 条话术（后端无单条生成端点，单格"生成"按钮也调用此方法）
+  // 支持 AbortController 取消：取消后静默恢复状态，不弹错误
+  const generateAcRef = useRef<AbortController | null>(null);
   const handleGenerateAll = async () => {
     if (!id) return;
+    // 中断上一次未完成的生成（如有）
+    generateAcRef.current?.abort();
+    const ac = new AbortController();
+    generateAcRef.current = ac;
     setGenerating(true);
     setError('');
     try {
-      await aiApi.generatePitches(id);
+      await aiApi.generatePitches(id, ac.signal);
       await fetchPitches();
       setToast('18 条话术已生成');
     } catch (err) {
-      setError(getErrorMsg(err));
+      // 用户主动取消：静默处理，不显示错误
+      if (err.name === 'AbortError' || (err as Error).message?.includes('aborted') || err.code === 'ERR_CANCELED') {
+        // 静默
+      } else {
+        setError(getErrorMsg(err));
+      }
     } finally {
+      if (generateAcRef.current === ac) generateAcRef.current = null;
       setGenerating(false);
     }
   };
 
-  // 单格生成（后端会生成全部，前端刷新）
-  const handleGenerateSingle = async () => {
-    if (!id) return;
-    setGenerating(true);
-    setError('');
-    try {
-      await aiApi.generatePitches(id);
-      await fetchPitches();
-      setToast('话术已生成');
-    } catch (err) {
-      setError(getErrorMsg(err));
-    } finally {
-      setGenerating(false);
-    }
+  // 取消生成
+  const handleCancelGenerate = () => {
+    generateAcRef.current?.abort();
+    generateAcRef.current = null;
+    setGenerating(false);
   };
 
   // 状态推进
@@ -367,7 +370,7 @@ export default function MatchDetail() {
   if (loading) return <Loading className="py-20" />;
   if (error && !match) {
     return (
-      <div className="px-6 py-6 max-w-5xl mx-auto">
+      <div className="px-4 py-4 sm:px-6 sm:py-6 max-w-5xl mx-auto">
         <div className="px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400 mb-4">
           {error}
         </div>
@@ -379,7 +382,7 @@ export default function MatchDetail() {
   }
   if (!match) {
     return (
-      <div className="px-6 py-6 max-w-5xl mx-auto">
+      <div className="px-4 py-4 sm:px-6 sm:py-6 max-w-5xl mx-auto">
         <p className="text-sm text-forest-500 dark:text-forest-400">匹配记录不存在</p>
         <Link to="/matches" className="btn-ghost inline-flex items-center gap-1 mt-2">
           <ArrowLeft className="w-4 h-4" /> 返回匹配列表
@@ -396,7 +399,7 @@ export default function MatchDetail() {
   const nextStatuses = STATUS_FLOW[match.status] || [];
 
   return (
-    <div className="px-6 py-6 max-w-7xl mx-auto">
+    <div className="px-4 py-4 sm:px-6 sm:py-6 max-w-7xl mx-auto">
       {/* toast 提示 */}
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg bg-forest-800 text-cream-50 text-sm shadow-cardHover">
@@ -663,6 +666,17 @@ export default function MatchDetail() {
               )}
               {generating ? 'AI 生成中...' : pitches.length === 0 ? '生成全部 18 条' : '重新生成全部'}
             </button>
+            {generating && (
+              <button
+                type="button"
+                onClick={handleCancelGenerate}
+                className="btn-ghost flex items-center gap-1"
+                title="取消生成"
+              >
+                <XCircle className="w-4 h-4" />
+                取消
+              </button>
+            )}
           </div>
         </div>
 
@@ -716,7 +730,7 @@ export default function MatchDetail() {
                           <PitchCell
                             pitch={pitch}
                             generating={generating}
-                            onGenerate={handleGenerateSingle}
+                            onGenerate={handleGenerateAll}
                             onReview={() => pitch && openReview(pitch)}
                           />
                         </td>
@@ -926,7 +940,7 @@ function PitchCell({
         ) : (
           <>
             <Sparkles className="w-4 h-4" />
-            <span className="text-xs">生成</span>
+            <span className="text-xs">生成全部</span>
           </>
         )}
       </button>

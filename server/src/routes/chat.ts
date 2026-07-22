@@ -302,8 +302,9 @@ chatRouter.post('/sessions/:id/regenerate', asyncHandler(async (req, res) => {
   const position = findPositionById(session.position_id);
   if (!position) throw new ApiError(404, '职位不存在');
   const resume = session.resume_id ? findResumeById(session.resume_id) : null;
+  // 获取最近回访记录（与 /analyze 端点保持一致：listFollowupRecords 返回数组，取前 3 条）
   const followups = session.resume_id
-    ? listFollowupsByResume(session.resume_id, 1, 3).data ?? []
+    ? listFollowupRecords({ resume_id: session.resume_id }).slice(0, 3)
     : [];
 
   // 取出对话历史（排除要重新分析的这条消息）

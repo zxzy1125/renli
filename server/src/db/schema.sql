@@ -349,3 +349,11 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read);
+
+-- ===== 补充索引（高频查询字段）=====
+CREATE INDEX IF NOT EXISTS idx_ai_analysis_record_id ON ai_analysis_records(followup_record_id);
+CREATE INDEX IF NOT EXISTS idx_ai_analysis_created ON ai_analysis_records(created_at);
+CREATE INDEX IF NOT EXISTS idx_resumes_candidate_status ON resumes(candidate_status);
+CREATE INDEX IF NOT EXISTS idx_matches_position_resume ON matches(position_id, resume_id);
+CREATE INDEX IF NOT EXISTS idx_followup_records_date ON followup_records(followup_date);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_created ON chat_messages(created_at);

@@ -393,6 +393,67 @@ export const aiApi = {
   },
   parseResume: (raw_text: string, images?: Array<{ name: string; mime: string; base64: string }>) =>
     api.post<unknown, { data: unknown }>('/ai/parse-resume', { raw_text, images }),
+  // 流式调用 AI 解析简历（SSE）：与 parsePositionStream 协议一致，仅 URL 不同
+  // POST /api/ai/parse-resume，body: { raw_text, images }
+  // 事件：chunk（delta）/ done（data）/ error（message）
+  parseResumeStream: async (
+    raw_text: string,
+    images: Array<{ name: string; mime: string; base64: string }> | undefined,
+    onChunk: (delta: string, fullText: string) => void,
+    signal?: AbortSignal,
+  ): Promise<unknown> => {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/ai/parse-resume', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ raw_text, images }),
+      signal,
+    });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try { const j = await res.json(); msg = j?.error || j?.message || msg; } catch { /* ignore */ }
+      throw new Error(msg);
+    }
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullText = '';
+    let finalData: unknown = null;
+    let errorMsg: string | null = null;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      // SSE 事件以空行分隔
+      const events = buffer.split('\n\n');
+      buffer = events.pop() || '';
+      for (const evt of events) {
+        if (!evt.trim()) continue;
+        let event = 'message';
+        let dataStr = '';
+        for (const line of evt.split('\n')) {
+          if (line.startsWith('event:')) event = line.slice(6).trim();
+          else if (line.startsWith('data:')) dataStr += line.slice(5).trim();
+        }
+        if (!dataStr) continue;
+        let data: any;
+        try { data = JSON.parse(dataStr); } catch { continue; }
+        if (event === 'chunk' && data?.delta) {
+          fullText += data.delta;
+          onChunk(data.delta, fullText);
+        } else if (event === 'done') {
+          finalData = data?.data ?? data;
+        } else if (event === 'error') {
+          errorMsg = data?.message || 'AI 解析失败';
+        }
+      }
+    }
+    if (errorMsg) throw new Error(errorMsg);
+    return finalData;
+  },
   generateBossPosting: (position_id: string, industry?: string, city?: string, style?: string) =>
     api
       .post<unknown, { data: BossPostingResult }>('/ai/generate-boss-posting', {
@@ -406,9 +467,9 @@ export const aiApi = {
     api
       .post<unknown, { data: Match }>('/ai/match-analysis', { position_id, resume_id })
       .then((r) => r.data),
-  generatePitches: (match_id: string) =>
+  generatePitches: (match_id: string, signal?: AbortSignal) =>
     api
-      .post<unknown, { data: Pitch[] }>('/ai/generate-pitches', { match_id })
+      .post<unknown, { data: Pitch[] }>('/ai/generate-pitches', { match_id }, signal ? { signal } : undefined)
       .then((r) => r.data),
   polishPitch: (pitch_id: string) =>
     api
@@ -462,7 +523,8 @@ export const aiApi = {
   // 智能匹配（SSE 流式）
   smartMatch: async (
     body: { position_ids?: string[]; status_filter?: string[] },
-    onProgress: (e: SmartMatchEvent) => void
+    onProgress: (e: SmartMatchEvent) => void,
+    signal?: AbortSignal,
   ) => {
     const token = localStorage.getItem('token');
     const resp = await fetch('/api/ai/smart-match', {
@@ -472,6 +534,7 @@ export const aiApi = {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(body),
+      signal,
     });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
@@ -603,11 +666,12 @@ export const chatApi = {
   // 删除单条消息
   removeMessage: (id: string) => api.delete<unknown, { ok: boolean }>(`/chat/messages/${id}`),
   // AI 分析求职者最新消息（自动存为 candidate 消息 + 返回 3 套回复）
-  analyze: (sessionId: string, latestMessage: string) =>
+  analyze: (sessionId: string, latestMessage: string, signal?: AbortSignal) =>
     api
       .post<unknown, { data: ChatAnalysisResult; message: ChatMessage }>(
         `/chat/sessions/${sessionId}/analyze`,
-        { latest_message: latestMessage }
+        { latest_message: latestMessage },
+        signal ? { signal } : undefined
       )
       .then((r) => ({ analysis: r.data, message: r.message })),
   // 重新生成 AI 分析（不存新消息）

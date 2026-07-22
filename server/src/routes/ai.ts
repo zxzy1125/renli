@@ -49,18 +49,26 @@ aiRouter.post('/parse-position', requireAdmin, asyncHandler(async (req, res) => 
     }
   };
 
+  // 客户端断连时中止上游 AI 调用，避免继续消耗 token（资源泄漏修复）
+  const abortController = new AbortController();
+  const onClientClose = () => abortController.abort();
+  req.on('close', onClientClose);
+
   try {
     const result = await callByPromptKey('parsePosition', {
       raw_text: String(raw_text),
     }, {
       ...(safeImages.length > 0 ? { images: safeImages } : {}),
       timeoutMs: 120000,
+      signal: abortController.signal,
       onChunk: (delta: string) => send('chunk', { delta }),
     });
     send('done', { data: result });
   } catch (err: any) {
     send('error', { message: err?.message || 'AI 解析失败' });
   } finally {
+    // 在 res.end() 前清理监听，避免正常结束时误触发 abort
+    req.removeListener('close', onClientClose);
     res.end();
   }
 }));
@@ -118,7 +126,7 @@ aiRouter.post('/match-analysis', asyncHandler(async (req, res) => {
       education: position.education,
       location: position.location,
     }),
-  });
+  }, { timeoutMs: 120000 });
   res.json({ data: result });
 }));
 
@@ -142,6 +150,8 @@ aiRouter.post('/generate-pitches', asyncHandler(async (req, res) => {
       currentTitle: resume.current_title,
       skills: resume.skills,
       workExperience: resume.work_experience,
+      expectation: resume.expectation,
+      expectedCity: resume.expected_city,
       commonGrounds: resume.common_grounds,
     }),
     position_data: JSON.stringify({
@@ -158,7 +168,7 @@ aiRouter.post('/generate-pitches', asyncHandler(async (req, res) => {
       salaryAnalysis: match.salary_analysis,
     }),
     previous_pitches: JSON.stringify(existing.map(p => ({ channel: p.channel, scenario: p.scene, content: p.content }))),
-  });
+  }, { timeoutMs: 120000, maxTokens: 6000 });
   res.json({ data: result });
 }));
 
@@ -179,6 +189,8 @@ aiRouter.post('/pre-followup', asyncHandler(async (req, res) => {
       currentTitle: resume.current_title,
       skills: resume.skills,
       workExperience: resume.work_experience,
+      expectation: resume.expectation,
+      expectedCity: resume.expected_city,
       commonGrounds: resume.common_grounds,
     }),
     position_data: JSON.stringify(position ?? {}),
@@ -189,7 +201,7 @@ aiRouter.post('/pre-followup', asyncHandler(async (req, res) => {
   const analysis = createAnalysis({
     id: nanoid(),
     type: 'pre_followup',
-    input: { resume_id, position_id },
+    input: { resume_id, position_id, candidate_status },
     output: result,
   });
   res.json({ data: result, analysis });
@@ -197,7 +209,7 @@ aiRouter.post('/pre-followup', asyncHandler(async (req, res) => {
 
 // POST /api/ai/post-followup（员工）
 aiRouter.post('/post-followup', asyncHandler(async (req, res) => {
-  const { resume_id, position_id, employee_input, followup_history, previous_analyses } = req.body ?? {};
+  const { resume_id, position_id, followup_record_id, employee_input, followup_history, previous_analyses } = req.body ?? {};
   if (!resume_id || !employee_input) throw new ApiError(400, 'resume_id 和 employee_input 不能为空');
   const resume = findResumeById(String(resume_id));
   if (!resume) throw new ApiError(404, '简历不存在');
@@ -220,6 +232,7 @@ aiRouter.post('/post-followup', asyncHandler(async (req, res) => {
   });
   const analysis = createAnalysis({
     id: nanoid(),
+    followup_record_id: followup_record_id ?? null,
     type: 'post_followup',
     input: { resume_id, position_id, employee_input },
     output: result,
@@ -243,13 +256,14 @@ aiRouter.post('/concern-pitch', asyncHandler(async (req, res) => {
       currentCompany: resume.current_company,
       currentTitle: resume.current_title,
       skills: resume.skills,
+      workExperience: resume.work_experience,
       commonGrounds: resume.common_grounds,
     }),
     position_data: JSON.stringify(position ?? {}),
     specific_concern: String(specific_concern),
     strategy: strategy ?? '',
     previous_pitches: previous_pitches ?? '[]',
-  });
+  }, { timeoutMs: 120000 });
   res.json({ data: result });
 }));
 
@@ -276,7 +290,7 @@ aiRouter.post('/polish', asyncHandler(async (req, res) => {
     original_content: String(original_content),
     channel_and_scenario: channel_and_scenario ?? '',
     resume_data: resumeData,
-  });
+  }, { timeoutMs: 120000 });
   res.json({ data: result });
 }));
 
@@ -342,34 +356,43 @@ aiRouter.post('/batch-match', asyncHandler(async (req, res) => {
     location: position.location,
   });
 
-  const results = await Promise.allSettled(
-    resume_ids.map(async (rid: string) => {
-      const resume = findResumeById(String(rid));
-      if (!resume) return { resume_id: String(rid), error: '简历不存在' };
-      if (!isAdmin(req.user) && resume.owner_id !== req.user!.id) {
-        return { resume_id: String(rid), error: '无权对此简历进行分析' };
+  // 分批处理：每批 5 个并发，批间串行，避免一次性高并发打爆上游限流（参照 smartMatchService 的 BATCH_SIZE=5）
+  const BATCH_SIZE = 5;
+  const data: any[] = [];
+  for (let i = 0; i < resume_ids.length; i += BATCH_SIZE) {
+    const batch = resume_ids.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.allSettled(
+      batch.map(async (rid: string) => {
+        const resume = findResumeById(String(rid));
+        if (!resume) return { resume_id: String(rid), error: '简历不存在' };
+        if (!isAdmin(req.user) && resume.owner_id !== req.user!.id) {
+          return { resume_id: String(rid), error: '无权对此简历进行分析' };
+        }
+        const result = await callByPromptKey('matchAnalysis', {
+          resume_data: JSON.stringify({
+            name: resume.name,
+            currentCompany: resume.current_company,
+            currentTitle: resume.current_title,
+            skills: resume.skills,
+            workExperience: resume.work_experience,
+            projects: resume.projects,
+            expectation: resume.expectation,
+            expectedCity: resume.expected_city,
+          }),
+          position_data: positionData,
+        }, { timeoutMs: 120000 });
+        return { resume_id: String(rid), resume_name: resume.name, data: result };
+      })
+    );
+    for (let j = 0; j < batchResults.length; j++) {
+      const r = batchResults[j];
+      if (r.status === 'fulfilled') {
+        data.push(r.value);
+      } else {
+        data.push({ resume_id: String(batch[j]), error: (r.reason as Error)?.message || '分析失败' });
       }
-      const result = await callByPromptKey('matchAnalysis', {
-        resume_data: JSON.stringify({
-          name: resume.name,
-          currentCompany: resume.current_company,
-          currentTitle: resume.current_title,
-          skills: resume.skills,
-          workExperience: resume.work_experience,
-          projects: resume.projects,
-          expectation: resume.expectation,
-          expectedCity: resume.expected_city,
-        }),
-        position_data: positionData,
-      });
-      return { resume_id: String(rid), resume_name: resume.name, data: result };
-    })
-  );
-
-  const data = results.map((r, i) => {
-    if (r.status === 'fulfilled') return r.value;
-    return { resume_id: String(resume_ids[i]), error: (r.reason as Error)?.message || '分析失败' };
-  });
+    }
+  }
 
   res.json({ data });
 }));

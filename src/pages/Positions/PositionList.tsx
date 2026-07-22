@@ -54,12 +54,12 @@ export default function PositionList() {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      // ignore
+      setError('导出失败，请重试');
     }
   };
 
   return (
-    <div className="px-6 py-6 max-w-7xl mx-auto">
+    <div className="px-4 py-4 sm:px-6 sm:py-6 max-w-7xl mx-auto">
       {/* 页面标题 */}
       <div className="flex items-center justify-between mb-4">
         <div>

@@ -1,5 +1,5 @@
 // AI 智能匹配页：自动扫描空闲人才，与开放职位进行 AI 匹配分析
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -49,6 +49,8 @@ export default function SmartMatch() {
   const [progress, setProgress] = useState<SmartMatchEvent | null>(null);
   const [result, setResult] = useState<SmartMatchResult | null>(null);
   const [error, setError] = useState('');
+  // 取消智能匹配用的 AbortController（运行期间可点击取消按钮中断）
+  const matchAcRef = useRef<AbortController | null>(null);
 
   // 加载统计
   const loadStats = useCallback(async () => {
@@ -104,6 +106,10 @@ export default function SmartMatch() {
       setError('请至少选择一种简历范围');
       return;
     }
+    // 中断上一次未完成的匹配（如有）
+    matchAcRef.current?.abort();
+    const ac = new AbortController();
+    matchAcRef.current = ac;
     setRunning(true);
     setResult(null);
     setProgress(null);
@@ -125,16 +131,31 @@ export default function SmartMatch() {
         if (event.type === 'error' && event.error) {
           setError(event.error);
         }
-      });
+      }, ac.signal);
     } catch (err) {
-      setError(getErrorMsg(err));
+      // 用户主动取消：静默处理，不显示错误
+      if (err.name === 'AbortError' || (err as Error).message?.includes('aborted')) {
+        // 静默
+      } else {
+        setError(getErrorMsg(err));
+      }
     } finally {
+      if (matchAcRef.current === ac) matchAcRef.current = null;
       setRunning(false);
     }
   };
 
+  // 取消智能匹配
+  const handleCancelMatch = () => {
+    matchAcRef.current?.abort();
+    matchAcRef.current = null;
+    setRunning(false);
+    setProgress(null);
+    setError('已取消匹配');
+  };
+
   return (
-    <div className="px-6 py-6 max-w-5xl mx-auto">
+    <div className="px-4 py-4 sm:px-6 sm:py-6 max-w-5xl mx-auto">
       {/* 顶部导航 */}
       <div className="flex items-center gap-2 mb-4">
         <button
@@ -267,24 +288,37 @@ export default function SmartMatch() {
           </div>
 
           {/* 开始按钮 */}
-          <button
-            type="button"
-            onClick={handleStart}
-            disabled={running || statusFilter.length === 0 || (positionMode === 'select' && selectedPosIds.length === 0)}
-            className="btn-ai flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {running ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                匹配中...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4" />
-                开始智能匹配
-              </>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleStart}
+              disabled={running || statusFilter.length === 0 || (positionMode === 'select' && selectedPosIds.length === 0)}
+              className="btn-ai flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {running ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  匹配中...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  开始智能匹配
+                </>
+              )}
+            </button>
+            {running && (
+              <button
+                type="button"
+                onClick={handleCancelMatch}
+                className="btn-ghost flex items-center gap-1"
+                title="取消匹配"
+              >
+                <XCircle className="w-4 h-4" />
+                取消
+              </button>
             )}
-          </button>
+          </div>
         </div>
       )}
 

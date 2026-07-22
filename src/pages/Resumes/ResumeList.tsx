@@ -40,7 +40,7 @@ export default function ResumeList() {
   const {
     list, total, page, setPage, pageSize,
     keyword, setKeyword, statusFilter, setStatusFilter,
-    loading, error, fetchList, handleSearch,
+    loading, error, setError, fetchList, handleSearch,
     selectedIds, toggleSelect, selectAll, clearSelection,
   } = useListPage<Resume>({
     fetchApi: (params) => {
@@ -71,7 +71,8 @@ export default function ResumeList() {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      // ignore
+      // 导出失败时给出明确提示，避免静默
+      setError('导出失败，请重试');
     }
   };
 
@@ -81,9 +82,15 @@ export default function ResumeList() {
     if (selectedIds.size === 0) return;
     setBatchDeleting(true);
     try {
-      await Promise.allSettled([...selectedIds].map((id) => resumesApi.remove(id)));
+      const results = await Promise.allSettled([...selectedIds].map((id) => resumesApi.remove(id)));
+      const failed = results.filter((r) => r.status === 'rejected').length;
       clearSelection();
       await fetchList();
+      if (failed > 0) {
+        setError(`部分删除失败（${failed} 条），请刷新列表查看`);
+      }
+    } catch {
+      setError('批量删除失败，请重试');
     } finally {
       setBatchDeleting(false);
     }
@@ -92,7 +99,7 @@ export default function ResumeList() {
   const allSelected = list.length > 0 && selectedIds.size === list.length;
 
   return (
-    <div className="px-6 py-6 max-w-7xl mx-auto">
+    <div className="px-4 py-4 sm:px-6 sm:py-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="font-serif text-2xl font-bold text-forest-800 dark:text-cream-100">简历库</h1>

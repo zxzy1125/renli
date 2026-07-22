@@ -136,6 +136,8 @@ export default function PositionForm() {
   const [parseMsg, setParseMsg] = useState('');
   // SSE 流式解析进度：AI 已生成的字符数
   const [streamChars, setStreamChars] = useState(0);
+  // 取消解析用的 AbortController（解析期间可点击取消按钮中断）
+  const parseAcRef = useRef<AbortController | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -263,6 +265,10 @@ export default function PositionForm() {
       setError('请先粘贴或上传职位原文');
       return;
     }
+    // 中断上一次未完成的解析（如有）
+    parseAcRef.current?.abort();
+    const ac = new AbortController();
+    parseAcRef.current = ac;
     setParsing(true);
     setParseMsg('AI 正在解析...');
     setError('');
@@ -281,6 +287,7 @@ export default function PositionForm() {
           setStreamChars(fullText.length);
           setParseMsg(`AI 正在解析... 已生成 ${fullText.length} 字符`);
         },
+        ac.signal,
       );
       const data = (res as { data?: Record<string, unknown> }).data ?? (res as Record<string, unknown>);
 
@@ -308,10 +315,24 @@ export default function PositionForm() {
       const extra = uploadImages.length > 0 ? `（含 ${uploadImages.length} 张图片多模态识别）` : '';
       setParseMsg(`AI 解析完成${extra}，已自动填充表单空字段，请核对后保存`);
     } catch (err) {
-      setError(getErrorMsg(err));
+      // 用户主动取消：静默处理，不显示错误
+      if (err.name === 'AbortError' || (err as Error).message?.includes('aborted')) {
+        // 静默
+      } else {
+        setError(getErrorMsg(err));
+      }
     } finally {
+      if (parseAcRef.current === ac) parseAcRef.current = null;
       setParsing(false);
     }
+  };
+
+  // 取消解析
+  const handleCancelParse = () => {
+    parseAcRef.current?.abort();
+    parseAcRef.current = null;
+    setParsing(false);
+    setParseMsg('已取消解析');
   };
 
   const validate = (): boolean => {
@@ -530,7 +551,7 @@ export default function PositionForm() {
   if (loading) return <Loading className="py-20" />;
 
   return (
-    <div className="px-6 py-6 max-w-6xl mx-auto">
+    <div className="px-4 py-4 sm:px-6 sm:py-6 max-w-6xl mx-auto">
       <div className="flex items-center gap-2 mb-4">
         <button
           type="button"
@@ -875,6 +896,17 @@ export default function PositionForm() {
                 <Sparkles className={`w-4 h-4 ${parsing ? 'animate-pulse' : ''}`} />
                 {parsing ? 'AI 解析中...' : 'AI 解析'}
               </button>
+              {parsing && (
+                <button
+                  type="button"
+                  onClick={handleCancelParse}
+                  className="btn-ghost flex items-center gap-1"
+                  title="取消解析"
+                >
+                  <X className="w-4 h-4" />
+                  取消
+                </button>
+              )}
               {parseMsg && (
                 <span className="text-xs text-forest-500 dark:text-forest-400">{parseMsg}</span>
               )}

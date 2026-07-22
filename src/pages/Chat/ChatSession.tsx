@@ -29,6 +29,7 @@ import {
   CheckCircle2,
   CalendarCheck,
   PhoneCall,
+  X,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { chatApi, getErrorMsg } from '@/lib/api';
@@ -67,6 +68,8 @@ export default function ChatSessionPage() {
   // 输入求职者消息
   const [input, setInput] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
+  // 取消 AI 分析用的 AbortController（分析期间可点击取消按钮中断）
+  const analyzeAcRef = useRef<AbortController | null>(null);
 
   // 当前 AI 分析结果（展示在右栏）
   const [analysis, setAnalysis] = useState<ChatAnalysisResult | null>(null);
@@ -137,19 +140,36 @@ export default function ChatSessionPage() {
   // AI 分析：发送求职者消息并获取分析
   const handleAnalyze = async () => {
     if (!id || !input.trim()) return;
+    // 中断上一次未完成的分析（如有）
+    analyzeAcRef.current?.abort();
+    const ac = new AbortController();
+    analyzeAcRef.current = ac;
     setAnalyzing(true);
     setError('');
     try {
-      const { analysis: result, message } = await chatApi.analyze(id, input.trim());
+      const { analysis: result, message } = await chatApi.analyze(id, input.trim(), ac.signal);
       setMessages((prev) => [...prev, message]);
       setAnalysis(result);
       setAnalysisMsgId(message.id);
       setInput('');
     } catch (err) {
-      setError(getErrorMsg(err));
+      // 用户主动取消：静默处理，不显示错误
+      if (err.name === 'AbortError' || (err as Error).message?.includes('aborted') || err.code === 'ERR_CANCELED') {
+        // 静默
+      } else {
+        setError(getErrorMsg(err));
+      }
     } finally {
+      if (analyzeAcRef.current === ac) analyzeAcRef.current = null;
       setAnalyzing(false);
     }
+  };
+
+  // 取消 AI 分析
+  const handleCancelAnalyze = () => {
+    analyzeAcRef.current?.abort();
+    analyzeAcRef.current = null;
+    setAnalyzing(false);
   };
 
   // 重新生成 AI 分析
@@ -473,7 +493,7 @@ export default function ChatSessionPage() {
         </div>
 
         {/* 中栏：对话流 + 输入框 */}
-        <div className="card flex flex-col h-[calc(100vh-180px)] min-h-[500px]">
+        <div className="card flex flex-col min-h-[400px] lg:h-[calc(100vh-180px)]">
           {/* 对话流 */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 ? (
@@ -515,19 +535,32 @@ export default function ChatSessionPage() {
                 disabled={analyzing || session.status === 'closed'}
                 rows={2}
               />
-              <button
-                type="button"
-                onClick={handleAnalyze}
-                className="btn-ai flex items-center gap-1 self-stretch px-4"
-                disabled={analyzing || !input.trim() || session.status === 'closed'}
-              >
-                {analyzing ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Sparkles className="w-4 h-4" />
+              <div className="flex items-stretch gap-2">
+                <button
+                  type="button"
+                  onClick={handleAnalyze}
+                  className="btn-ai flex items-center gap-1 self-stretch px-4"
+                  disabled={analyzing || !input.trim() || session.status === 'closed'}
+                >
+                  {analyzing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4" />
+                  )}
+                  {analyzing ? '分析中' : 'AI 分析'}
+                </button>
+                {analyzing && (
+                  <button
+                    type="button"
+                    onClick={handleCancelAnalyze}
+                    className="btn-ghost flex items-center gap-1 px-3 text-risk-600 dark:text-risk-400"
+                    title="取消分析"
+                  >
+                    <X className="w-4 h-4" />
+                    取消
+                  </button>
                 )}
-                {analyzing ? '分析中' : 'AI 分析'}
-              </button>
+              </div>
             </div>
             <div className="flex items-center justify-between mt-1.5 text-xs text-forest-400 dark:text-forest-500">
               <span>Ctrl/⌘ + Enter 快速分析</span>
@@ -539,7 +572,7 @@ export default function ChatSessionPage() {
         </div>
 
         {/* 右栏：AI 分析面板 */}
-        <div className="card flex flex-col h-[calc(100vh-180px)] min-h-[500px] overflow-hidden">
+        <div className="card flex flex-col min-h-[400px] lg:h-[calc(100vh-180px)] overflow-hidden">
           {analysis ? (
             <AnalysisPanel
               analysis={analysis}

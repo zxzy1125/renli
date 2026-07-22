@@ -3,6 +3,31 @@ import { getAiConfig } from '../repositories/aiAnalysisRepo.js';
 import { PROMPT_TEMPLATES, fillTemplate } from './promptTemplates.js';
 import { logger } from '../utils/logger.js';
 
+// ===== AI 结果缓存（仅对 temperature<=0 的确定性非流式调用生效）=====
+interface CacheEntry { result: any; expireAt: number; }
+const AI_CACHE = new Map<string, CacheEntry>();
+const AI_CACHE_TTL = 30 * 60 * 1000; // 30 分钟
+const AI_CACHE_MAX = 100; // 最多缓存 100 条
+function getCache(key: string): any | null {
+  const e = AI_CACHE.get(key);
+  if (!e) return null;
+  if (Date.now() > e.expireAt) { AI_CACHE.delete(key); return null; }
+  return e.result;
+}
+function setCache(key: string, result: any): void {
+  if (AI_CACHE.size >= AI_CACHE_MAX) {
+    // 简单 LRU：删最早插入的一个
+    const firstKey = AI_CACHE.keys().next().value;
+    if (firstKey) AI_CACHE.delete(firstKey);
+  }
+  AI_CACHE.set(key, { result, expireAt: Date.now() + AI_CACHE_TTL });
+}
+// 生成缓存 key：只对非流式、temperature<=0 的调用缓存；有图片不缓存（图片可能变化）
+function cacheKey(promptKey: string, variables: Record<string, string>, images?: unknown[]): string {
+  if (images && images.length > 0) return '';
+  return `${promptKey}:${JSON.stringify(variables)}`;
+}
+
 // 多模态消息内容：可由文本段和图片段组成
 // OpenAI 协议：content 可以是 string，也可以是 [{type:'text',text:...},{type:'image_url',image_url:{url:'data:image/png;base64,...'}}]
 export type MessageContentPart =
@@ -85,6 +110,8 @@ export async function callAI(
     timeoutMs?: number;
     images?: ChatImage[];
     maxTokens?: number;
+    // 外部传入的取消信号（如 SSE 客户端断连），触发时中止当前请求
+    signal?: AbortSignal;
     // 流式回调：每收到一个 delta 就触发一次，供外层 SSE 实时推给前端
     onChunk?: (delta: string, fullContent: string) => void;
   }
@@ -138,6 +165,16 @@ export async function callAI(
   const timeoutMs = options?.timeoutMs ?? (imgs.length > 0 ? 120000 : 60000);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  // 监听外部 signal（如 SSE 客户端断连），触发时中止本次请求，避免继续消耗上游 token
+  const externalSignal = options?.signal;
+  const onExternalAbort = () => controller.abort();
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort();
+    } else {
+      externalSignal.addEventListener('abort', onExternalAbort, { once: true });
+    }
+  }
   const tag = useMultimodal ? '[AI/MM]' : '[AI]';
   logger.info(`${tag} 请求 ${url}  model=${model}  imgs=${imgs.length}  timeout=${timeoutMs}ms  stream=true  max_tokens=${body.max_tokens}`);
   try {
@@ -201,15 +238,39 @@ export async function callAI(
     throw err;
   } finally {
     clearTimeout(timer);
+    // 清理外部 signal 监听，避免内存泄漏
+    if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort);
   }
+}
+
+// ===== 可重试错误处理（仅用于非流式 JSON 调用，流式重试体验差不在此重试）=====
+const RETRYABLE = [429, 500, 502, 503, 504];
+async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  let lastErr: any;
+  for (let i = 0; i < 3; i++) {
+    try { return await fn(); }
+    catch (err: any) {
+      lastErr = err;
+      // 超时（AbortError 被包成"AI 调用超时"）/ 客户端断连不重试
+      if (err.name === 'AbortError') throw err;
+      const isRetryable = RETRYABLE.some(code => err.message?.includes(`HTTP ${code}`))
+        || err.message?.includes('fetch failed')
+        || err.message?.includes('ECONNRESET');
+      if (!isRetryable || i === 2) throw err;
+      // 退避 1s / 2s
+      await new Promise(r => setTimeout(r, (i + 1) * 1000));
+    }
+  }
+  throw lastErr;
 }
 
 // 调用 AI 并容错解析 JSON
 export async function callAIJson<T = any>(
   messages: ChatMessage[],
-  options?: { temperature?: number; timeoutMs?: number; images?: ChatImage[]; maxTokens?: number; onChunk?: (delta: string, fullContent: string) => void }
+  options?: { temperature?: number; timeoutMs?: number; images?: ChatImage[]; maxTokens?: number; signal?: AbortSignal; onChunk?: (delta: string, fullContent: string) => void }
 ): Promise<T> {
-  const content = await callAI(messages, options);
+  // 非流式 JSON 调用支持重试（流式不重试：onChunk 会重复推送）
+  const content = await withRetry(() => callAI(messages, options));
   try {
     return parseAIJson(content) as T;
   } catch (err: any) {
@@ -222,7 +283,7 @@ export async function callAIJson<T = any>(
 export async function callByPromptKey(
   promptKey: string,
   variables: Record<string, string>,
-  options?: { temperature?: number; timeoutMs?: number; images?: ChatImage[]; maxTokens?: number; onChunk?: (delta: string, fullContent: string) => void }
+  options?: { temperature?: number; timeoutMs?: number; images?: ChatImage[]; maxTokens?: number; signal?: AbortSignal; onChunk?: (delta: string, fullContent: string) => void }
 ): Promise<any> {
   // 优先用数据库中的自定义提示词，回退到代码默认
   const cfg = getAiConfig();
@@ -239,7 +300,18 @@ export async function callByPromptKey(
     { role: 'system', content: system },
     { role: 'user', content: user },
   ];
-  return callAIJson(messages, options);
+  // 仅对非流式、temperature<=0、无图片的确定性调用尝试缓存
+  const cacheable = (options?.temperature ?? 0) <= 0 && !options?.images?.length && !options?.onChunk;
+  const key = cacheable ? cacheKey(promptKey, variables, options?.images) : '';
+  if (cacheable && key) {
+    const hit = getCache(key);
+    if (hit !== null) return hit;
+  }
+  const result = await callAIJson(messages, options);
+  if (cacheable && key) {
+    setCache(key, result);
+  }
+  return result;
 }
 
 // 测试 AI 连接

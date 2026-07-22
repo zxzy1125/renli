@@ -170,7 +170,7 @@ export async function executeSmartMatch(
           onProgress?.({
             type: 'progress',
             current: processed,
-            total: totalPairs,
+            total_pairs: totalPairs,
             position_title: position.title,
             resume_name: resume.name,
             matched: result.matched,
@@ -185,14 +185,16 @@ export async function executeSmartMatch(
 
           // 创建匹配记录
           const matchId = nanoid();
-          const score = aiResult?.score ?? null;
+          // matchScore 为提示词约定的字段名，score 作为向后兼容回退
+          const score = aiResult?.matchScore ?? aiResult?.score ?? null;
           const matchStatus = score && score >= 70 ? 'interested' : 'consulting';
 
           createMatch({
             id: matchId,
             position_id: position.id,
             resume_id: resume.id,
-            owner_id: userId,
+            // owner_id 取简历归属人：管理员代他人匹配时，匹配仍归属于简历 owner
+            owner_id: resume.owner_id,
             status: matchStatus,
             score,
             highlights: aiResult?.highlights || [],
@@ -221,7 +223,7 @@ export async function executeSmartMatch(
           onProgress?.({
             type: 'error',
             current: processed,
-            total: totalPairs,
+            total_pairs: totalPairs,
             position_title: position.title,
             error: (r.reason as Error)?.message || 'AI 分析失败',
           });
@@ -239,7 +241,7 @@ export async function executeSmartMatch(
   onProgress?.({
     type: 'complete',
     current: processed,
-    total: totalPairs,
+    total_pairs: totalPairs,
     matched: result.matched,
     skipped: result.skipped,
     failed: result.failed,

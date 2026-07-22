@@ -127,8 +127,9 @@ export default function ResumeDetail() {
       await navigator.clipboard.writeText(resume.remark);
       setRemarkCopied(true);
       setTimeout(() => setRemarkCopied(false), 2000);
-    } catch {
-      // 兜底
+    } catch (err) {
+      // 复制失败时提示用户手动选择，不影响页面展示
+      console.warn('复制失败，请手动选择:', err);
     }
   };
 
@@ -148,7 +149,7 @@ export default function ResumeDetail() {
   if (loading) return <Loading className="py-20" />;
   if (error) {
     return (
-      <div className="px-6 py-6 max-w-5xl mx-auto">
+      <div className="px-4 py-4 sm:px-6 sm:py-6 max-w-5xl mx-auto">
         <div className="px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400 mb-4">
           {error}
         </div>
@@ -160,7 +161,7 @@ export default function ResumeDetail() {
   }
   if (!resume) {
     return (
-      <div className="px-6 py-6 max-w-5xl mx-auto">
+      <div className="px-4 py-4 sm:px-6 sm:py-6 max-w-5xl mx-auto">
         <p className="text-sm text-forest-500 dark:text-forest-400">简历不存在</p>
         <Link to="/resumes" className="btn-ghost inline-flex items-center gap-1 mt-2">
           <ArrowLeft className="w-4 h-4" /> 返回简历库
@@ -170,7 +171,7 @@ export default function ResumeDetail() {
   }
 
   return (
-    <div className="px-6 py-6 max-w-6xl mx-auto">
+    <div className="px-4 py-4 sm:px-6 sm:py-6 max-w-6xl mx-auto">
       <div className="flex items-center gap-2 mb-4">
         <Link to="/resumes" className="btn-ghost inline-flex items-center gap-1">
           <ArrowLeft className="w-4 h-4" /> 简历库

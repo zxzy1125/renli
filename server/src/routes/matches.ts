@@ -69,11 +69,12 @@ matchesRouter.post('/', validateBody(createMatchSchema), asyncHandler(async (req
   }
 
   // 先创建一个初始匹配记录
+  // owner_id 取简历归属人：管理员代他人创建时，匹配仍归属于简历 owner，便于其后续操作
   const match = createMatch({
     id: nanoid(),
     position_id: position.id,
     resume_id: resume.id,
-    owner_id: req.user!.id,
+    owner_id: resume.owner_id,
     status: 'consulting',
   });
 
@@ -103,8 +104,9 @@ matchesRouter.post('/', validateBody(createMatchSchema), asyncHandler(async (req
       }),
     });
     // 更新匹配记录
+    // matchScore 为提示词约定的字段名，score 作为向后兼容回退
     updateMatch(match.id, {
-      score: aiReport?.matchScore ?? null,
+      score: aiReport?.matchScore ?? aiReport?.score ?? null,
       highlights: aiReport?.highlights ?? [],
       concerns: aiReport?.concerns ?? [],
       salary_analysis: aiReport?.salaryAnalysis ?? {},

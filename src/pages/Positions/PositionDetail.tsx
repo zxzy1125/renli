@@ -210,8 +210,9 @@ export default function PositionDetail() {
             if (!cancelled) {
               setClient(clients.find((c) => c.id === p.client_id) || null);
             }
-          } catch {
-            // 忽略客户公司加载错误
+          } catch (err) {
+            // 客户公司列表加载失败不影响职位展示，仅记录日志
+            console.warn('客户公司列表加载失败:', err);
           }
         }
       } catch (err) {
@@ -228,7 +229,7 @@ export default function PositionDetail() {
   if (loading) return <Loading className="py-20" />;
   if (error) {
     return (
-      <div className="px-6 py-6 max-w-5xl mx-auto">
+      <div className="px-4 py-4 sm:px-6 sm:py-6 max-w-5xl mx-auto">
         <div className="px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400 mb-4">
           {error}
         </div>
@@ -240,7 +241,7 @@ export default function PositionDetail() {
   }
   if (!position) {
     return (
-      <div className="px-6 py-6 max-w-5xl mx-auto">
+      <div className="px-4 py-4 sm:px-6 sm:py-6 max-w-5xl mx-auto">
         <p className="text-sm text-forest-500 dark:text-forest-400">职位不存在</p>
         <Link to="/positions" className="btn-ghost inline-flex items-center gap-1 mt-2">
           <ArrowLeft className="w-4 h-4" /> 返回职位库
@@ -252,7 +253,7 @@ export default function PositionDetail() {
   const salary = [position.salary_min, position.salary_max].filter(Boolean).join(' - ');
 
   return (
-    <div className="px-6 py-6 max-w-6xl mx-auto">
+    <div className="px-4 py-4 sm:px-6 sm:py-6 max-w-6xl mx-auto">
       {/* 顶部操作 */}
       <div className="flex items-center gap-2 mb-4">
         <Link to="/positions" className="btn-ghost inline-flex items-center gap-1">
@@ -466,8 +467,9 @@ export default function PositionDetail() {
                       if (extracted.length > 0) {
                         replacePosting(bossTask.id, style, extracted[0]);
                       }
-                    } catch {
-                      // ignore
+                    } catch (err) {
+                      // 单风格重新生成失败时记录日志，不阻断弹窗交互
+                      console.warn('BOSS 文案重新生成失败:', err);
                     } finally {
                       setStyleRegenerating(bossTask.id, style, false);
                     }
