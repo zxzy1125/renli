@@ -1,4 +1,4 @@
-// 职位详情页：基本信息 + JD/要求/加分项 + AI 解析结果表格 + 折叠原文 + 生成 BOSS 文案按钮
+// 职位详情页：基本信息 + JD/要求/加分项 + AI 解析结果（增强卡片布局）+ 折叠原文 + 生成 BOSS 文案按钮
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
@@ -20,6 +20,17 @@ import {
   AlertTriangle,
   CheckCircle2,
   Sparkle,
+  Clock,
+  GraduationCap,
+  TrendingUp,
+  Heart,
+  Target,
+  Shield,
+  Coffee,
+  User,
+  Zap,
+  HelpCircle,
+  Lightbulb,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { positionsApi, clientsApi, aiApi, getErrorMsg } from '@/lib/api';
@@ -503,7 +514,7 @@ function BossPostingCard({
   );
 }
 
-// AI 解析结果表格：把 ai_meta + 源文件信息以结构化表格呈现
+// AI 解析结果：增强卡片布局，展示求职者关心的所有字段
 interface AiMetaShape {
   clientCompany?: string;
   salaryUnit?: string;
@@ -511,7 +522,62 @@ interface AiMetaShape {
   confidence?: number;
   uncertainFields?: string[];
   rawTextSummary?: string;
+  keywords?: string[];
+  salaryDetails?: {
+    baseSalary?: string; commission?: string; performanceBonus?: string;
+    annualBonus?: string; totalRange?: string; otherCompensation?: string;
+  };
+  trainingPeriod?: { duration?: string; salary?: string; content?: string };
+  probation?: { duration?: string; salary?: string; conditions?: string; postSalary?: string };
+  performanceMetrics?: { kpi?: string; evaluationCycle?: string; consequences?: string };
+  benefits?: {
+    socialInsurance?: string; paidLeave?: string; allowances?: string;
+    insurance?: string; meals?: string; activities?: string; other?: string;
+  };
+  workLifeBalance?: { overtime?: string; schedule?: string; weekdays?: string; flexibility?: string };
+  teamInfo?: { size?: string; reportTo?: string; subordinates?: string; structure?: string };
+  growthPath?: { promotion?: string; training?: string; learning?: string };
+  positionContext?: { hiringReason?: string; urgency?: string; note?: string };
+  interviewProcess?: { rounds?: string; format?: string; duration?: string };
+  companyInsights?: { scale?: string; industry?: string; fundingStage?: string; highlights?: string };
+  jobSeekerVerdict?: string;
   [k: string]: unknown;
+}
+
+// 辅助：判断对象是否有任何非空字段
+function hasAnyValue(obj: Record<string, unknown> | undefined | null): boolean {
+  if (!obj || typeof obj !== 'object') return false;
+  return Object.values(obj).some((v) => v != null && v !== '');
+}
+
+// 辅助：渲染 key-value 列表卡片
+function DetailCard({
+  title,
+  icon: Icon,
+  items,
+}: {
+  title: string;
+  icon: typeof Wallet;
+  items: Array<{ label: string; value: string | undefined | null }>;
+}) {
+  const visible = items.filter((i) => i.value != null && i.value !== '');
+  if (visible.length === 0) return null;
+  return (
+    <div className="card p-4">
+      <h3 className="font-serif text-sm font-semibold text-forest-700 dark:text-cream-200 mb-3 flex items-center gap-2">
+        <Icon className="w-4 h-4 text-ochre-500 dark:text-ochre-400" />
+        {title}
+      </h3>
+      <dl className="space-y-2">
+        {visible.map((item) => (
+          <div key={item.label} className="flex flex-col sm:flex-row sm:items-start gap-1">
+            <dt className="text-xs text-forest-500 dark:text-forest-400 sm:w-24 shrink-0 pt-0.5">{item.label}</dt>
+            <dd className="text-sm text-forest-800 dark:text-cream-100 leading-relaxed">{item.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
 }
 
 function AiResultTable({
@@ -521,222 +587,275 @@ function AiResultTable({
   position: Position;
   client?: Client | null;
 }) {
-  // 没有任何 AI 解析结果或源文件，不渲染该区块
   const aiMeta = (position.ai_meta as AiMetaShape | null) ?? null;
   const hasSourceFile = !!(position.source_filename || position.source_ext);
   if (!aiMeta && !hasSourceFile) return null;
 
   const confidence = typeof aiMeta?.confidence === 'number' ? aiMeta.confidence : null;
-  const confidencePct =
-    confidence !== null ? `${Math.round(confidence * 100)}%` : '—';
+  const confidencePct = confidence !== null ? `${Math.round(confidence * 100)}%` : '—';
   const confidenceColor =
-    confidence === null
-      ? 'text-forest-500'
-      : confidence >= 0.85
-      ? 'text-emerald-600'
-      : confidence >= 0.6
-      ? 'text-ochre-600'
+    confidence === null ? 'text-forest-500'
+      : confidence >= 0.85 ? 'text-emerald-600'
+      : confidence >= 0.6 ? 'text-ochre-600'
       : 'text-risk-600';
 
-  const highlights = Array.isArray(aiMeta?.highlights)
-    ? (aiMeta!.highlights as string[]).filter(Boolean)
-    : [];
-  const uncertainFields = Array.isArray(aiMeta?.uncertainFields)
-    ? (aiMeta!.uncertainFields as string[]).filter(Boolean)
-    : [];
+  const highlights = Array.isArray(aiMeta?.highlights) ? (aiMeta!.highlights as string[]).filter(Boolean) : [];
+  const uncertainFields = Array.isArray(aiMeta?.uncertainFields) ? (aiMeta!.uncertainFields as string[]).filter(Boolean) : [];
+  const keywords = Array.isArray(aiMeta?.keywords) ? (aiMeta!.keywords as string[]).filter(Boolean) : (Array.isArray(position.keywords) ? position.keywords : []);
 
-  const rows: Array<{ label: string; value: React.ReactNode; mono?: boolean }> = [];
-  if (aiMeta?.clientCompany) {
-    rows.push({
-      label: '客户公司（AI 识别）',
-      value: aiMeta.clientCompany,
-    });
-  }
-  if (client?.name) {
-    rows.push({
-      label: '关联客户公司',
-      value: client.name,
-    });
-  }
-  if (aiMeta?.salaryUnit) {
-    rows.push({
-      label: '薪资单位',
-      value: aiMeta.salaryUnit,
-      mono: true,
-    });
-  }
+  // 基础信息行（原有逻辑，精简保留）
+  const basicRows: Array<{ label: string; value: React.ReactNode; mono?: boolean }> = [];
+  if (aiMeta?.clientCompany) basicRows.push({ label: '客户公司（AI 识别）', value: aiMeta.clientCompany });
+  if (client?.name) basicRows.push({ label: '关联客户公司', value: client.name });
+  if (aiMeta?.salaryUnit) basicRows.push({ label: '薪资单位', value: aiMeta.salaryUnit, mono: true });
   if (position.salary_min || position.salary_max) {
-    const s = [position.salary_min, position.salary_max].filter(Boolean).join(' - ');
-    rows.push({
-      label: '薪资范围',
-      value: s,
-      mono: true,
-    });
+    basicRows.push({ label: '薪资范围', value: [position.salary_min, position.salary_max].filter(Boolean).join(' - '), mono: true });
   }
-  if (position.headcount) {
-    rows.push({
-      label: '招聘人数',
-      value: `${position.headcount} 人`,
-    });
-  }
-  if (position.experience) {
-    rows.push({
-      label: '经验要求',
-      value: position.experience,
-    });
-  }
-  if (position.education) {
-    rows.push({
-      label: '学历要求',
-      value: position.education,
-    });
-  }
-  if (position.job_type) {
-    rows.push({
-      label: '职位类型',
-      value: getOptionLabel(JOB_TYPE_OPTIONS, position.job_type),
-    });
-  }
-  if (position.work_mode) {
-    rows.push({
-      label: '工作模式',
-      value: getOptionLabel(WORK_MODE_OPTIONS, position.work_mode),
-    });
-  }
-  if (position.location) {
-    rows.push({
-      label: '工作地点',
-      value: position.location,
-    });
-  }
-  if (position.department) {
-    rows.push({
-      label: '所在部门',
-      value: position.department,
-    });
-  }
-  if (position.priority) {
-    rows.push({
-      label: '优先级',
-      value: getOptionLabel(PRIORITY_OPTIONS, position.priority),
-    });
-  }
-  if (position.status) {
-    rows.push({
-      label: '状态',
-      value: getOptionLabel(POSITION_STATUS_OPTIONS, position.status),
-    });
-  }
-  rows.push({
-    label: 'AI 置信度',
-    value: (
-      <span className={`inline-flex items-center gap-1 font-medium ${confidenceColor}`}>
-        {confidence !== null && confidence >= 0.85 && (
-          <CheckCircle2 className="w-3.5 h-3.5" />
-        )}
-        {confidence !== null && confidence < 0.6 && (
-          <AlertTriangle className="w-3.5 h-3.5" />
-        )}
-        {confidencePct}
-      </span>
-    ),
-  });
   if (position.source_filename) {
-    rows.push({
-      label: '源文件名',
+    basicRows.push({
+      label: '源文件',
       value: (
         <span className="inline-flex items-center gap-1.5">
           <FileText className="w-3.5 h-3.5 text-forest-400" />
           {position.source_filename}
-          {position.source_ext && (
-            <span className="text-xs text-forest-400">（{position.source_ext}）</span>
-          )}
+          {position.source_ext && <span className="text-xs text-forest-400">（{position.source_ext}）</span>}
         </span>
       ),
     });
   }
-  if (position.keywords && position.keywords.length > 0) {
-    rows.push({
-      label: '关键词',
-      value: (
-        <div className="flex flex-wrap gap-1 justify-end">
-          {position.keywords.map((k, i) => (
-            <span
-              key={`${k}-${i}`}
-              className="text-xs px-1.5 py-0.5 rounded bg-cream-100 dark:bg-forest-800/50 text-forest-700 dark:text-cream-200 border border-forest-100 dark:border-forest-800"
-            >
-              {k}
-            </span>
-          ))}
-        </div>
-      ),
-    });
-  }
+
+  // 工作生活平衡标签文本
+  const overtimeLabel: Record<string, string> = {
+    rare: '基本不加班', occasional: '偶尔加班', frequent: '经常加班', heavy: '高强度/996',
+  };
+  const hiringLabel: Record<string, string> = {
+    new: '新增 HC', replacement: '替补', expansion: '扩编', unknown: '未说明',
+  };
+
+  const salaryDetails = aiMeta?.salaryDetails;
+  const trainingPeriod = aiMeta?.trainingPeriod;
+  const probation = aiMeta?.probation;
+  const perfMetrics = aiMeta?.performanceMetrics;
+  const benefits = aiMeta?.benefits;
+  const wlb = aiMeta?.workLifeBalance;
+  const teamInfo = aiMeta?.teamInfo;
+  const growth = aiMeta?.growthPath;
+  const ctx = aiMeta?.positionContext;
+  const interview = aiMeta?.interviewProcess;
+  const companyInsights = aiMeta?.companyInsights;
 
   return (
     <section className="card p-5">
-      <div className="flex items-center justify-between mb-3">
+      {/* 标题 + 置信度 */}
+      <div className="flex items-center justify-between mb-4">
         <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 flex items-center gap-2">
           <Sparkle className="w-4 h-4 text-ochre-500 dark:text-ochre-400" />
-          AI 解析结果
+          AI 智能解析
         </h2>
         {confidence !== null && (
-          <span
-            className={`text-xs px-2 py-0.5 rounded-full border ${
-              confidence >= 0.85
-                ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
-                : confidence >= 0.6
-                ? 'bg-ochre-50 dark:bg-ochre-900/20 border-ochre-100 dark:border-ochre-800 text-ochre-700 dark:text-ochre-400'
-                : 'bg-risk-50 dark:bg-risk-900/20 border-risk-100 dark:border-risk-800 text-risk-700 dark:text-risk-400'
-            }`}
-          >
+          <span className={`text-xs px-2 py-0.5 rounded-full border ${
+            confidence >= 0.85 ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
+              : confidence >= 0.6 ? 'bg-ochre-50 dark:bg-ochre-900/20 border-ochre-100 dark:border-ochre-800 text-ochre-700 dark:text-ochre-400'
+              : 'bg-risk-50 dark:bg-risk-900/20 border-risk-100 dark:border-risk-800 text-risk-700 dark:text-risk-400'
+          }`}>
             置信度 {confidencePct}
           </span>
         )}
       </div>
 
-      {/* 主表格：所有字段以两列表格展示 */}
-      <div className="overflow-x-auto rounded-lg border border-forest-100 dark:border-forest-800">
-        <table className="w-full text-sm">
-          <tbody>
-            {rows.map((r, i) => (
-              <tr
-                key={r.label}
-                className={i % 2 === 0 ? 'bg-cream-50 dark:bg-forest-800/50' : 'bg-white dark:bg-forest-900'}
-              >
-                <th
-                  scope="row"
-                  className="text-left font-medium text-forest-600 dark:text-cream-300 px-3 py-2 align-top w-1/3 whitespace-nowrap"
-                >
-                  {r.label}
-                </th>
-                <td
-                  className={`px-3 py-2 text-forest-800 dark:text-cream-100 ${
-                    r.mono ? 'font-mono' : ''
-                  }`}
-                >
-                  {r.value}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* 基础信息表格 */}
+      {basicRows.length > 0 && (
+        <div className="overflow-x-auto rounded-lg border border-forest-100 dark:border-forest-800 mb-4">
+          <table className="w-full text-sm">
+            <tbody>
+              {basicRows.map((r, i) => (
+                <tr key={r.label} className={i % 2 === 0 ? 'bg-cream-50 dark:bg-forest-800/50' : 'bg-white dark:bg-forest-900'}>
+                  <th scope="row" className="text-left font-medium text-forest-600 dark:text-cream-300 px-3 py-2 align-top w-1/3 whitespace-nowrap">{r.label}</th>
+                  <td className={`px-3 py-2 text-forest-800 dark:text-cream-100 ${r.mono ? 'font-mono' : ''}`}>{r.value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* 求职者评价（醒目展示） */}
+      {aiMeta?.jobSeekerVerdict && (
+        <div className="mb-4 px-4 py-3 rounded-lg bg-gradient-to-r from-ochre-50 to-cream-50 dark:from-ochre-900/20 dark:to-forest-800/50 border border-ochre-100 dark:border-ochre-800">
+          <div className="text-xs font-semibold text-ochre-700 dark:text-ochre-400 mb-1 flex items-center gap-1.5">
+            <Lightbulb className="w-3.5 h-3.5" />
+            求职者视角评价
+          </div>
+          <p className="text-sm text-forest-700 dark:text-cream-200 leading-relaxed">{aiMeta.jobSeekerVerdict}</p>
+        </div>
+      )}
+
+      {/* 增强字段卡片网格 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        {/* 💰 薪资详情 */}
+        <DetailCard
+          title="薪资详情"
+          icon={Wallet}
+          items={[
+            { label: '底薪', value: salaryDetails?.baseSalary },
+            { label: '提成', value: salaryDetails?.commission },
+            { label: '绩效奖金', value: salaryDetails?.performanceBonus },
+            { label: '年终奖', value: salaryDetails?.annualBonus },
+            { label: '综合收入', value: salaryDetails?.totalRange },
+            { label: '其他收入', value: salaryDetails?.otherCompensation },
+          ]}
+        />
+
+        {/* 📈 业绩指标 */}
+        <DetailCard
+          title="业绩指标"
+          icon={Target}
+          items={[
+            { label: 'KPI/考核', value: perfMetrics?.kpi },
+            { label: '考核周期', value: perfMetrics?.evaluationCycle },
+            { label: '未达标影响', value: perfMetrics?.consequences },
+          ]}
+        />
+
+        {/* 🎓 培训期 */}
+        <DetailCard
+          title="培训期"
+          icon={GraduationCap}
+          items={[
+            { label: '培训时长', value: trainingPeriod?.duration },
+            { label: '培训薪资', value: trainingPeriod?.salary },
+            { label: '培训内容', value: trainingPeriod?.content },
+          ]}
+        />
+
+        {/* ✅ 试用期与转正 */}
+        <DetailCard
+          title="试用期与转正"
+          icon={CheckCircle2}
+          items={[
+            { label: '试用时长', value: probation?.duration },
+            { label: '试用薪资', value: probation?.salary },
+            { label: '转正条件', value: probation?.conditions },
+            { label: '转正后待遇', value: probation?.postSalary },
+          ]}
+        />
+
+        {/* 🏖️ 公司福利 */}
+        <DetailCard
+          title="公司福利"
+          icon={Heart}
+          items={[
+            { label: '五险一金', value: benefits?.socialInsurance },
+            { label: '带薪假期', value: benefits?.paidLeave },
+            { label: '各类补贴', value: benefits?.allowances },
+            { label: '保险', value: benefits?.insurance },
+            { label: '餐饮住宿', value: benefits?.meals },
+            { label: '团建/体检', value: benefits?.activities },
+            { label: '其他福利', value: benefits?.other },
+          ]}
+        />
+
+        {/* ⏰ 工作生活平衡 */}
+        <DetailCard
+          title="作息与加班"
+          icon={Coffee}
+          items={[
+            { label: '加班强度', value: wlb?.overtime ? (overtimeLabel[wlb.overtime] || wlb.overtime) : undefined },
+            { label: '上下班时间', value: wlb?.schedule },
+            { label: '休息安排', value: wlb?.weekdays },
+            { label: '弹性工作', value: wlb?.flexibility },
+          ]}
+        />
+
+        {/* 👥 团队信息 */}
+        <DetailCard
+          title="团队信息"
+          icon={Users}
+          items={[
+            { label: '团队规模', value: teamInfo?.size },
+            { label: '汇报对象', value: teamInfo?.reportTo },
+            { label: '下属人数', value: teamInfo?.subordinates },
+            { label: '团队架构', value: teamInfo?.structure },
+          ]}
+        />
+
+        {/* 📈 晋升成长 */}
+        <DetailCard
+          title="晋升与成长"
+          icon={TrendingUp}
+          items={[
+            { label: '晋升通道', value: growth?.promotion },
+            { label: '培训机会', value: growth?.training },
+            { label: '学习资源', value: growth?.learning },
+          ]}
+        />
+
+        {/* 🔍 岗位背景 */}
+        <DetailCard
+          title="岗位背景"
+          icon={HelpCircle}
+          items={[
+            { label: '招聘原因', value: ctx?.hiringReason ? (hiringLabel[ctx.hiringReason] || ctx.hiringReason) : undefined },
+            { label: '紧急程度', value: ctx?.urgency },
+            { label: '补充说明', value: ctx?.note },
+          ]}
+        />
+
+        {/* 🎤 面试流程 */}
+        <DetailCard
+          title="面试流程"
+          icon={Zap}
+          items={[
+            { label: '面试轮数', value: interview?.rounds },
+            { label: '面试形式', value: interview?.format },
+            { label: '面试周期', value: interview?.duration },
+          ]}
+        />
+
+        {/* 🏢 公司信息 */}
+        <DetailCard
+          title="公司信息"
+          icon={Building2}
+          items={[
+            { label: '公司规模', value: companyInsights?.scale },
+            { label: '所属行业', value: companyInsights?.industry },
+            { label: '融资阶段', value: companyInsights?.fundingStage },
+            { label: '公司亮点', value: companyInsights?.highlights },
+          ]}
+        />
       </div>
+
+      {/* 关键词标签 */}
+      {keywords.length > 0 && (
+        <div className="mb-4">
+          <h3 className="text-xs font-semibold text-forest-600 dark:text-cream-300 mb-2 flex items-center gap-1.5">
+            <Shield className="w-3.5 h-3.5 text-forest-400" />
+            关键词标签
+          </h3>
+          <div className="flex flex-wrap gap-1.5">
+            {keywords.map((k, i) => (
+              <span
+                key={`${k}-${i}`}
+                className="text-xs px-2 py-0.5 rounded-full bg-forest-50 dark:bg-forest-800/60 text-forest-700 dark:text-cream-200 border border-forest-200 dark:border-forest-700"
+              >
+                {k}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 职位亮点 */}
       {highlights.length > 0 && (
-        <div className="mt-4">
-          <h3 className="text-sm font-semibold text-forest-700 dark:text-cream-200 mb-2 flex items-center gap-1.5">
+        <div className="mb-4">
+          <h3 className="text-xs font-semibold text-forest-600 dark:text-cream-300 mb-2 flex items-center gap-1.5">
             <Sparkle className="w-3.5 h-3.5 text-ochre-500 dark:text-ochre-400" />
             职位亮点
           </h3>
           <ul className="space-y-1">
             {highlights.map((h, i) => (
-              <li
-                key={i}
-                className="text-sm text-forest-700 flex items-start gap-2"
-              >
-                <span className="mt-1.5 w-1 h-1 rounded-full bg-ochre-500 shrink-0" />
+              <li key={i} className="text-sm text-forest-700 dark:text-cream-200 flex items-start gap-2">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-ochre-500 shrink-0" />
                 <span>{h}</span>
               </li>
             ))}
@@ -746,19 +865,14 @@ function AiResultTable({
 
       {/* 不确定字段警告 */}
       {uncertainFields.length > 0 && (
-        <div className="mt-4 px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800">
-          <div className="text-sm font-semibold text-risk-700 dark:text-risk-400 flex items-center gap-1.5 mb-1">
+        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800">
+          <div className="text-xs font-semibold text-risk-700 dark:text-risk-400 flex items-center gap-1.5 mb-1">
             <AlertTriangle className="w-3.5 h-3.5" />
             以下字段 AI 不确定，请人工核对
           </div>
           <div className="flex flex-wrap gap-1">
             {uncertainFields.map((f, i) => (
-              <span
-                key={i}
-                className="text-xs px-1.5 py-0.5 rounded bg-white dark:bg-forest-900 text-risk-700 dark:text-risk-400 border border-risk-100 dark:border-risk-800"
-              >
-                {f}
-              </span>
+              <span key={i} className="text-xs px-1.5 py-0.5 rounded bg-white dark:bg-forest-900 text-risk-700 dark:text-risk-400 border border-risk-100 dark:border-risk-800">{f}</span>
             ))}
           </div>
         </div>
@@ -766,8 +880,8 @@ function AiResultTable({
 
       {/* 原文摘要 */}
       {aiMeta?.rawTextSummary && (
-        <div className="mt-4">
-          <h3 className="text-sm font-semibold text-forest-700 dark:text-cream-200 mb-2 flex items-center gap-1.5">
+        <div>
+          <h3 className="text-xs font-semibold text-forest-600 dark:text-cream-300 mb-2 flex items-center gap-1.5">
             <FileText className="w-3.5 h-3.5 text-forest-400 dark:text-forest-500" />
             AI 原文摘要
           </h3>

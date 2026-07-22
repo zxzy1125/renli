@@ -106,51 +106,123 @@ function buildConstrainedSystem(role: string): string {
 // 提示词 1：职位文件解析
 export const PARSE_POSITION_PROMPT = {
   system: BASE_SYSTEM,
-  user: `你是资深 HR 助手。任务：从用户提供的职位描述原文中，精准、完整地提取结构化字段。原文可能来自 .txt / .pdf / .docx / .xlsx / .csv / 图片 文件，已经过文本提取，可能含有少量格式残渣（如多余空行、页眉页脚、Excel 多 sheet 拼接标记），需要你智能识别。
+  user: `你是资深 HR 助手。任务：逐字逐句认真阅读用户提供的职位描述原文，精准、完整地提取结构化字段。原文可能来自 .txt / .pdf / .docx / .xlsx / .csv / 图片 文件，已经过文本提取，可能含有少量格式残渣（如多余空行、页眉页脚、Excel 多 sheet 拼接标记），需要你智能识别。
+
+**核心铁律：严格从 JD 原文提取，逐字分析，禁止编造、禁止臆测、禁止虚假承诺。原文没有明确写的信息必须留空/null，绝不可以凭经验补全。**
 
 **多模态识别**：本条用户消息可能附带 1~N 张图片（来自原文件嵌入图片、扫描件、或独立上传的图片），你必须把图片中的文字信息一并识别，整合到下方对应字段。识别图片中的：标题、表格内容、JD、要求、薪资数字、地点等所有可见文字。图片和文本信息冲突时优先采信图片中明确写出的数字/术语。
 
 【职位原文】
 {raw_text}
 
-输出 JSON：
+输出 JSON（严格按此结构，所有字段都必须输出，原文未提及的填 null）：
 {
   "title": "职位名称（如不明确，根据职责推断）",
-  "clientCompany": "客户公司名（如原文未提，留空字符串）",
-  "department": "所属部门（如未提，留空字符串）",
-  "salaryMin": "薪资下限（数字字符串，如 '30'，单位 K；提取不到留空字符串）",
-  "salaryMax": "薪资上限（数字字符串，如 '50'）",
+  "clientCompany": "客户公司名（原文未提填 null）",
+  "department": "所属部门（原文未提填 null）",
+  "salaryMin": "薪资下限（纯数字字符串，如 '30'，单位 K；原文未提填 null）",
+  "salaryMax": "薪资上限（纯数字字符串）",
   "salaryUnit": "K / W / 元/月 / 元/天（按原文实际单位，原文未提默认 K）",
-  "experience": "经验要求（如 '3-5年'；原文未提留空字符串）",
-  "education": "学历要求（如 '本科及以上'；原文未提留空字符串）",
-  "location": "工作地点（原文未提留空字符串）",
-  "headcount": "招聘人数（数字字符串，如 '2'；原文未提留空字符串）",
-  "jobType": "必须从枚举中选一个：full_time / part_time / intern / outsourcing（注意是下划线，不是 fulltime）",
-  "workMode": "必须从枚举中选一个：onsite / remote / hybrid",
-  "priority": "必须从枚举中选一个：high / medium / low（按薪资/紧急程度/HC 数判断，默认 medium）",
-  "responsibilities": "岗位职责（保留原文每一条要点，整理为 Markdown 有序列表，禁止合并、禁止丢失原文任何一条职责）",
-  "requirements": "任职要求（保留原文每一条要点，整理为 Markdown 有序列表，禁止合并、禁止丢失原文任何一条要求）",
-  "bonus": "加分项（如原文有'加分项/优先/Preferred'部分则整理为 Markdown 列表；没有则留空字符串）",
-  "highlights": ["职位亮点 3-5 条（每条 ≤30 字，要具体到薪资数字/技术栈/团队规模等，禁止'发展空间大''团队氛围好'这种废话）"],
-  "keywords": ["关键词标签 5-10 个（技术栈/业务领域/级别，如 'React'/'高并发'/'SaaS'/'高级'）"],
+  "experience": "经验要求（如 '3-5年'；原文未提填 null）",
+  "education": "学历要求（如 '本科及以上'；原文未提填 null）",
+  "location": "工作地点（原文未提填 null）",
+  "headcount": "招聘人数（纯数字字符串；原文未提填 null）",
+  "jobType": "枚举：full_time / part_time / intern / outsourcing",
+  "workMode": "枚举：onsite / remote / hybrid",
+  "priority": "枚举：high / medium / low（按薪资/紧急程度/HC数判断，默认 medium）",
+  "responsibilities": "岗位职责（逐条保留原文每一条，Markdown 有序列表，禁止合并丢失）",
+  "requirements": "任职要求（逐条保留原文每一条，Markdown 有序列表，禁止合并丢失）",
+  "bonus": "加分项（有则 Markdown 列表，无则空字符串）",
+  "highlights": ["职位亮点 3-5 条（每条≤30字，必须具体，禁止套话）"],
+  "keywords": ["关键词标签 5-10 个"],
+  "salaryDetails": {
+    "baseSalary": "底薪/基本工资（原文原文原话提取，如 '无责底薪4000'；未提填 null）",
+    "commission": "提成方式与比例（原文原话，如 '业绩提成10%-15%'；未提填 null）",
+    "performanceBonus": "绩效奖金规则（原文原话；未提填 null）",
+    "annualBonus": "年终奖/十三薪/年底双薪等（原文原话；未提填 null）",
+    "totalRange": "综合薪资范围（原文原文中提到的综合收入范围，如 '综合月薪8000-15000'；未提填 null）",
+    "otherCompensation": "其他收入项（股票/期权/项目奖金/签约奖等，原文原话；未提填 null）"
+  },
+  "trainingPeriod": {
+    "duration": "培训期时长（原文原话；未提填 null）",
+    "salary": "培训期薪资/待遇（原文原话；未提填 null）",
+    "content": "培训内容说明（原文原话；未提填 null）"
+  },
+  "probation": {
+    "duration": "试用期时长（原文原话；未提填 null）",
+    "salary": "试用期薪资/薪资比例（原文原话，如 '试用期工资80%'；未提填 null）",
+    "conditions": "转正条件（原文原话；未提填 null）",
+    "postSalary": "转正后薪资结构/待遇变化（原文原话；未提填 null）"
+  },
+  "performanceMetrics": {
+    "kpi": "业绩指标/考核标准（原文原话；未提填 null）",
+    "evaluationCycle": "考核周期（月度/季度/年度；未提填 null）",
+    "consequences": "未达标后果/奖惩规则（原文原话；未提填 null）"
+  },
+  "benefits": {
+    "socialInsurance": "五险一金（缴纳基数/比例/补充公积金等，原文原话；未提填 null）",
+    "paidLeave": "带薪假期（年假天数/病假/婚假等，原文原话；未提填 null）",
+    "allowances": "各类补贴（餐补/交通补/住房补/通讯补/高温补贴等，原文原话；未提填 null）",
+    "insurance": "商业保险/补充医疗/意外险等（原文原话；未提填 null）",
+    "meals": "餐饮/住宿（包吃/包住/食堂/宿舍等，原文原话；未提填 null）",
+    "activities": "团建/旅游/体检/节日福利/生日福利等（原文原话；未提填 null）",
+    "other": "其他任何福利（原文原话；未提填 null）"
+  },
+  "workLifeBalance": {
+    "overtime": "枚举：rare（基本不加班）/ occasional（偶尔加班）/ frequent（经常加班）/ heavy（996/高强度）；未提填 null",
+    "schedule": "上下班时间（原文原话，如 '9:00-18:00'；未提填 null）",
+    "weekdays": "休息安排（原文原话，如 '双休' '大小周' '月休4天'；未提填 null）",
+    "flexibility": "弹性工作说明（原文原话；未提填 null）"
+  },
+  "teamInfo": {
+    "size": "团队规模（原文原话；未提填 null）",
+    "reportTo": "汇报对象/上级职位（原文原话；未提填 null）",
+    "subordinates": "下属人数（原文原话；未提填 null）",
+    "structure": "团队架构描述（原文原话；未提填 null）"
+  },
+  "growthPath": {
+    "promotion": "晋升通道/晋升机制（原文原话；未提填 null）",
+    "training": "培训机会/带教体系（原文原话；未提填 null）",
+    "learning": "学习资源/成长机会（原文原话；未提填 null）"
+  },
+  "positionContext": {
+    "hiringReason": "枚举：new（新增HC）/ replacement（替补）/ expansion（扩编）/ unknown；原文未提填 unknown",
+    "urgency": "枚举：high / medium / low；原文未提填 null",
+    "note": "其他补充说明（原文原话；未提填 null）"
+  },
+  "interviewProcess": {
+    "rounds": "面试轮数（原文原话；未提填 null）",
+    "format": "面试形式（现场/视频/电话等，原文原话；未提填 null）",
+    "duration": "面试/入职周期（原文原话；未提填 null）"
+  },
+  "companyInsights": {
+    "scale": "公司规模/人数（原文原话；未提填 null）",
+    "industry": "所属行业（原文原话；未提填 null）",
+    "fundingStage": "融资阶段（原文原话；未提填 null）",
+    "highlights": "公司亮点/介绍（原文原话摘要；未提填 null）"
+  },
+  "jobSeekerVerdict": "用 2-3 句话从求职者角度客观评价此岗位的优劣势，必须基于原文事实，禁止编造美化。如有明显风险点（如高强度加班、薪资不明确、提成不确定）必须如实指出",
   "confidence": 0.85,
-  "uncertainFields": ["把握不大的字段说明（confidence < 0.85 时必须列出，说明哪个字段不确定及原因）"],
-  "rawTextSummary": "用 1-2 句话总结原文核心信息（职位名 + 薪资 + 关键技能要求），便于人工快速核对"
+  "uncertainFields": ["把握不大的字段说明（<0.85 时必填）"],
+  "rawTextSummary": "1-2 句话总结原文核心信息"
 }
 
 铁律（违反即失败）：
-1. **完整性优先**：responsibilities / requirements 必须保留原文每一条信息（含图片中的），宁多勿少。如果原文有 8 条要求，输出必须有 8 条，禁止合并或省略
-2. 原文没明说的字段不要瞎编，留空字符串并在 uncertainFields 中说明
-3. jobType / workMode / priority 必须从枚举中选，禁止自创值（如 'fulltime' '合同工'等都不对）
-4. salaryMin / salaryMax 必须是纯数字字符串，不带单位（'30' 而非 '30K'）；如原文只给一个数（如 '月薪 20K'），下限和上限都填这个数
-5. highlights 必须有"吸引力"且具体，禁止"公司发展良好""团队氛围好""晋升空间大"这类套话
-6. confidence 取值：原文信息齐全且明确 = 0.9+；部分字段需推断 = 0.7-0.85；大量字段靠猜 = <0.7
-7. confidence < 0.85 时，uncertainFields 必须非空，逐项说明哪些字段不确定及依据
-8. keywords 必须覆盖原文核心技术栈和业务关键词，便于后续匹配检索
-9. rawTextSummary 必须输出，作为人工核对入口
-10. 输出必须是合法 JSON，不要包裹 markdown 代码块
-11. **Excel 多 sheet 处理**：原文可能含「========== [Excel 工作表：xxx] ==========」分隔的多 sheet 文本，必须把所有 sheet 信息整合到对应字段，不要漏掉任一 sheet
-12. **图片识别**：若用户消息附带图片，必须把图片内文字纳入解析，绝不能因为信息在图片中就忽略；如图片为表格，按表格行列结构识别后整合到 responsibilities/requirements 等字段`,
+1. **逐字阅读，禁止编造**：每一个字段必须来自原文，原文没有写的必须填 null。绝对不可以凭经验补全、臆测、美化。宁可 null 也不可以编造
+2. **完整性优先**：responsibilities / requirements 必须逐条保留原文，宁多勿少
+3. **薪资信息必须详细**：salaryDetails 中每个子字段都要认真提取，原文怎么写的就怎么填，保留原始描述
+4. **提成绩效重点提取**：commission、performanceBonus、performanceMetrics 是求职者最关心的，原文有相关内容必须完整提取原话
+5. **培训期/试用期/转正**：trainingPeriod 和 probation 是关键信息，原文有相关内容必须逐字提取
+6. **福利全面提取**：benefits 每个子字段都要检查，原文提到的任何福利都不能遗漏
+7. jobType / workMode / priority 必须从枚举中选，禁止自创值
+8. salaryMin / salaryMax 必须是纯数字字符串；原文只给一个数时上下限填同一个数
+9. highlights 必须具体，禁止'发展空间大''团队氛围好'等套话
+10. jobSeekerVerdict 必须客观，如薪资不明确、加班严重、提成不确定等必须如实说明
+11. confidence 取值：信息齐全=0.9+；部分推断=0.7-0.85；大量缺失=<0.7
+12. 输出必须是合法 JSON，不要包裹 markdown 代码块
+13. **Excel 多 sheet 处理**：必须把所有 sheet 信息整合，不漏任一 sheet
+14. **图片识别**：必须把图片内文字纳入解析
+15. **原话原则**：benefits/salaryDetails/trainingPeriod/probation/performanceMetrics/workLifeBalance/teamInfo/growthPath/interviewProcess/companyInsights 中的文本字段，尽量使用原文原话或原文原意的精简版，禁止扩写美化`,
 };
 
 // 提示词 2：简历文件解析
