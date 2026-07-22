@@ -129,6 +129,12 @@ export function listResumes(query: ResumeQuery = {}): PaginatedResult<Resume> {
   );
 }
 
+// 查询全部简历（无分页，用于撞单检测等）
+export function findAllResumes(): Resume[] {
+  const rows = db.prepare('SELECT * FROM resumes ORDER BY created_at DESC').all() as ResumeRow[];
+  return rows.map(toResume);
+}
+
 // 通过 phone_hash 查询
 export function findResumesByPhoneHash(phoneHash: string, excludeId?: string): Resume[] {
   const sql = excludeId
