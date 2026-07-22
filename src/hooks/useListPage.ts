@@ -1,5 +1,5 @@
 // 通用列表页面 Hook：封装搜索/筛选/分页/加载/错误状态 + 批量选择
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { getErrorMsg } from '@/lib/api';
 
 export interface UseListPageOptions<T> {
@@ -36,6 +36,10 @@ export function useListPage<T extends { id: string }>({
   // 批量选择状态
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  // 用 ref 存储 fetchApi，避免内联函数导致 useCallback 依赖变化引发无限循环
+  const fetchApiRef = useRef(fetchApi);
+  fetchApiRef.current = fetchApi;
+
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -60,7 +64,7 @@ export function useListPage<T extends { id: string }>({
     setLoading(true);
     setError('');
     try {
-      const res = await fetchApi({
+      const res = await fetchApiRef.current({
         keyword: keyword || undefined,
         status: statusFilter || undefined,
         page,
@@ -74,7 +78,7 @@ export function useListPage<T extends { id: string }>({
     } finally {
       setLoading(false);
     }
-  }, [keyword, statusFilter, page, fetchApi, defaultPageSize, extraParams]);
+  }, [keyword, statusFilter, page, defaultPageSize, extraParams]);
 
   useEffect(() => {
     if (autoFetch) {
