@@ -127,7 +127,7 @@ export const PARSE_POSITION_PROMPT = {
   "education": "学历要求（如 '本科及以上'；原文未提填 null）",
   "location": "工作地点（原文未提填 null）",
   "headcount": "招聘人数（纯数字字符串；原文未提填 null）",
-  "jobType": "枚举：full_time / part_time / intern / outsourcing",
+  "jobType": "枚举：fulltime / parttime / intern / outsourcing",
   "workMode": "枚举：onsite / remote / hybrid",
   "priority": "枚举：high / medium / low（按薪资/紧急程度/HC数判断，默认 medium）",
   "responsibilities": "岗位职责（逐条保留原文每一条，Markdown 有序列表，禁止合并丢失）",

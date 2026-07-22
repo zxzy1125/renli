@@ -1,7 +1,7 @@
 // 职位表单的常量定义
 export const JOB_TYPE_OPTIONS = [
-  { value: 'full_time', label: '全职' },
-  { value: 'part_time', label: '兼职' },
+  { value: 'fulltime', label: '全职' },
+  { value: 'parttime', label: '兼职' },
   { value: 'intern', label: '实习' },
   { value: 'outsourcing', label: '外包' },
 ] as const;
