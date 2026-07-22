@@ -12,10 +12,24 @@ export interface VersionEntry {
 }
 
 // 当前版本（取版本历史首条）
-export const CURRENT_VERSION = '0.4.0';
+export const CURRENT_VERSION = '0.5.0';
 
 // 版本历史（新版本在前面）
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '0.5.0',
+    date: '2026-07-23',
+    title: 'AI 解析提速 + 系统性修复 15 项问题',
+    type: 'improvement',
+    changes: [
+      'AI 解析提速：temperature=0 确定性输出、max_tokens 限制防跑题、提示词精简（5133→1800 字符）、图片压缩（≤1024px/≤500KB）、SSE 流式推送边生成边显示',
+      'P0 必崩修复：/regenerate 端点调用未定义函数崩溃、匹配分数字段名不一致导致分数丢失、话术单条生成与全部生成实现重复',
+      'P1 稳定性：batch-match 并发控制（50→分批 5）、SSE 客户端断连中止 AI 调用避免资源泄漏、确定性调用加 30min 缓存避免重复付费、5 组重复端点入参字段统一',
+      'P2 健壮性：话术类调用超时延长至 120s、AI 调用加 429/5xx 重试机制、简历 AI 解析改 SSE 流式、5 个页面 AI 长操作加取消按钮、多处静默 catch 改为错误提示',
+      'P3 性能：补 6 个数据库索引、匹配归属改为取简历 owner_id',
+      'P3 移动端：主要页面 padding 响应式、ChatSession 三栏布局高度修复、表格横向滚动',
+    ],
+  },
   {
     version: '0.4.0',
     date: '2026-07-22',
