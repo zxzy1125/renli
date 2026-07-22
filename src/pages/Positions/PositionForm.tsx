@@ -34,6 +34,19 @@ interface AiMeta {
   confidence?: number;
   uncertainFields?: string[];
   rawTextSummary?: string;
+  keywords?: string[];
+  salaryDetails?: Record<string, string>;
+  trainingPeriod?: Record<string, string>;
+  probation?: Record<string, string>;
+  performanceMetrics?: Record<string, string>;
+  benefits?: Record<string, string>;
+  workLifeBalance?: Record<string, string>;
+  teamInfo?: Record<string, string>;
+  growthPath?: Record<string, string>;
+  positionContext?: Record<string, string>;
+  interviewProcess?: Record<string, string>;
+  companyInsights?: Record<string, string>;
+  jobSeekerVerdict?: string;
   [k: string]: unknown;
 }
 
@@ -809,7 +822,7 @@ function mergeParseResult(
     if (matched) next.client_id = matched.id;
   }
 
-  // 保存 AI 完整结果到 ai_meta（详情页表格化展示用）
+  // 保存 AI 完整结果到 ai_meta（详情页卡片化展示用）
   next.ai_meta = {
     clientCompany,
     salaryUnit: pickString(data.salaryUnit ?? data.salary_unit),
@@ -817,6 +830,20 @@ function mergeParseResult(
     confidence: typeof data.confidence === 'number' ? data.confidence : undefined,
     uncertainFields: pickStringArray(data.uncertainFields ?? data.uncertain_fields),
     rawTextSummary: pickString(data.rawTextSummary ?? data.raw_text_summary),
+    keywords: pickStringArray(data.keywords),
+    // 增强字段：全部保存，PositionDetail 卡片展示用
+    salaryDetails: (data.salaryDetails ?? data.salary_details) as Record<string, string> | undefined,
+    trainingPeriod: (data.trainingPeriod ?? data.training_period) as Record<string, string> | undefined,
+    probation: data.probation as Record<string, string> | undefined,
+    performanceMetrics: (data.performanceMetrics ?? data.performance_metrics) as Record<string, string> | undefined,
+    benefits: data.benefits as Record<string, string> | undefined,
+    workLifeBalance: (data.workLifeBalance ?? data.work_life_balance) as Record<string, string> | undefined,
+    teamInfo: (data.teamInfo ?? data.team_info) as Record<string, string> | undefined,
+    growthPath: (data.growthPath ?? data.growth_path) as Record<string, string> | undefined,
+    positionContext: (data.positionContext ?? data.position_context) as Record<string, string> | undefined,
+    interviewProcess: (data.interviewProcess ?? data.interview_process) as Record<string, string> | undefined,
+    companyInsights: (data.companyInsights ?? data.company_insights) as Record<string, string> | undefined,
+    jobSeekerVerdict: pickString(data.jobSeekerVerdict ?? data.job_seeker_verdict) || undefined,
   };
   return next;
 }
