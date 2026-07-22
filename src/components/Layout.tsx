@@ -11,7 +11,7 @@ export default function Layout() {
   const user = useAuthStore((s) => s.user);
 
   return (
-    <div className="flex min-h-screen bg-cream-50">
+    <div className="flex min-h-screen bg-cream-50 dark:bg-forest-950 dark:text-cream-50">
       <Sidebar
         role={user?.role}
         open={sidebarOpen}

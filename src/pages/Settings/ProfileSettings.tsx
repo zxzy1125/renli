@@ -45,38 +45,38 @@ export default function ProfileSettings() {
 
   return (
     <div>
-      <h2 className="font-serif text-lg font-semibold text-forest-800 mb-1">个人设置</h2>
-      <p className="text-sm text-forest-500 mb-4">修改登录密码</p>
+      <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-1">个人设置</h2>
+      <p className="text-sm text-forest-500 dark:text-forest-400 mb-4">修改登录密码</p>
 
       {/* 账号信息 */}
-      <div className="mb-6 p-4 rounded-lg bg-cream-50 border border-cream-200">
+      <div className="mb-6 p-4 rounded-lg bg-cream-50 dark:bg-forest-800 border border-cream-200 dark:border-forest-700">
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div>
-            <div className="text-forest-500 text-xs">用户名</div>
-            <div className="text-forest-800 font-mono">{user?.username}</div>
+            <div className="text-forest-500 dark:text-forest-400 text-xs">用户名</div>
+            <div className="text-forest-800 dark:text-cream-100 font-mono">{user?.username}</div>
           </div>
           <div>
-            <div className="text-forest-500 text-xs">姓名</div>
-            <div className="text-forest-800">{user?.real_name}</div>
+            <div className="text-forest-500 dark:text-forest-400 text-xs">姓名</div>
+            <div className="text-forest-800 dark:text-cream-100">{user?.real_name}</div>
           </div>
           <div>
-            <div className="text-forest-500 text-xs">角色</div>
-            <div className="text-forest-800">{user?.role === 'admin' ? '管理员' : '招聘顾问'}</div>
+            <div className="text-forest-500 dark:text-forest-400 text-xs">角色</div>
+            <div className="text-forest-800 dark:text-cream-100">{user?.role === 'admin' ? '管理员' : '招聘顾问'}</div>
           </div>
           <div>
-            <div className="text-forest-500 text-xs">部门</div>
-            <div className="text-forest-800">{user?.department || '—'}</div>
+            <div className="text-forest-500 dark:text-forest-400 text-xs">部门</div>
+            <div className="text-forest-800 dark:text-cream-100">{user?.department || '—'}</div>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
           {error}
         </div>
       )}
       {success && (
-        <div className="mb-4 px-3 py-2 rounded-lg bg-forest-50 border border-forest-100 text-sm text-forest-700">
+        <div className="mb-4 px-3 py-2 rounded-lg bg-forest-50 dark:bg-forest-800/50 border border-forest-100 dark:border-forest-800 text-sm text-forest-700 dark:text-cream-200">
           {success}
         </div>
       )}

@@ -144,7 +144,7 @@ export default function PositionDetail() {
   if (error) {
     return (
       <div className="px-6 py-6 max-w-5xl mx-auto">
-        <div className="px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700 mb-4">
+        <div className="px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400 mb-4">
           {error}
         </div>
         <Link to="/positions" className="btn-ghost inline-flex items-center gap-1">
@@ -156,7 +156,7 @@ export default function PositionDetail() {
   if (!position) {
     return (
       <div className="px-6 py-6 max-w-5xl mx-auto">
-        <p className="text-sm text-forest-500">职位不存在</p>
+        <p className="text-sm text-forest-500 dark:text-forest-400">职位不存在</p>
         <Link to="/positions" className="btn-ghost inline-flex items-center gap-1 mt-2">
           <ArrowLeft className="w-4 h-4" /> 返回职位库
         </Link>
@@ -179,9 +179,9 @@ export default function PositionDetail() {
       <div className="card p-6 mb-4">
         <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
           <div>
-            <h1 className="font-serif text-2xl font-bold text-forest-800">{position.title}</h1>
+            <h1 className="font-serif text-2xl font-bold text-forest-800 dark:text-cream-100">{position.title}</h1>
             {client && (
-              <div className="flex items-center gap-1 text-sm text-forest-500 mt-1">
+              <div className="flex items-center gap-1 text-sm text-forest-500 dark:text-forest-400 mt-1">
                 <Building2 className="w-3.5 h-3.5" />
                 <span>{client.name}</span>
                 {position.department && <span>· {position.department}</span>}
@@ -219,9 +219,9 @@ export default function PositionDetail() {
                 setBossTask(generatingTask);
                 setBossOpen(true);
               }}
-              className="btn-ghost flex items-center gap-1 text-forest-600"
+              className="btn-ghost flex items-center gap-1 text-forest-600 dark:text-cream-300"
             >
-              <Sparkles className="w-4 h-4 animate-pulse text-ochre-500" />
+              <Sparkles className="w-4 h-4 animate-pulse text-ochre-500 dark:text-ochre-400" />
               查看生成进度
             </button>
           )}
@@ -232,7 +232,7 @@ export default function PositionDetail() {
                 setBossTask(latestCompleted);
                 setBossOpen(true);
               }}
-              className="btn-ghost flex items-center gap-1 text-ochre-700"
+              className="btn-ghost flex items-center gap-1 text-ochre-700 dark:text-ochre-400"
             >
               查看上次生成结果
             </button>
@@ -252,7 +252,7 @@ export default function PositionDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* 左侧基本信息 */}
         <div className="card p-5">
-          <h2 className="font-serif text-lg font-semibold text-forest-800 mb-3">基本信息</h2>
+          <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-3">基本信息</h2>
           <dl className="space-y-2 text-sm">
             <InfoRow icon={Building2} label="客户公司" value={client?.name} />
             <InfoRow label="部门" value={position.department ?? undefined} />
@@ -284,16 +284,16 @@ export default function PositionDetail() {
         {/* 右侧 JD / 要求 / 加分项 */}
         <div className="lg:col-span-2 space-y-4">
           <section className="card p-5">
-            <h2 className="font-serif text-lg font-semibold text-forest-800 mb-3">岗位职责</h2>
+            <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-3">岗位职责</h2>
             <MarkdownView content={position.jd} />
           </section>
           <section className="card p-5">
-            <h2 className="font-serif text-lg font-semibold text-forest-800 mb-3">任职要求</h2>
+            <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-3">任职要求</h2>
             <MarkdownView content={position.requirements} />
           </section>
           {position.bonus && (
             <section className="card p-5">
-              <h2 className="font-serif text-lg font-semibold text-forest-800 mb-3">加分项</h2>
+              <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-3">加分项</h2>
               <MarkdownView content={position.bonus} />
             </section>
           )}
@@ -309,20 +309,20 @@ export default function PositionDetail() {
                 onClick={() => setRawOpen((v) => !v)}
                 className="w-full flex items-center justify-between text-left"
               >
-                <span className="font-serif text-base font-semibold text-forest-700 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-forest-400" />
+                <span className="font-serif text-base font-semibold text-forest-700 dark:text-cream-200 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-forest-400 dark:text-forest-500" />
                   原始文本
                   {position.source_filename && (
-                    <span className="text-xs text-forest-500 font-normal">
+                    <span className="text-xs text-forest-500 dark:text-forest-400 font-normal">
                       （来源：{position.source_filename}
                       {position.source_ext ? ` · ${position.source_ext}` : ''}）
                     </span>
                   )}
                 </span>
                 {rawOpen ? (
-                  <ChevronDown className="w-4 h-4 text-forest-400" />
+                  <ChevronDown className="w-4 h-4 text-forest-400 dark:text-forest-500" />
                 ) : (
-                  <ChevronRight className="w-4 h-4 text-forest-400" />
+                  <ChevronRight className="w-4 h-4 text-forest-400 dark:text-forest-500" />
                 )}
               </button>
               {rawOpen && (
@@ -343,13 +343,13 @@ export default function PositionDetail() {
         size="lg"
       >
         {bossTask?.status === 'generating' ? (
-          <div className="py-8 text-center text-sm text-forest-500">
-            <Sparkles className="w-6 h-6 mx-auto mb-2 animate-pulse text-ochre-500" />
+          <div className="py-8 text-center text-sm text-forest-500 dark:text-forest-400">
+            <Sparkles className="w-6 h-6 mx-auto mb-2 animate-pulse text-ochre-500 dark:text-ochre-400" />
             AI 正在后台生成 3 套文案（诱惑型/神秘型/专业型）...
-            <p className="text-xs text-forest-400 mt-2">您可以安全离开此页面，完成后会收到通知</p>
+            <p className="text-xs text-forest-400 dark:text-forest-500 mt-2">您可以安全离开此页面，完成后会收到通知</p>
           </div>
         ) : bossTask?.status === 'error' ? (
-          <div className="px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+          <div className="px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
             {bossTask.error}
           </div>
         ) : bossTask?.status === 'completed' ? (
@@ -387,11 +387,11 @@ export default function PositionDetail() {
               );
             })}
             {bossTask.postings.length === 0 && (
-              <p className="text-sm text-forest-400 text-center py-4">暂无内容</p>
+              <p className="text-sm text-forest-400 dark:text-forest-500 text-center py-4">暂无内容</p>
             )}
           </div>
         ) : (
-          <p className="text-sm text-forest-400 text-center py-4">暂无内容</p>
+          <p className="text-sm text-forest-400 dark:text-forest-500 text-center py-4">暂无内容</p>
         )}
       </Modal>
     </div>
@@ -412,12 +412,12 @@ function InfoRow({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <dt className="text-forest-500 flex items-center gap-1.5">
-        {Icon && <Icon className="w-3.5 h-3.5 text-forest-400" />}
+      <dt className="text-forest-500 dark:text-cream-300 flex items-center gap-1.5">
+        {Icon && <Icon className="w-3.5 h-3.5 text-forest-400 dark:text-forest-500" />}
         {label}
       </dt>
-      <dd className={`text-forest-800 ${mono ? 'font-mono' : ''}`}>
-        {value || <span className="text-forest-300">—</span>}
+      <dd className={`text-forest-800 dark:text-cream-100 ${mono ? 'font-mono' : ''}`}>
+        {value || <span className="text-forest-300 dark:text-forest-600">—</span>}
       </dd>
     </div>
   );
@@ -464,9 +464,9 @@ function BossPostingCard({
   };
 
   return (
-    <div className="border border-forest-100 rounded-lg overflow-hidden">
-      <div className="flex items-center justify-between px-3 py-2 bg-cream-100">
-        <span className="text-xs font-medium text-ochre-700 px-2 py-0.5 rounded bg-ochre-50 border border-ochre-100">
+    <div className="border border-forest-100 dark:border-forest-800 rounded-lg overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-2 bg-cream-100 dark:bg-forest-800/50">
+        <span className="text-xs font-medium text-ochre-700 dark:text-ochre-400 px-2 py-0.5 rounded bg-ochre-50 dark:bg-ochre-900/20 border border-ochre-100 dark:border-ochre-800">
           {label}
         </span>
         <div className="flex items-center gap-2">
@@ -475,7 +475,7 @@ function BossPostingCard({
               type="button"
               onClick={onRegenerate}
               disabled={regenerating}
-              className={`text-xs text-forest-600 hover:text-forest-800 flex items-center gap-1 ${regenerating ? 'opacity-60 cursor-wait' : ''}`}
+              className={`text-xs text-forest-600 dark:text-cream-300 hover:text-forest-800 dark:hover:text-cream-100 flex items-center gap-1 ${regenerating ? 'opacity-60 cursor-wait' : ''}`}
             >
               <Sparkles className={`w-3.5 h-3.5 ${regenerating ? 'animate-pulse text-ochre-500' : ''}`} />
               {regenerating ? '重新生成中...' : '重新生成'}
@@ -484,7 +484,7 @@ function BossPostingCard({
           <button
             type="button"
             onClick={handleCopy}
-            className="text-xs text-forest-600 hover:text-forest-800 flex items-center gap-1"
+            className="text-xs text-forest-600 dark:text-cream-300 hover:text-forest-800 dark:hover:text-cream-100 flex items-center gap-1"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-forest-600" /> : <Copy className="w-3.5 h-3.5" />}
             {copied ? '已复制' : '一键复制'}
@@ -492,7 +492,7 @@ function BossPostingCard({
         </div>
       </div>
       <div className="p-3">
-        <div className="font-serif text-base font-semibold text-forest-800 mb-2">
+        <div className="font-serif text-base font-semibold text-forest-800 dark:text-cream-100 mb-2">
           {posting.title}
         </div>
         <div className="markdown-body">
@@ -663,7 +663,7 @@ function AiResultTable({
           {position.keywords.map((k, i) => (
             <span
               key={`${k}-${i}`}
-              className="text-xs px-1.5 py-0.5 rounded bg-cream-100 text-forest-700 border border-forest-100"
+              className="text-xs px-1.5 py-0.5 rounded bg-cream-100 dark:bg-forest-800/50 text-forest-700 dark:text-cream-200 border border-forest-100 dark:border-forest-800"
             >
               {k}
             </span>
@@ -676,8 +676,8 @@ function AiResultTable({
   return (
     <section className="card p-5">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-serif text-lg font-semibold text-forest-800 flex items-center gap-2">
-          <Sparkle className="w-4 h-4 text-ochre-500" />
+        <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 flex items-center gap-2">
+          <Sparkle className="w-4 h-4 text-ochre-500 dark:text-ochre-400" />
           AI 解析结果
         </h2>
         {confidence !== null && (
@@ -686,8 +686,8 @@ function AiResultTable({
               confidence >= 0.85
                 ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
                 : confidence >= 0.6
-                ? 'bg-ochre-50 border-ochre-100 text-ochre-700'
-                : 'bg-risk-50 border-risk-100 text-risk-700'
+                ? 'bg-ochre-50 dark:bg-ochre-900/20 border-ochre-100 dark:border-ochre-800 text-ochre-700 dark:text-ochre-400'
+                : 'bg-risk-50 dark:bg-risk-900/20 border-risk-100 dark:border-risk-800 text-risk-700 dark:text-risk-400'
             }`}
           >
             置信度 {confidencePct}
@@ -696,22 +696,22 @@ function AiResultTable({
       </div>
 
       {/* 主表格：所有字段以两列表格展示 */}
-      <div className="overflow-x-auto rounded-lg border border-forest-100">
+      <div className="overflow-x-auto rounded-lg border border-forest-100 dark:border-forest-800">
         <table className="w-full text-sm">
           <tbody>
             {rows.map((r, i) => (
               <tr
                 key={r.label}
-                className={i % 2 === 0 ? 'bg-cream-50' : 'bg-white'}
+                className={i % 2 === 0 ? 'bg-cream-50 dark:bg-forest-800/50' : 'bg-white dark:bg-forest-900'}
               >
                 <th
                   scope="row"
-                  className="text-left font-medium text-forest-600 px-3 py-2 align-top w-1/3 whitespace-nowrap"
+                  className="text-left font-medium text-forest-600 dark:text-cream-300 px-3 py-2 align-top w-1/3 whitespace-nowrap"
                 >
                   {r.label}
                 </th>
                 <td
-                  className={`px-3 py-2 text-forest-800 ${
+                  className={`px-3 py-2 text-forest-800 dark:text-cream-100 ${
                     r.mono ? 'font-mono' : ''
                   }`}
                 >
@@ -726,8 +726,8 @@ function AiResultTable({
       {/* 职位亮点 */}
       {highlights.length > 0 && (
         <div className="mt-4">
-          <h3 className="text-sm font-semibold text-forest-700 mb-2 flex items-center gap-1.5">
-            <Sparkle className="w-3.5 h-3.5 text-ochre-500" />
+          <h3 className="text-sm font-semibold text-forest-700 dark:text-cream-200 mb-2 flex items-center gap-1.5">
+            <Sparkle className="w-3.5 h-3.5 text-ochre-500 dark:text-ochre-400" />
             职位亮点
           </h3>
           <ul className="space-y-1">
@@ -746,8 +746,8 @@ function AiResultTable({
 
       {/* 不确定字段警告 */}
       {uncertainFields.length > 0 && (
-        <div className="mt-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100">
-          <div className="text-sm font-semibold text-risk-700 flex items-center gap-1.5 mb-1">
+        <div className="mt-4 px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800">
+          <div className="text-sm font-semibold text-risk-700 dark:text-risk-400 flex items-center gap-1.5 mb-1">
             <AlertTriangle className="w-3.5 h-3.5" />
             以下字段 AI 不确定，请人工核对
           </div>
@@ -755,7 +755,7 @@ function AiResultTable({
             {uncertainFields.map((f, i) => (
               <span
                 key={i}
-                className="text-xs px-1.5 py-0.5 rounded bg-white text-risk-700 border border-risk-100"
+                className="text-xs px-1.5 py-0.5 rounded bg-white dark:bg-forest-900 text-risk-700 dark:text-risk-400 border border-risk-100 dark:border-risk-800"
               >
                 {f}
               </span>
@@ -767,11 +767,11 @@ function AiResultTable({
       {/* 原文摘要 */}
       {aiMeta?.rawTextSummary && (
         <div className="mt-4">
-          <h3 className="text-sm font-semibold text-forest-700 mb-2 flex items-center gap-1.5">
-            <FileText className="w-3.5 h-3.5 text-forest-400" />
+          <h3 className="text-sm font-semibold text-forest-700 dark:text-cream-200 mb-2 flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5 text-forest-400 dark:text-forest-500" />
             AI 原文摘要
           </h3>
-          <p className="text-sm text-forest-600 leading-relaxed bg-cream-50 border border-forest-100 rounded-lg px-3 py-2">
+          <p className="text-sm text-forest-600 dark:text-cream-300 leading-relaxed bg-cream-50 dark:bg-forest-800/50 border border-forest-100 dark:border-forest-800 rounded-lg px-3 py-2">
             {aiMeta.rawTextSummary}
           </p>
         </div>

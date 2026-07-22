@@ -22,14 +22,14 @@ export default function NotFound({
       : '您访问的页面不存在或已被删除。');
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-cream-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-cream-50 dark:bg-forest-950 px-4">
       <div className="text-center max-w-md">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-cream-100 text-forest-500 mb-4">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-cream-100 dark:bg-forest-800 text-forest-500 dark:text-forest-400 mb-4">
           <ShieldAlert className="w-8 h-8" />
         </div>
-        <div className="font-mono text-5xl font-bold text-forest-700 mb-2">{code}</div>
-        <h1 className="font-serif text-xl font-semibold text-forest-800 mb-2">{heading}</h1>
-        <p className="text-sm text-forest-500 mb-6">{desc}</p>
+        <div className="font-mono text-5xl font-bold text-forest-700 dark:text-cream-200 mb-2">{code}</div>
+        <h1 className="font-serif text-xl font-semibold text-forest-800 dark:text-cream-100 mb-2">{heading}</h1>
+        <p className="text-sm text-forest-500 dark:text-forest-400 mb-6">{desc}</p>
         <Link to="/dashboard" className="btn-primary inline-flex items-center gap-2">
           <Home className="w-4 h-4" />
           返回工作台

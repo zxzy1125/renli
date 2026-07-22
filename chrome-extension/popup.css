@@ -1,0 +1,94 @@
+/* 代招助手 Chrome 插件 Popup 样式 */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  color: #1f2937;
+  background: #f9fafb;
+}
+
+.popup-container {
+  width: 340px;
+  min-height: 200px;
+  padding: 16px;
+}
+
+/* Header */
+.header {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 12px; border-bottom: 1px solid #e5e7eb; margin-bottom: 14px;
+}
+.logo { width: 28px; height: 28px; border-radius: 6px; }
+.header h1 { font-size: 16px; font-weight: 600; color: #111827; }
+
+/* Panels */
+.panel h2 {
+  font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #374151;
+}
+label {
+  display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px; margin-top: 10px;
+}
+input[type="text"], input[type="password"] {
+  width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px;
+  font-size: 13px; outline: none; transition: border-color .15s;
+}
+input:focus { border-color: #225036; }
+
+/* Buttons */
+.btn-row { display: flex; gap: 8px; margin-top: 14px; }
+.btn {
+  padding: 8px 16px; border: 1px solid #d1d5db; border-radius: 6px;
+  background: #fff; color: #374151; font-size: 13px; cursor: pointer;
+  transition: all .15s; flex: 1; text-align: center;
+}
+.btn:hover { background: #f3f4f6; }
+.btn.primary {
+  background: #225036; color: #fff; border-color: #225036; width: 100%;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 16px; font-size: 14px; font-weight: 500; margin-top: 14px;
+}
+.btn.primary:hover { background: #1a3d2a; }
+.btn.primary:disabled { opacity: .5; cursor: not-allowed; }
+.btn-icon { font-size: 16px; font-weight: 700; }
+
+/* Status */
+.status {
+  padding: 8px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 12px;
+}
+.status.info   { background: #eff6ff; color: #1e40af; }
+.status.warn   { background: #fffbeb; color: #92400e; }
+.status.error  { background: #fef2f2; color: #991b1b; }
+.status.success { background: #f0fdf4; color: #166534; }
+
+/* Candidate Preview */
+.preview-card {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+  padding: 12px; margin-bottom: 12px;
+}
+.preview-name { font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 4px; }
+.preview-detail { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
+.preview-skills { display: flex; flex-wrap: wrap; gap: 4px; }
+.skill-tag {
+  display: inline-block; padding: 2px 8px; font-size: 11px;
+  background: #ecfdf5; color: #065f46; border-radius: 9999px; border: 1px solid #a7f3d0;
+}
+
+/* Result Message */
+.result-msg {
+  margin-top: 10px; padding: 8px 12px; border-radius: 6px; font-size: 13px;
+}
+.result-msg.success { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
+.result-msg.error   { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; }
+
+/* Footer */
+.footer {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 16px; padding-top: 12px; border-top: 1px solid #e5e7eb;
+  font-size: 12px; color: #9ca3af;
+}
+.footer a { color: #225036; text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+.conn-status { font-size: 11px; }
+.conn-status.connected { color: #16a34a; }

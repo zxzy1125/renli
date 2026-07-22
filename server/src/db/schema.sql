@@ -334,3 +334,18 @@ CREATE INDEX IF NOT EXISTS idx_boss_messages_user ON boss_messages(user_id);
 CREATE INDEX IF NOT EXISTS idx_boss_messages_candidate ON boss_messages(candidate_id);
 CREATE INDEX IF NOT EXISTS idx_boss_action_logs_user ON boss_action_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_boss_stat_daily_user_date ON boss_stat_daily(user_id, d_date);
+
+-- 通知表
+CREATE TABLE IF NOT EXISTS notifications (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  type TEXT NOT NULL DEFAULT 'info',
+  title TEXT NOT NULL,
+  message TEXT,
+  is_read INTEGER NOT NULL DEFAULT 0,
+  entity_type TEXT,
+  entity_id TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read);

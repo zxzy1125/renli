@@ -185,8 +185,8 @@ export default function TeamSettings() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="font-serif text-lg font-semibold text-forest-800">团队管理</h2>
-          <p className="text-sm text-forest-500 mt-1">添加、编辑、禁用、删除员工账号</p>
+          <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100">团队管理</h2>
+          <p className="text-sm text-forest-500 dark:text-forest-400 mt-1">添加、编辑、禁用、删除员工账号</p>
         </div>
         <button
           type="button"
@@ -199,7 +199,7 @@ export default function TeamSettings() {
       </div>
 
       {error && (
-        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
           {error}
         </div>
       )}
@@ -211,7 +211,7 @@ export default function TeamSettings() {
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-cream-100 text-forest-700">
+            <thead className="bg-cream-100 dark:bg-forest-800 text-forest-700 dark:text-cream-200">
               <tr>
                 <th className="text-left px-3 py-2 font-medium">用户名</th>
                 <th className="text-left px-3 py-2 font-medium">姓名</th>
@@ -224,17 +224,17 @@ export default function TeamSettings() {
             </thead>
             <tbody>
               {list.map((u) => (
-                <tr key={u.id} className="border-t border-forest-50 hover:bg-cream-50">
-                  <td className="px-3 py-2 font-mono text-forest-700">{u.username}</td>
-                  <td className="px-3 py-2 text-forest-800">{u.real_name}</td>
-                  <td className="px-3 py-2 text-forest-600">{u.department || '—'}</td>
+                <tr key={u.id} className="border-t border-forest-50 dark:border-forest-800 hover:bg-cream-50 dark:hover:bg-forest-800/50">
+                  <td className="px-3 py-2 font-mono text-forest-700 dark:text-cream-200">{u.username}</td>
+                  <td className="px-3 py-2 text-forest-800 dark:text-cream-100">{u.real_name}</td>
+                  <td className="px-3 py-2 text-forest-600 dark:text-cream-300">{u.department || '—'}</td>
                   <td className="px-3 py-2">
                     <StatusBadge status={u.role} />
                   </td>
                   <td className="px-3 py-2">
                     <StatusBadge status={u.status} />
                   </td>
-                  <td className="px-3 py-2 text-forest-500 text-xs">
+                  <td className="px-3 py-2 text-forest-500 dark:text-forest-400 text-xs">
                     {dayjs(u.created_at).format('YYYY-MM-DD')}
                   </td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
@@ -266,7 +266,7 @@ export default function TeamSettings() {
                     <button
                       type="button"
                       onClick={() => setToDelete(u)}
-                      className="text-xs px-2 py-1 rounded text-risk-600 hover:bg-risk-50 inline-flex items-center gap-1 ml-1 disabled:opacity-50"
+                      className="text-xs px-2 py-1 rounded text-risk-600 dark:text-risk-400 hover:bg-risk-50 dark:hover:bg-risk-900/20 inline-flex items-center gap-1 ml-1 disabled:opacity-50"
                       disabled={u.id === me?.id}
                       title={u.id === me?.id ? '不能删除自己' : ''}
                     >
@@ -308,7 +308,7 @@ export default function TeamSettings() {
       >
         <form id="user-form" onSubmit={handleSave} className="space-y-3">
           {formError && (
-            <div className="px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+            <div className="px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
               {formError}
             </div>
           )}
@@ -323,7 +323,7 @@ export default function TeamSettings() {
                 disabled={!!editing}
               />
               {editing && (
-                <p className="text-xs text-forest-400 mt-1">用户名不可修改</p>
+                <p className="text-xs text-forest-400 dark:text-forest-500 mt-1">用户名不可修改</p>
               )}
             </div>
             <div>
@@ -447,7 +447,7 @@ export default function TeamSettings() {
         }
       >
         {formError && (
-          <div className="mb-3 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+          <div className="mb-3 px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
             {formError}
           </div>
         )}

@@ -184,11 +184,11 @@ export default function FollowupHome() {
       {/* 顶部标题 */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
-          <h1 className="font-serif text-2xl font-bold text-forest-800 flex items-center gap-2">
+          <h1 className="font-serif text-2xl font-bold text-forest-800 dark:text-cream-100 flex items-center gap-2">
             <Clock className="w-6 h-6 text-ochre-500" />
             跟进管理
           </h1>
-          <p className="text-sm text-forest-500 mt-1">
+          <p className="text-sm text-forest-500 dark:text-cream-300 mt-1">
             按回访计划持续触达求职者，AI 自动生成作战卡片与深度分析报告
           </p>
         </div>
@@ -199,7 +199,7 @@ export default function FollowupHome() {
       </div>
 
       {error && (
-        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
           {error}
         </div>
       )}
@@ -208,7 +208,7 @@ export default function FollowupHome() {
       <section className="mb-6">
         <div className="flex items-center gap-2 mb-3">
           <Clock className="w-5 h-5 text-ochre-500" />
-          <h2 className="font-serif text-lg font-semibold text-forest-800">
+          <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100">
             今日待回访 ({todayPlans.length})
           </h2>
         </div>
@@ -216,7 +216,7 @@ export default function FollowupHome() {
         {todayPlans.length === 0 ? (
           <div className="card p-8 text-center">
             <div className="text-4xl mb-2">🎉</div>
-            <p className="text-sm text-forest-500">今天没有待回访的求职者</p>
+            <p className="text-sm text-forest-500 dark:text-cream-300">今天没有待回访的求职者</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -237,13 +237,13 @@ export default function FollowupHome() {
       {/* Section 2: 逾期未回访（仅有数据时显示） */}
       {overduePlans.length > 0 && (
         <section className="mb-6">
-          <div className="rounded-lg bg-risk-50 border border-risk-200 px-4 py-3 mb-3">
-            <div className="flex items-center gap-2 text-risk-700 font-medium">
+          <div className="rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-200 dark:border-risk-800 px-4 py-3 mb-3">
+            <div className="flex items-center gap-2 text-risk-700 dark:text-risk-400 font-medium">
               <AlertTriangle className="w-5 h-5" />
               <span>⚠️ 逾期未回访 ({overduePlans.length})</span>
             </div>
           </div>
-          <div className="card divide-y divide-forest-100">
+          <div className="card divide-y divide-forest-100 dark:divide-forest-800">
             {overduePlans.map((plan) => (
               <OverdueRow
                 key={plan.id}
@@ -261,12 +261,12 @@ export default function FollowupHome() {
       <section>
         <div className="flex items-center gap-2 mb-3">
           <Briefcase className="w-5 h-5 text-forest-600" />
-          <h2 className="font-serif text-lg font-semibold text-forest-800">全部回访计划</h2>
+          <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100">全部回访计划</h2>
         </div>
 
         <div className="card">
           {/* Tab 切换 */}
-          <div className="flex items-center border-b border-forest-100">
+          <div className="flex items-center border-b border-forest-100 dark:border-forest-800">
             {PLAN_STATUS_TABS.map((tab) => {
               const count = allPlans.filter((p) => p.status === tab.value).length;
               const active = activeStatus === tab.value;
@@ -277,12 +277,12 @@ export default function FollowupHome() {
                   onClick={() => setActiveStatus(tab.value)}
                   className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px ${
                     active
-                      ? 'border-forest-500 text-forest-800'
-                      : 'border-transparent text-forest-500 hover:text-forest-700'
+                      ? 'border-forest-500 text-forest-800 dark:text-cream-100'
+                      : 'border-transparent text-forest-500 dark:text-cream-300 hover:text-forest-700 dark:hover:text-cream-100'
                   }`}
                 >
                   {tab.label}
-                  <span className="ml-1 text-xs text-forest-400">({count})</span>
+                  <span className="ml-1 text-xs text-forest-400 dark:text-forest-500">({count})</span>
                 </button>
               );
             })}
@@ -290,7 +290,7 @@ export default function FollowupHome() {
 
           {/* 表格 */}
           {filteredPlans.length === 0 ? (
-            <div className="py-10 text-center text-sm text-forest-400">
+            <div className="py-10 text-center text-sm text-forest-400 dark:text-forest-500">
               {activeStatus === 'active'
                 ? '暂无进行中的回访计划，点击右上角「新建回访计划」开始'
                 : `暂无${PLAN_STATUS_LABELS[activeStatus]}的计划`}
@@ -299,7 +299,7 @@ export default function FollowupHome() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-forest-500 border-b border-forest-100 bg-cream-50">
+                  <tr className="text-left text-forest-500 dark:text-cream-300 border-b border-forest-100 dark:border-forest-800 bg-cream-50 dark:bg-forest-800">
                     <th className="px-4 py-2.5 font-medium">求职者</th>
                     <th className="px-4 py-2.5 font-medium">类型</th>
                     <th className="px-4 py-2.5 font-medium">下次回访</th>
@@ -308,31 +308,31 @@ export default function FollowupHome() {
                     <th className="px-4 py-2.5 font-medium text-right">操作</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-forest-100">
+                <tbody className="divide-y divide-forest-100 dark:divide-forest-800">
                   {filteredPlans.map((plan) => {
                     const maxTimes = plan.max_times ?? '—';
                     return (
-                      <tr key={plan.id} className="hover:bg-cream-50/50">
+                      <tr key={plan.id} className="hover:bg-cream-50/50 dark:hover:bg-forest-800/50">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-forest-800">
+                            <span className="font-medium text-forest-800 dark:text-cream-100">
                               {plan.resume?.name || '—'}
                             </span>
                             <RiskBadge risk={plan.resume?.risk_warning} />
                           </div>
-                          <div className="text-xs text-forest-400 mt-0.5 truncate max-w-[180px]">
+                          <div className="text-xs text-forest-400 dark:text-forest-500 mt-0.5 truncate max-w-[180px]">
                             {plan.title}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-forest-600">
+                        <td className="px-4 py-3 text-forest-600 dark:text-cream-300">
                           {PLAN_TYPE_LABELS[plan.type]}
                         </td>
-                        <td className="px-4 py-3 text-forest-600">
+                        <td className="px-4 py-3 text-forest-600 dark:text-cream-300">
                           {plan.next_remind_date
                             ? dayjs(plan.next_remind_date).format('YYYY-MM-DD')
                             : '—'}
                         </td>
-                        <td className="px-4 py-3 text-forest-600">
+                        <td className="px-4 py-3 text-forest-600 dark:text-cream-300">
                           {plan.completed_times} / {maxTimes}
                         </td>
                         <td className="px-4 py-3">
@@ -374,7 +374,7 @@ export default function FollowupHome() {
                                 <button
                                   type="button"
                                   onClick={() => setStoppingPlan(plan)}
-                                  className="btn-ghost text-xs text-risk-600 hover:bg-risk-50 flex items-center gap-0.5"
+                                  className="btn-ghost text-xs text-risk-600 dark:text-risk-400 hover:bg-risk-50 dark:hover:bg-risk-900/20 flex items-center gap-0.5"
                                   title="停止计划"
                                 >
                                   <Square className="w-3 h-3" />
@@ -444,15 +444,15 @@ export default function FollowupHome() {
           </>
         }
       >
-        <p className="text-sm text-forest-600 mb-3">
+        <p className="text-sm text-forest-600 dark:text-cream-300 mb-3">
           当前计划「{reschedulePlan?.title}」的下一次回访日期是：
-          <span className="font-medium text-forest-800">
+          <span className="font-medium text-forest-800 dark:text-cream-100">
             {reschedulePlan && dayjs(reschedulePlan.next_remind_date).format('YYYY-MM-DD')}
           </span>
         </p>
         <label className="label">新的下次回访日期</label>
         <div className="relative">
-          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-forest-400 pointer-events-none" />
+          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-forest-400 dark:text-forest-500 pointer-events-none" />
           <input
             type="date"
             className="input pl-9"
@@ -521,7 +521,7 @@ function TodayCard({
         <button
           type="button"
           onClick={onView}
-          className="font-medium text-forest-800 hover:text-forest-600 truncate"
+          className="font-medium text-forest-800 dark:text-cream-100 hover:text-forest-600 dark:hover:text-cream-200 truncate"
         >
           {resume?.name || '—'}
         </button>
@@ -529,7 +529,7 @@ function TodayCard({
       </div>
 
       {/* 联系方式 */}
-      <div className="flex items-center gap-1.5 text-xs text-forest-500 mb-2">
+      <div className="flex items-center gap-1.5 text-xs text-forest-500 dark:text-cream-300 mb-2">
         {resume?.wechat_id ? (
           <MessageCircle className="w-3 h-3" />
         ) : (
@@ -540,7 +540,7 @@ function TodayCard({
 
       {/* 职位信息 */}
       {resume?.current_company && (
-        <div className="flex items-center gap-1.5 text-xs text-forest-500 mb-2">
+        <div className="flex items-center gap-1.5 text-xs text-forest-500 dark:text-cream-300 mb-2">
           <Building2 className="w-3 h-3" />
           <span className="truncate">{resume.current_company}</span>
           {resume.current_title && <span>· {resume.current_title}</span>}
@@ -548,18 +548,18 @@ function TodayCard({
       )}
 
       {/* 已回访天数/次数 + 目的 */}
-      <div className="text-xs text-forest-400 mb-2">
+      <div className="text-xs text-forest-400 dark:text-forest-500 mb-2">
         <span>已回访 {plan.completed_times} 次</span>
         {plan.max_times && <span> / 上限 {plan.max_times}</span>}
       </div>
       {plan.purpose && (
-        <div className="text-xs text-forest-600 bg-cream-50 rounded p-2 mb-3 line-clamp-2">
+        <div className="text-xs text-forest-600 dark:text-cream-300 bg-cream-50 dark:bg-forest-800/50 rounded p-2 mb-3 line-clamp-2">
           🎯 {plan.purpose}
         </div>
       )}
 
       {/* 操作按钮 */}
-      <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-2 border-t border-forest-100">
+      <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-2 border-t border-forest-100 dark:border-forest-800">
         <button
           type="button"
           onClick={onStart}
@@ -606,13 +606,13 @@ function OverdueRow({
     <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-forest-800">{plan.resume?.name || '—'}</span>
+          <span className="font-medium text-forest-800 dark:text-cream-100">{plan.resume?.name || '—'}</span>
           <RiskBadge risk={plan.resume?.risk_warning} />
         </div>
-        <span className="text-xs px-2 py-0.5 rounded bg-risk-100 text-risk-700">
+        <span className="text-xs px-2 py-0.5 rounded bg-risk-100 dark:bg-risk-900/20 text-risk-700 dark:text-risk-400">
           逾期 {overdueDays} 天
         </span>
-        <span className="text-xs text-forest-500 truncate">
+        <span className="text-xs text-forest-500 dark:text-cream-300 truncate">
           应回访：{dayjs(plan.next_remind_date).format('YYYY-MM-DD')}
         </span>
       </div>
@@ -636,7 +636,7 @@ function OverdueRow({
         <button
           type="button"
           onClick={onStop}
-          className="btn-ghost text-xs text-risk-600 hover:bg-risk-50 flex items-center gap-1 px-2 py-1"
+          className="btn-ghost text-xs text-risk-600 dark:text-risk-400 hover:bg-risk-50 dark:hover:bg-risk-900/20 flex items-center gap-1 px-2 py-1"
         >
           <Square className="w-3 h-3" />
           停止

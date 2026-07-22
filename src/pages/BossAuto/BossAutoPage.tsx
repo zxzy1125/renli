@@ -155,8 +155,8 @@ export default function BossAutoPage() {
       {/* 标题 */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-serif font-semibold">Boss 自动化</h1>
-          <p className="text-sm text-forest-600 mt-1">
+          <h1 className="text-2xl font-serif font-semibold dark:text-cream-100">Boss 自动化</h1>
+          <p className="text-sm text-forest-600 dark:text-cream-300 mt-1">
             自动打招呼 / 复聊 / 智能沟通 · 防封号策略已启用
           </p>
         </div>
@@ -189,7 +189,7 @@ export default function BossAutoPage() {
                   {isAgentOnline ? 'Agent 在线' : 'Agent 离线'}
                 </Badge>
                 {status?.agentUser && (
-                  <span className="text-xs text-forest-500">
+                  <span className="text-xs text-forest-500 dark:text-forest-400">
                     账号：{status.agentUser.name}
                   </span>
                 )}
@@ -200,12 +200,12 @@ export default function BossAutoPage() {
                   Chrome {isConnected ? '已连接' : '未连接'}
                 </Badge>
                 {status?.bossUser && (
-                  <span className="text-sm text-forest-700">
+                  <span className="text-sm text-forest-700 dark:text-cream-200">
                     Boss 用户：<strong>{status.bossUser.name}</strong>（UID: {status.bossUser.uid}）
                   </span>
                 )}
               </div>
-              <p className="text-xs text-forest-500">{status?.message}</p>
+              <p className="text-xs text-forest-500 dark:text-forest-400">{status?.message}</p>
             </div>
             <div className="flex gap-2">
               {!isConnected ? (
@@ -222,17 +222,17 @@ export default function BossAutoPage() {
             </div>
           </div>
           {!isAgentOnline && (
-            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded text-xs text-red-800">
+            <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs text-red-800 dark:text-red-400">
               <AlertCircle className="w-4 h-4 inline mr-1" />
               本地 Agent 未连接。请在本地电脑：
               <ol className="list-decimal ml-5 mt-1 space-y-0.5">
-                <li>双击 <code className="px-1 bg-red-100 rounded">chrome-debug.bat</code> 启动 Chrome 并登录 Boss 直聘</li>
-                <li>双击 <code className="px-1 bg-red-100 rounded">agent/start.bat</code> 启动本地 Agent</li>
+                <li>双击 <code className="px-1 bg-red-100 dark:bg-red-900/40 rounded">chrome-debug.bat</code> 启动 Chrome 并登录 Boss 直聘</li>
+                <li>双击 <code className="px-1 bg-red-100 dark:bg-red-900/40 rounded">agent/start.bat</code> 启动本地 Agent</li>
               </ol>
             </div>
           )}
           {isAgentOnline && !isConnected && (
-            <div className="mt-3 p-3 bg-ochre-50 border border-ochre-200 rounded text-xs text-forest-700">
+            <div className="mt-3 p-3 bg-ochre-50 dark:bg-ochre-900/20 border border-ochre-200 dark:border-ochre-800 rounded text-xs text-forest-700 dark:text-cream-200">
               <AlertCircle className="w-4 h-4 inline mr-1" />
               Agent 已在线，但 Chrome 未连接。请确保已运行 chrome-debug.bat 启动 Chrome 并登录 Boss，然后点"连接 Chrome"
             </div>
@@ -269,14 +269,14 @@ export default function BossAutoPage() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
-              <label className="text-xs text-forest-600 mb-1 block">城市 Code</label>
+              <label className="text-xs text-forest-600 dark:text-cream-300 mb-1 block">城市 Code</label>
               <Input
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 placeholder="如 101010100（北京）"
                 disabled={isRunning}
               />
-              <p className="text-[10px] text-forest-400 mt-1">
+              <p className="text-[10px] text-forest-400 dark:text-forest-500 mt-1">
                 <a
                   href="https://www.zhipin.com/web/chat/recommend"
                   target="_blank"
@@ -288,7 +288,7 @@ export default function BossAutoPage() {
               </p>
             </div>
             <div>
-              <label className="text-xs text-forest-600 mb-1 block">本次上限</label>
+              <label className="text-xs text-forest-600 dark:text-cream-300 mb-1 block">本次上限</label>
               <Input
                 type="number"
                 value={maxCount}
@@ -299,7 +299,7 @@ export default function BossAutoPage() {
               />
             </div>
             <div>
-              <label className="text-xs text-forest-600 mb-1 block">浏览概率</label>
+              <label className="text-xs text-forest-600 dark:text-cream-300 mb-1 block">浏览概率</label>
               <Input
                 type="number"
                 value={browseRatio}
@@ -312,7 +312,7 @@ export default function BossAutoPage() {
             </div>
           </div>
           <div>
-            <label className="text-xs text-forest-600 mb-1 block">
+            <label className="text-xs text-forest-600 dark:text-cream-300 mb-1 block">
               自定义打招呼话术（留空用 Boss 默认）
             </label>
             <Textarea
@@ -343,7 +343,7 @@ export default function BossAutoPage() {
 
           {/* 任务进度 */}
           {taskStatus?.result && (
-            <div className="mt-3 p-3 bg-forest-50 rounded border border-forest-200 text-sm">
+            <div className="mt-3 p-3 bg-forest-50 dark:bg-forest-800/50 rounded border border-forest-200 dark:border-forest-700 text-sm">
               <div className="flex flex-wrap gap-4">
                 <span>总操作：<strong>{taskStatus.result.total}</strong></span>
                 <span className="text-green-700">成功：{taskStatus.result.success}</span>
@@ -373,13 +373,13 @@ export default function BossAutoPage() {
               {logs.map((log) => (
                 <div
                   key={log.id}
-                  className="flex items-center justify-between py-2 px-3 bg-forest-50 rounded text-sm"
+                  className="flex items-center justify-between py-2 px-3 bg-forest-50 dark:bg-forest-800/50 rounded text-sm"
                 >
                   <div className="flex items-center gap-3">
                     <Badge variant="default">{log.action}</Badge>
-                    <span className="text-forest-700">{log.target || '-'}</span>
+                    <span className="text-forest-700 dark:text-cream-200">{log.target || '-'}</span>
                   </div>
-                  <span className="text-xs text-forest-400">{log.created_at}</span>
+                  <span className="text-xs text-forest-400 dark:text-forest-500">{log.created_at}</span>
                 </div>
               ))}
             </div>
@@ -417,10 +417,10 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="bg-white border border-forest-200 rounded-lg p-3 flex items-center gap-3">
+    <div className="bg-white dark:bg-forest-900 border border-forest-200 dark:border-forest-700 rounded-lg p-3 flex items-center gap-3">
       <Icon className={`w-6 h-6 ${color}`} />
       <div>
-        <div className="text-xs text-forest-500">{label}</div>
+        <div className="text-xs text-forest-500 dark:text-forest-400">{label}</div>
         <div className="text-lg font-semibold">{value}</div>
       </div>
     </div>

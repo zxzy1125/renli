@@ -12,6 +12,7 @@ import {
   MessageCircle,
   Settings,
   Bot,
+  Bell,
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -42,6 +43,7 @@ const adminMenus: MenuItem[] = [
   { to: '/conversions', label: '转化跟踪', icon: TrendingUp },
   { to: '/boss-auto', label: 'Boss自动化', icon: Bot },
   { to: '/conflicts', label: '撞单管理', icon: AlertTriangle },
+  { to: '/notifications', label: '消息通知', icon: Bell },
   { to: '/settings', label: '设置', icon: Settings },
 ];
 
@@ -55,6 +57,7 @@ const consultantMenus: MenuItem[] = [
   { to: '/followups', label: '跟进管理', icon: CalendarClock },
   { to: '/conversions', label: '转化跟踪', icon: TrendingUp },
   { to: '/boss-auto', label: 'Boss自动化', icon: Bot },
+  { to: '/notifications', label: '消息通知', icon: Bell },
   { to: '/settings', label: '设置', icon: Settings },
 ];
 
@@ -73,12 +76,12 @@ export default function Sidebar({ role, open, onClose }: SidebarProps) {
       )}
       <aside
         className={cn(
-          'fixed lg:static inset-y-0 left-0 z-50 w-[220px] bg-forest-800 text-cream-50 flex flex-col transition-transform duration-200',
+          'fixed lg:static inset-y-0 left-0 z-50 w-[220px] bg-forest-800 text-cream-50 flex flex-col transition-transform duration-200 dark:bg-forest-950 dark:border-r dark:border-forest-800',
           open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         {/* Logo 区 */}
-        <div className="flex items-center justify-between px-5 h-14 border-b border-forest-700">
+        <div className="flex items-center justify-between px-5 h-14 border-b border-forest-700 dark:border-forest-800">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-ochre-300 to-ochre-500 flex items-center justify-center font-serif font-bold text-forest-900">
               代
@@ -109,7 +112,7 @@ export default function Sidebar({ role, open, onClose }: SidebarProps) {
                       cn(
                         'flex items-center gap-3 px-5 py-2.5 text-sm transition-colors',
                         isActive
-                          ? 'bg-forest-700 text-cream-50 border-l-2 border-ochre-300'
+                          ? 'bg-forest-700 text-cream-50 border-l-2 border-ochre-300 dark:bg-forest-800'
                           : 'text-cream-50/80 hover:bg-forest-700/50 hover:text-cream-50'
                       )
                     }
@@ -129,7 +132,7 @@ export default function Sidebar({ role, open, onClose }: SidebarProps) {
         </nav>
 
         {/* 底部版本信息 */}
-        <div className="px-5 py-3 text-xs text-cream-50/40 border-t border-forest-700">
+        <div className="px-5 py-3 text-xs text-cream-50/40 border-t border-forest-700 dark:border-forest-800">
           v{CURRENT_VERSION} · 公测版
         </div>
       </aside>

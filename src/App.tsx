@@ -21,6 +21,7 @@ import ResumeForm from '@/pages/Resumes/ResumeForm';
 
 import ClientList from '@/pages/Clients/ClientList';
 import ConflictList from '@/pages/Conflicts/ConflictList';
+import NotificationList from '@/pages/Notifications/NotificationList';
 
 import MatchList from '@/pages/Matches/MatchList';
 import MatchNew from '@/pages/Matches/MatchNew';
@@ -115,6 +116,9 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
+            {/* 消息通知 */}
+            <Route path="/notifications" element={<NotificationList />} />
 
             {/* 设置 */}
             <Route path="/settings" element={<Settings />}>

@@ -1,8 +1,8 @@
 // 职位库列表
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Plus, Eye, Pencil, Trash2, MapPin, Users, Wallet, Building2 } from 'lucide-react';
-import { positionsApi, clientsApi } from '@/lib/api';
+import { Search, Plus, Eye, Pencil, Trash2, MapPin, Users, Wallet, Building2, Download, FileSpreadsheet, FileText, ChevronDown } from 'lucide-react';
+import { positionsApi, clientsApi, reportsApi } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import type { Client, Position } from '@/types';
 import Loading from '@/components/Loading';
@@ -20,7 +20,6 @@ export default function PositionList() {
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === 'admin';
 
-  // 使用通用列表 Hook
   const {
     list, total, page, setPage, pageSize,
     keyword, setKeyword, statusFilter, setStatusFilter,
@@ -30,7 +29,6 @@ export default function PositionList() {
     defaultPageSize: PAGE_SIZE,
   });
 
-  // 客户公司列表
   const [clients, setClients] = useState<Client[]>([]);
   const clientMap = new Map(clients.map((c) => [c.id, c.name]));
 
@@ -38,30 +36,78 @@ export default function PositionList() {
     clientsApi.list().then(setClients).catch(() => {});
   }, []);
 
-  // 使用通用删除 Hook
   const { toDelete, setToDelete, deleting, handleDelete } = useDeleteHandler<Position>(
     positionsApi.remove,
     fetchList
   );
+
+  // 导出下拉
+  const [showExport, setShowExport] = useState(false);
+  const handleExport = async (format: 'xlsx' | 'pdf') => {
+    setShowExport(false);
+    try {
+      const blob = await reportsApi.export('positions', format);
+      const url = URL.createObjectURL(blob as any);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `职位库.${format === 'xlsx' ? 'xlsx' : 'pdf'}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // ignore
+    }
+  };
 
   return (
     <div className="px-6 py-6 max-w-7xl mx-auto">
       {/* 页面标题 */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="font-serif text-2xl font-bold text-forest-800">职位库</h1>
-          <p className="text-sm text-forest-500 mt-1">团队共享 · 全员可见</p>
+          <h1 className="font-serif text-2xl font-bold text-forest-800 dark:text-cream-100">职位库</h1>
+          <p className="text-sm text-forest-500 mt-1 dark:text-forest-400">团队共享 · 全员可见</p>
         </div>
-        {isAdmin && (
-          <button
-            type="button"
-            onClick={() => navigate('/positions/new')}
-            className="btn-primary flex items-center gap-1"
-          >
-            <Plus className="w-4 h-4" />
-            新建职位
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* 导出下拉 */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowExport((v) => !v)}
+              className="btn-secondary flex items-center gap-1 text-sm"
+            >
+              <Download className="w-4 h-4" />
+              导出
+              <ChevronDown className="w-3 h-3" />
+            </button>
+            {showExport && (
+              <div className="absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-forest-100 py-1 z-20 dark:bg-forest-800 dark:border-forest-700">
+                <button
+                  onClick={() => handleExport('xlsx')}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-forest-700 hover:bg-forest-50 dark:text-cream-200 dark:hover:bg-forest-700"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-forest-500" />
+                  Excel (.xlsx)
+                </button>
+                <button
+                  onClick={() => handleExport('pdf')}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-forest-700 hover:bg-forest-50 dark:text-cream-200 dark:hover:bg-forest-700"
+                >
+                  <FileText className="w-4 h-4 text-risk-500" />
+                  PDF (.pdf)
+                </button>
+              </div>
+            )}
+          </div>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => navigate('/positions/new')}
+              className="btn-primary flex items-center gap-1"
+            >
+              <Plus className="w-4 h-4" />
+              新建职位
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 搜索栏 */}
@@ -98,7 +144,7 @@ export default function PositionList() {
 
       {/* 错误提示 */}
       {error && (
-        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700 dark:bg-risk-900/20 dark:border-risk-800 dark:text-risk-400">
           {error}
         </div>
       )}
@@ -156,12 +202,12 @@ function PositionCard({ position, clientName, isAdmin, onDelete }: PositionCardP
     .filter(Boolean)
     .join(' - ');
   return (
-    <div className="card p-4 hover:shadow-cardHover transition-shadow flex flex-col">
+    <div className="card p-4 hover:shadow-cardHover transition-shadow flex flex-col dark:hover:shadow-none">
       {/* 标题行 */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <Link
           to={`/positions/${position.id}`}
-          className="font-serif text-base font-semibold text-forest-800 hover:text-forest-600 line-clamp-2 flex-1"
+          className="font-serif text-base font-semibold text-forest-800 hover:text-forest-600 dark:text-cream-100 dark:hover:text-cream-200 line-clamp-2 flex-1"
         >
           {position.title}
         </Link>
@@ -170,35 +216,35 @@ function PositionCard({ position, clientName, isAdmin, onDelete }: PositionCardP
 
       {/* 客户公司 */}
       {clientName && (
-        <div className="flex items-center gap-1 text-sm text-forest-600 mb-2">
-          <Building2 className="w-3.5 h-3.5 text-forest-400" />
+        <div className="flex items-center gap-1 text-sm text-forest-600 dark:text-cream-300 mb-2">
+          <Building2 className="w-3.5 h-3.5 text-forest-400 dark:text-forest-500" />
           <span>{clientName}</span>
-          {position.department ? <span className="text-forest-400">· {position.department}</span> : null}
+          {position.department ? <span className="text-forest-400 dark:text-forest-500">· {position.department}</span> : null}
         </div>
       )}
 
       {/* 信息 */}
-      <div className="grid grid-cols-2 gap-2 text-xs text-forest-600 mb-3">
+      <div className="grid grid-cols-2 gap-2 text-xs text-forest-600 dark:text-cream-300 mb-3">
         {position.location && (
           <div className="flex items-center gap-1">
-            <MapPin className="w-3 h-3 text-forest-400" />
+            <MapPin className="w-3 h-3 text-forest-400 dark:text-forest-500" />
             <span>{position.location}</span>
           </div>
         )}
         {position.headcount ? (
           <div className="flex items-center gap-1">
-            <Users className="w-3 h-3 text-forest-400" />
+            <Users className="w-3 h-3 text-forest-400 dark:text-forest-500" />
             <span>{position.headcount} 人</span>
           </div>
         ) : null}
         {salary && (
           <div className="flex items-center gap-1">
-            <Wallet className="w-3 h-3 text-forest-400" />
+            <Wallet className="w-3 h-3 text-forest-400 dark:text-forest-500" />
             <span className="font-mono">{salary}</span>
           </div>
         )}
         {position.job_type && (
-          <div className="text-forest-500">
+          <div className="text-forest-500 dark:text-forest-400">
             类型：{getOptionLabel(JOB_TYPE_OPTIONS, position.job_type)}
           </div>
         )}
@@ -210,7 +256,7 @@ function PositionCard({ position, clientName, isAdmin, onDelete }: PositionCardP
           {position.keywords.slice(0, 4).map((k, i) => (
             <span
               key={i}
-              className="px-1.5 py-0.5 rounded text-xs bg-ochre-50 text-ochre-700 border border-ochre-100"
+              className="px-1.5 py-0.5 rounded text-xs bg-ochre-50 text-ochre-700 border border-ochre-100 dark:bg-ochre-900/20 dark:text-ochre-400 dark:border-ochre-800"
             >
               {k}
             </span>
@@ -222,7 +268,7 @@ function PositionCard({ position, clientName, isAdmin, onDelete }: PositionCardP
       )}
 
       {/* 操作 */}
-      <div className="mt-auto flex items-center justify-end gap-1 pt-2 border-t border-forest-50">
+      <div className="mt-auto flex items-center justify-end gap-1 pt-2 border-t border-forest-50 dark:border-forest-800">
         <Link
           to={`/positions/${position.id}`}
           className="btn-ghost text-xs px-2 py-1 flex items-center gap-1"
@@ -242,7 +288,7 @@ function PositionCard({ position, clientName, isAdmin, onDelete }: PositionCardP
             <button
               type="button"
               onClick={onDelete}
-              className="text-xs px-2 py-1 rounded text-risk-600 hover:bg-risk-50 flex items-center gap-1"
+              className="text-xs px-2 py-1 rounded text-risk-600 hover:bg-risk-50 dark:hover:bg-risk-900/20 flex items-center gap-1"
             >
               <Trash2 className="w-3.5 h-3.5" />
               删除
@@ -258,9 +304,9 @@ function EmptyState() {
   return (
     <div className="card p-12">
       <Empty />
-      <p className="text-center text-sm text-forest-500 mt-2">
+      <p className="text-center text-sm text-forest-500 dark:text-forest-400 mt-2">
         暂无职位，{''}
-        <Link to="/positions/new" className="text-forest-600 underline">
+        <Link to="/positions/new" className="text-forest-600 dark:text-forest-300 underline">
           立即新建
         </Link>
       </p>

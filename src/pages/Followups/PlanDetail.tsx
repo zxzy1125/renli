@@ -166,7 +166,7 @@ export default function PlanDetail() {
   if (error && !plan) {
     return (
       <div className="px-6 py-6 max-w-5xl mx-auto">
-        <div className="px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700 mb-4">
+        <div className="px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400 mb-4">
           {error}
         </div>
         <Link to="/followups" className="btn-ghost inline-flex items-center gap-1">
@@ -178,7 +178,7 @@ export default function PlanDetail() {
   if (!plan) {
     return (
       <div className="px-6 py-6 max-w-5xl mx-auto">
-        <p className="text-sm text-forest-500">回访计划不存在</p>
+        <p className="text-sm text-forest-500 dark:text-forest-400">回访计划不存在</p>
         <Link to="/followups" className="btn-ghost inline-flex items-center gap-1 mt-2">
           <ArrowLeft className="w-4 h-4" /> 返回跟进管理
         </Link>
@@ -196,7 +196,7 @@ export default function PlanDetail() {
       </div>
 
       {error && (
-        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
           {error}
         </div>
       )}
@@ -205,7 +205,7 @@ export default function PlanDetail() {
       <div className="card p-6 mb-4">
         <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
           <div>
-            <h1 className="font-serif text-2xl font-bold text-forest-800 flex items-center gap-3">
+            <h1 className="font-serif text-2xl font-bold text-forest-800 dark:text-cream-100 flex items-center gap-3">
               {resume?.name || '—'}
               <span
                 className={`badge text-sm px-2.5 py-1 ${PLAN_STATUS_TONE_CLASS[plan.status]}`}
@@ -213,16 +213,16 @@ export default function PlanDetail() {
                 {PLAN_STATUS_LABELS[plan.status]}
               </span>
             </h1>
-            <div className="flex items-center gap-2 mt-1 text-sm text-forest-500">
-              <span className="font-medium text-forest-700">{plan.title}</span>
-              <span className="text-forest-300">·</span>
-              <span className="badge bg-cream-100 text-forest-700">
+            <div className="flex items-center gap-2 mt-1 text-sm text-forest-500 dark:text-forest-400">
+              <span className="font-medium text-forest-700 dark:text-cream-200">{plan.title}</span>
+              <span className="text-forest-300 dark:text-forest-600">·</span>
+              <span className="badge bg-cream-100 dark:bg-forest-800 text-forest-700 dark:text-cream-200">
                 {PLAN_TYPE_LABELS[plan.type]}
               </span>
-              <span className="text-forest-300">·</span>
+              <span className="text-forest-300 dark:text-forest-600">·</span>
               <Calendar className="w-3.5 h-3.5" />
               <span>下次回访：{dayjs(plan.next_remind_date).format('YYYY-MM-DD')}</span>
-              <span className="text-forest-300">·</span>
+              <span className="text-forest-300 dark:text-forest-600">·</span>
               <span>
                 已回访 {plan.completed_times}
                 {plan.max_times ? ` / ${plan.max_times}` : ''} 次
@@ -272,8 +272,8 @@ export default function PlanDetail() {
 
         {/* 计划目的 */}
         {plan.purpose && (
-          <div className="text-sm text-forest-700 bg-cream-50 rounded-lg p-3 border border-forest-100">
-            <span className="text-forest-500 font-medium">回访目的：</span>
+          <div className="text-sm text-forest-700 dark:text-cream-200 bg-cream-50 dark:bg-forest-800 rounded-lg p-3 border border-forest-100 dark:border-forest-800">
+            <span className="text-forest-500 dark:text-forest-400 font-medium">回访目的：</span>
             {plan.purpose}
           </div>
         )}
@@ -284,7 +284,7 @@ export default function PlanDetail() {
         <div className="space-y-4">
           {resume && (
             <section className="card p-5">
-              <h2 className="font-serif text-lg font-semibold text-forest-800 mb-3">求职者</h2>
+              <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-3">求职者</h2>
               <RiskBanner risk={resume.risk_warning} className="mb-3" />
               <dl className="space-y-2 text-sm">
                 <InfoRow icon={Building2} label="现公司" value={resume.current_company ?? undefined} />
@@ -296,7 +296,7 @@ export default function PlanDetail() {
               </dl>
               <Link
                 to={`/resumes/${resume.id}`}
-                className="text-xs text-forest-600 hover:text-forest-800 mt-3 inline-flex items-center gap-1"
+                className="text-xs text-forest-600 dark:text-cream-300 hover:text-forest-800 mt-3 inline-flex items-center gap-1"
               >
                 查看简历详情 →
               </Link>
@@ -305,24 +305,24 @@ export default function PlanDetail() {
 
           {/* 关联职位 */}
           <section className="card p-5">
-            <h2 className="font-serif text-lg font-semibold text-forest-800 mb-3">
+            <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-3">
               关联职位 ({positions.length})
             </h2>
             {positions.length === 0 ? (
-              <p className="text-sm text-forest-400">未关联职位</p>
+              <p className="text-sm text-forest-400 dark:text-forest-500">未关联职位</p>
             ) : (
               <ul className="space-y-2">
                 {positions.map((p) => (
                   <li key={p.id}>
                     <Link
                       to={`/positions/${p.id}`}
-                      className="block p-2.5 rounded-lg border border-forest-100 hover:bg-cream-50 hover:border-forest-300 transition-colors"
+                      className="block p-2.5 rounded-lg border border-forest-100 dark:border-forest-800 hover:bg-cream-50 dark:hover:bg-forest-800/50 hover:border-forest-300 transition-colors"
                     >
-                      <div className="flex items-center gap-1.5 text-sm font-medium text-forest-800">
-                        <Briefcase className="w-3.5 h-3.5 text-forest-500" />
+                      <div className="flex items-center gap-1.5 text-sm font-medium text-forest-800 dark:text-cream-100">
+                        <Briefcase className="w-3.5 h-3.5 text-forest-500 dark:text-forest-400" />
                         {p.title}
                       </div>
-                      <div className="text-xs text-forest-500 mt-0.5">
+                      <div className="text-xs text-forest-500 dark:text-forest-400 mt-0.5">
                         {p.department || '—'}
                         {p.location && <span> · {p.location}</span>}
                       </div>
@@ -335,7 +335,7 @@ export default function PlanDetail() {
 
           {/* 计划配置 */}
           <section className="card p-5">
-            <h2 className="font-serif text-lg font-semibold text-forest-800 mb-3">计划配置</h2>
+            <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-3">计划配置</h2>
             <dl className="space-y-2 text-sm">
               <InfoRow label="计划类型" value={PLAN_TYPE_LABELS[plan.type]} />
               {plan.type === 'once' && plan.remind_date && (
@@ -365,7 +365,7 @@ export default function PlanDetail() {
         <div className="lg:col-span-2">
           <section className="card p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-serif text-lg font-semibold text-forest-800">
+              <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100">
                 回访历史 ({records.length})
               </h2>
               {plan.status === 'active' && (
@@ -381,14 +381,14 @@ export default function PlanDetail() {
             </div>
 
             {records.length === 0 ? (
-              <div className="py-10 text-center text-sm text-forest-400">
-                <Clock className="w-8 h-8 mx-auto mb-2 text-forest-300" />
+              <div className="py-10 text-center text-sm text-forest-400 dark:text-forest-500">
+                <Clock className="w-8 h-8 mx-auto mb-2 text-forest-300 dark:text-forest-600" />
                 还没有回访记录，点击「开始回访」开始第一次跟进
               </div>
             ) : (
               <div className="relative">
                 {/* 时间轴竖线 */}
-                <div className="absolute left-3 top-2 bottom-2 w-px bg-forest-200" />
+                <div className="absolute left-3 top-2 bottom-2 w-px bg-forest-200 dark:bg-forest-700" />
                 <ul className="space-y-4">
                   {records.map((rec) => (
                     <TimelineItem
@@ -453,18 +453,18 @@ export default function PlanDetail() {
         {viewingRecord && analysisLoadingId === viewingRecord.id && (
           <div className="py-10 text-center">
             <Sparkles className="w-10 h-10 mx-auto mb-3 text-ochre-500 animate-pulse" />
-            <div className="flex items-center justify-center gap-2 text-forest-700 font-medium">
+            <div className="flex items-center justify-center gap-2 text-forest-700 dark:text-cream-200 font-medium">
               <Loader2 className="w-4 h-4 animate-spin" />
               AI 正在深度分析...
             </div>
-            <p className="text-xs text-forest-400 mt-2">预计 5-15 秒</p>
+            <p className="text-xs text-forest-400 dark:text-forest-500 mt-2">预计 5-15 秒</p>
           </div>
         )}
 
         {viewingRecord && analysisErrorId === viewingRecord.id && (
           <div className="py-8 text-center">
             <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-risk-500" />
-            <p className="text-sm text-risk-700">分析生成失败，请稍后重试</p>
+            <p className="text-sm text-risk-700 dark:text-risk-400">分析生成失败，请稍后重试</p>
           </div>
         )}
 
@@ -493,17 +493,17 @@ function TimelineItem({
   return (
     <li className="relative pl-10">
       {/* 时间轴节点 */}
-      <div className="absolute left-1.5 top-1 w-3 h-3 rounded-full bg-ochre-400 border-2 border-white" />
+      <div className="absolute left-1.5 top-1 w-3 h-3 rounded-full bg-ochre-400 border-2 border-white dark:border-forest-900" />
 
-      <div className="rounded-lg border border-forest-100 bg-white p-3">
+      <div className="rounded-lg border border-forest-100 dark:border-forest-800 bg-white dark:bg-forest-900 p-3">
         {/* 时间 + 渠道 + 结果 */}
         <div className="flex flex-wrap items-center gap-2 mb-2">
-          <span className="text-xs text-forest-500 flex items-center gap-1">
+          <span className="text-xs text-forest-500 dark:text-forest-400 flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             {dayjs(record.followup_date).format('YYYY-MM-DD')}
           </span>
           {record.contact_channel && (
-            <span className="badge bg-cream-100 text-forest-700">
+            <span className="badge bg-cream-100 dark:bg-forest-800 text-forest-700 dark:text-cream-200">
               {CHANNEL_LABELS[record.contact_channel]}
             </span>
           )}
@@ -516,7 +516,7 @@ function TimelineItem({
 
         {/* 回访记录 */}
         {record.note && (
-          <p className="text-sm text-forest-700 whitespace-pre-wrap leading-relaxed mb-2">
+          <p className="text-sm text-forest-700 dark:text-cream-200 whitespace-pre-wrap leading-relaxed mb-2">
             {record.note}
           </p>
         )}
@@ -524,12 +524,12 @@ function TimelineItem({
         {/* 介绍了哪些职位 */}
         {introduced.length > 0 && (
           <div className="mb-2">
-            <div className="text-xs text-forest-500 mb-1">本次介绍了：</div>
+            <div className="text-xs text-forest-500 dark:text-forest-400 mb-1">本次介绍了：</div>
             <div className="flex flex-wrap gap-1">
               {introduced.map((p) => (
                 <span
                   key={p.id}
-                  className="px-2 py-0.5 rounded text-xs bg-forest-50 text-forest-700 border border-forest-200"
+                  className="px-2 py-0.5 rounded text-xs bg-forest-50 dark:bg-forest-800/50 text-forest-700 dark:text-cream-200 border border-forest-200 dark:border-forest-700"
                 >
                   {p.title}
                 </span>
@@ -540,14 +540,14 @@ function TimelineItem({
 
         {/* 下一步动作 */}
         {record.next_action && (
-          <div className="text-xs text-forest-500 mb-2">
-            <span className="text-forest-400">下一步：</span>
+          <div className="text-xs text-forest-500 dark:text-forest-400 mb-2">
+            <span className="text-forest-400 dark:text-forest-500">下一步：</span>
             {record.next_action}
           </div>
         )}
 
         {/* 操作 */}
-        <div className="flex justify-end pt-1 border-t border-forest-100">
+        <div className="flex justify-end pt-1 border-t border-forest-100 dark:border-forest-800">
           <button
             type="button"
             onClick={onViewAnalysis}
@@ -573,9 +573,9 @@ function AnalysisContent({
   return (
     <div className="space-y-3">
       {/* 原始记录 */}
-      <div className="rounded-lg border border-forest-100 p-3">
-        <div className="text-xs font-medium text-forest-600 mb-1">📋 员工回访记录（原始）</div>
-        <p className="text-sm text-forest-700 whitespace-pre-wrap leading-relaxed">
+      <div className="rounded-lg border border-forest-100 dark:border-forest-800 p-3">
+        <div className="text-xs font-medium text-forest-600 dark:text-cream-300 mb-1">📋 员工回访记录（原始）</div>
+        <p className="text-sm text-forest-700 dark:text-cream-200 whitespace-pre-wrap leading-relaxed">
           {record.note || '（无记录）'}
         </p>
       </div>
@@ -590,15 +590,15 @@ function AnalysisContent({
             {analysis.concerns.map((c, i) => (
               <div key={i} className="text-sm">
                 <div className="flex items-start justify-between gap-2">
-                  <span className="font-medium text-forest-800">
+                  <span className="font-medium text-forest-800 dark:text-cream-100">
                     顾虑{i + 1}：{c.concern}
                   </span>
                   <span className={`badge ${strengthToneClass(c.strength)} flex-shrink-0`}>
                     {c.strength}
                   </span>
                 </div>
-                <p className="text-forest-700 mt-1 leading-relaxed">
-                  <span className="text-forest-500">分析：</span>
+                <p className="text-forest-700 dark:text-cream-200 mt-1 leading-relaxed">
+                  <span className="text-forest-500 dark:text-forest-400">分析：</span>
                   {c.analysis}
                 </p>
               </div>
@@ -617,7 +617,7 @@ function AnalysisContent({
             {analysis.strategies.map((s, i) => (
               <div key={i} className="text-sm">
                 <div className="flex items-start justify-between gap-2">
-                  <span className="font-medium text-forest-800">
+                  <span className="font-medium text-forest-800 dark:text-cream-100">
                     策略{i + 1}：{s.strategy}
                   </span>
                   <span className={`badge ${priorityToneClass(s.priority)} flex-shrink-0`}>
@@ -625,10 +625,10 @@ function AnalysisContent({
                   </span>
                 </div>
                 {s.actions?.length > 0 && (
-                  <ul className="mt-1 space-y-0.5 text-forest-700">
+                  <ul className="mt-1 space-y-0.5 text-forest-700 dark:text-cream-200">
                     {s.actions.map((a, j) => (
                       <li key={j} className="flex items-start gap-1.5">
-                        <CheckCircle2 className="w-3 h-3 text-forest-500 mt-1 flex-shrink-0" />
+                        <CheckCircle2 className="w-3 h-3 text-forest-500 dark:text-forest-400 mt-1 flex-shrink-0" />
                         <span>{a}</span>
                       </li>
                     ))}
@@ -641,12 +641,12 @@ function AnalysisContent({
       )}
 
       {/* 转化概率更新 */}
-      <div className="rounded-lg border border-forest-100 p-3">
-        <div className="text-xs font-medium text-forest-600 mb-1 flex items-center gap-1">
+      <div className="rounded-lg border border-forest-100 dark:border-forest-800 p-3">
+        <div className="text-xs font-medium text-forest-600 dark:text-cream-300 mb-1 flex items-center gap-1">
           <TrendingUp className="w-3.5 h-3.5" /> 📊 转化可能性更新
         </div>
         <div className="flex items-baseline gap-3">
-          <span className="font-mono text-lg text-forest-500">
+          <span className="font-mono text-lg text-forest-500 dark:text-forest-400">
             {analysis.conversionProbability + (analysis.probabilityChange || 0)}%
           </span>
           <span>→</span>
@@ -669,8 +669,8 @@ function AnalysisContent({
           )}
         </div>
         {analysis.changeReason && (
-          <p className="text-sm text-forest-600 mt-1">
-            <span className="text-forest-500">原因：</span>
+          <p className="text-sm text-forest-600 dark:text-cream-300 mt-1">
+            <span className="text-forest-500 dark:text-forest-400">原因：</span>
             {analysis.changeReason}
           </p>
         )}
@@ -678,24 +678,24 @@ function AnalysisContent({
 
       {/* 下次回访建议 */}
       {analysis.nextFollowup && (
-        <div className="rounded-lg border border-forest-100 p-3">
-          <div className="text-xs font-medium text-forest-600 mb-1 flex items-center gap-1">
+        <div className="rounded-lg border border-forest-100 dark:border-forest-800 p-3">
+          <div className="text-xs font-medium text-forest-600 dark:text-cream-300 mb-1 flex items-center gap-1">
             <Calendar className="w-3.5 h-3.5" /> 📅 下次回访建议
           </div>
-          <div className="text-sm text-forest-700 space-y-1">
+          <div className="text-sm text-forest-700 dark:text-cream-200 space-y-1">
             <div>
-              <span className="text-forest-500">时间：</span>
+              <span className="text-forest-500 dark:text-forest-400">时间：</span>
               {analysis.nextFollowup.suggestedDate
                 ? dayjs(analysis.nextFollowup.suggestedDate).format('YYYY-MM-DD')
                 : '—'}
             </div>
             <div>
-              <span className="text-forest-500">重点：</span>
+              <span className="text-forest-500 dark:text-forest-400">重点：</span>
               {analysis.nextFollowup.focus || '—'}
             </div>
             {analysis.nextFollowup.preparation?.length > 0 && (
               <div>
-                <span className="text-forest-500">准备物料：</span>
+                <span className="text-forest-500 dark:text-forest-400">准备物料：</span>
                 {analysis.nextFollowup.preparation.join('、')}
               </div>
             )}
@@ -719,12 +719,12 @@ function InfoRow({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <dt className="text-forest-500 flex items-center gap-1.5">
-        {Icon && <Icon className="w-3.5 h-3.5 text-forest-400" />}
+      <dt className="text-forest-500 dark:text-forest-400 flex items-center gap-1.5">
+        {Icon && <Icon className="w-3.5 h-3.5 text-forest-400 dark:text-forest-500" />}
         {label}
       </dt>
-      <dd className={`text-forest-800 ${mono ? 'font-mono' : ''}`}>
-        {value || <span className="text-forest-300">—</span>}
+      <dd className={`text-forest-800 dark:text-cream-100 ${mono ? 'font-mono' : ''}`}>
+        {value || <span className="text-forest-300 dark:text-forest-600">—</span>}
       </dd>
     </div>
   );

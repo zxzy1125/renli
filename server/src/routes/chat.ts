@@ -17,6 +17,7 @@ import {
 } from '../repositories/chatRepo.js';
 import { findPositionById } from '../repositories/positionRepo.js';
 import { findResumeById } from '../repositories/resumeRepo.js';
+import { listRecords as listFollowupRecords } from '../repositories/followupRepo.js';
 import { callByPromptKey } from '../services/aiService.js';
 
 export const chatRouter = Router();
@@ -213,6 +214,11 @@ chatRouter.post('/sessions/:id/analyze', asyncHandler(async (req, res) => {
   // 取出已有对话历史（不含本次最新消息，最新消息由前端传入）
   const history = listMessages(session.id);
 
+  // 获取最近回访记录（用于注入更多上下文给 AI）
+  const followups = session.resume_id
+    ? listFollowupRecords({ resume_id: session.resume_id }).slice(0, 3)
+    : [];
+
   // 先把求职者最新消息存入数据库
   const candidateMsg = createMessage({
     id: nanoid(),
@@ -239,7 +245,10 @@ chatRouter.post('/sessions/:id/analyze', asyncHandler(async (req, res) => {
       workExperience: resume.work_experience,
       commonGrounds: resume.common_grounds,
       expectedCity: resume.expected_city,
+      candidateStatus: resume.candidate_status,
+      expectedOnboardDate: resume.expected_onboard_date,
     } : {}),
+    recent_followups: JSON.stringify(followups.map(f => ({ result: f.result, channel: f.contact_channel, date: f.followup_date }))),
     chat_history: JSON.stringify(history.map(m => ({
       role: m.role,
       content: m.content,
@@ -293,6 +302,9 @@ chatRouter.post('/sessions/:id/regenerate', asyncHandler(async (req, res) => {
   const position = findPositionById(session.position_id);
   if (!position) throw new ApiError(404, '职位不存在');
   const resume = session.resume_id ? findResumeById(session.resume_id) : null;
+  const followups = session.resume_id
+    ? listFollowupsByResume(session.resume_id, 1, 3).data ?? []
+    : [];
 
   // 取出对话历史（排除要重新分析的这条消息）
   const allMessages = listMessages(session.id);
@@ -317,7 +329,10 @@ chatRouter.post('/sessions/:id/regenerate', asyncHandler(async (req, res) => {
       workExperience: resume.work_experience,
       commonGrounds: resume.common_grounds,
       expectedCity: resume.expected_city,
+      candidateStatus: resume.candidate_status,
+      expectedOnboardDate: resume.expected_onboard_date,
     } : {}),
+    recent_followups: JSON.stringify(followups.map(f => ({ result: f.result, channel: f.contact_channel, date: f.followup_date }))),
     chat_history: JSON.stringify(history.map(m => ({
       role: m.role,
       content: m.content,

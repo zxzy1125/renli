@@ -283,3 +283,58 @@ aiRouter.post('/generate-boss-posting', asyncHandler(async (req, res) => {
     res.json({ data: result });
   }
 }));
+
+// POST /api/ai/batch-match（批量 AI 匹配：一个职位 → 多份简历）
+aiRouter.post('/batch-match', asyncHandler(async (req, res) => {
+  const { position_id, resume_ids } = req.body ?? {};
+  if (!position_id) throw new ApiError(400, 'position_id 不能为空');
+  if (!Array.isArray(resume_ids) || resume_ids.length === 0) {
+    throw new ApiError(400, '请提供 resume_ids 数组（最多 50 条）');
+  }
+  if (resume_ids.length > 50) throw new ApiError(400, '单次最多匹配 50 份简历');
+
+  const position = findPositionById(String(position_id));
+  if (!position) throw new ApiError(404, '职位不存在');
+
+  const positionData = JSON.stringify({
+    title: position.title,
+    requirements: position.requirements,
+    jd: position.jd,
+    salaryMin: position.salary_min,
+    salaryMax: position.salary_max,
+    experience: position.experience,
+    education: position.education,
+    location: position.location,
+  });
+
+  const results = await Promise.allSettled(
+    resume_ids.map(async (rid: string) => {
+      const resume = findResumeById(String(rid));
+      if (!resume) return { resume_id: String(rid), error: '简历不存在' };
+      if (!isAdmin(req.user) && resume.owner_id !== req.user!.id) {
+        return { resume_id: String(rid), error: '无权对此简历进行分析' };
+      }
+      const result = await callByPromptKey('matchAnalysis', {
+        resume_data: JSON.stringify({
+          name: resume.name,
+          currentCompany: resume.current_company,
+          currentTitle: resume.current_title,
+          skills: resume.skills,
+          workExperience: resume.work_experience,
+          projects: resume.projects,
+          expectation: resume.expectation,
+          expectedCity: resume.expected_city,
+        }),
+        position_data: positionData,
+      });
+      return { resume_id: String(rid), resume_name: resume.name, data: result };
+    })
+  );
+
+  const data = results.map((r, i) => {
+    if (r.status === 'fulfilled') return r.value;
+    return { resume_id: String(resume_ids[i]), error: (r.reason as Error)?.message || '分析失败' };
+  });
+
+  res.json({ data });
+}));

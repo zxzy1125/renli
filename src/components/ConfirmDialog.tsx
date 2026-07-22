@@ -62,7 +62,7 @@ export default function ConfirmDialog({
         </>
       }
     >
-      <p className="text-sm text-forest-700">{message}</p>
+      <p className="text-sm text-forest-700 dark:text-cream-200">{message}</p>
       {requireNote && (
         <div className="mt-3">
           <label className="label">{noteLabel}</label>

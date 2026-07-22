@@ -149,8 +149,8 @@ export default function ClientList() {
     <div className="px-6 py-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="font-serif text-2xl font-bold text-forest-800">客户公司</h1>
-          <p className="text-sm text-forest-500 mt-1">团队共享 · 全员可见</p>
+          <h1 className="font-serif text-2xl font-bold text-forest-800 dark:text-cream-100">客户公司</h1>
+          <p className="text-sm text-forest-500 dark:text-forest-400 mt-1">团队共享 · 全员可见</p>
         </div>
         {isAdmin && (
           <button
@@ -171,7 +171,7 @@ export default function ClientList() {
         className="card p-4 mb-4 flex items-center gap-3"
       >
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-forest-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-forest-400 dark:text-forest-500" />
           <input
             type="text"
             className="input pl-9"
@@ -183,7 +183,7 @@ export default function ClientList() {
       </form>
 
       {error && (
-        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
           {error}
         </div>
       )}
@@ -194,8 +194,8 @@ export default function ClientList() {
         <div className="card p-12">
           <Empty />
           {isAdmin && (
-            <p className="text-center text-sm text-forest-500 mt-2">
-              <button type="button" onClick={handleOpenNew} className="text-forest-600 underline">
+            <p className="text-center text-sm text-forest-500 dark:text-forest-400 mt-2">
+              <button type="button" onClick={handleOpenNew} className="text-forest-600 dark:text-cream-300 underline">
                 立即新建客户公司
               </button>
             </p>
@@ -204,7 +204,7 @@ export default function ClientList() {
       ) : (
         <div className="card overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-cream-100 text-forest-700">
+            <thead className="bg-cream-100 dark:bg-forest-800 text-forest-700 dark:text-cream-200">
               <tr>
                 <th className="text-left px-4 py-2 font-medium">公司名称</th>
                 <th className="text-left px-4 py-2 font-medium">行业</th>
@@ -217,38 +217,38 @@ export default function ClientList() {
             </thead>
             <tbody>
               {filtered.map((c) => (
-                <tr key={c.id} className="border-t border-forest-50 hover:bg-cream-50">
-                  <td className="px-4 py-2 text-forest-800 font-medium">
+                <tr key={c.id} className="border-t border-forest-50 dark:border-forest-800 hover:bg-cream-50 dark:hover:bg-forest-800/50">
+                  <td className="px-4 py-2 text-forest-800 dark:text-cream-100 font-medium">
                     <div className="flex items-center gap-1.5">
-                      <Building2 className="w-3.5 h-3.5 text-forest-400" />
+                      <Building2 className="w-3.5 h-3.5 text-forest-400 dark:text-forest-500" />
                       {c.name}
                     </div>
                   </td>
-                  <td className="px-4 py-2 text-forest-600">{c.industry || '—'}</td>
-                  <td className="px-4 py-2 text-forest-600">
+                  <td className="px-4 py-2 text-forest-600 dark:text-cream-300">{c.industry || '—'}</td>
+                  <td className="px-4 py-2 text-forest-600 dark:text-cream-300">
                     {c.contact_name ? (
                       <span className="inline-flex items-center gap-1">
-                        <UserIcon className="w-3 h-3 text-forest-400" />
+                        <UserIcon className="w-3 h-3 text-forest-400 dark:text-forest-500" />
                         {c.contact_name}
                       </span>
                     ) : (
                       '—'
                     )}
                   </td>
-                  <td className="px-4 py-2 text-forest-600 font-mono">
+                  <td className="px-4 py-2 text-forest-600 dark:text-cream-300 font-mono">
                     {c.contact_phone ? (
                       <span className="inline-flex items-center gap-1">
-                        <Phone className="w-3 h-3 text-forest-400" />
+                        <Phone className="w-3 h-3 text-forest-400 dark:text-forest-500" />
                         {c.contact_phone}
                       </span>
                     ) : (
                       '—'
                     )}
                   </td>
-                  <td className="px-4 py-2 text-right font-mono text-forest-700">
+                  <td className="px-4 py-2 text-right font-mono text-forest-700 dark:text-cream-200">
                     {positionCount(c.id)}
                   </td>
-                  <td className="px-4 py-2 text-forest-500 text-xs">
+                  <td className="px-4 py-2 text-forest-500 dark:text-forest-400 text-xs">
                     {dayjs(c.created_at).format('YYYY-MM-DD')}
                   </td>
                   {isAdmin && (
@@ -264,7 +264,7 @@ export default function ClientList() {
                       <button
                         type="button"
                         onClick={() => setToDelete(c)}
-                        className="text-xs px-2 py-1 rounded text-risk-600 hover:bg-risk-50 inline-flex items-center gap-1 ml-1"
+                        className="text-xs px-2 py-1 rounded text-risk-600 hover:bg-risk-50 dark:hover:bg-risk-900/20 inline-flex items-center gap-1 ml-1"
                       >
                         <Trash2 className="w-3 h-3" />
                         删除
@@ -305,13 +305,13 @@ export default function ClientList() {
       >
         <form id="client-form" onSubmit={handleSave} className="space-y-3">
           {formError && (
-            <div className="px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+            <div className="px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
               {formError}
             </div>
           )}
           <div>
             <label className="label">
-              公司名称 <span className="text-risk-600">*</span>
+              公司名称 <span className="text-risk-600 dark:text-risk-400">*</span>
             </label>
             <input
               type="text"

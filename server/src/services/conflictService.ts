@@ -4,10 +4,32 @@ import {
   findResumesByPhoneHash,
   findResumesByEmail,
   findResumesByNameAndCompany,
+  findAllResumes,
 } from '../repositories/resumeRepo.js';
 import { createConflict } from '../repositories/conflictRepo.js';
 import type { ConflictCheckResult, ConflictMatchField } from '../types/index.js';
 import { logger } from '../utils/logger.js';
+
+// Levenshtein 距离（用于姓名模糊匹配）
+function levenshtein(a: string, b: string): number {
+  const m = a.length, n = b.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+  }
+  return dp[m][n];
+}
+
+// 去除空格和标点，统一为小写，用于模糊比对
+function normalizeForMatch(s: string): string {
+  return s.replace(/[\s\-_.·]/g, '').toLowerCase();
+}
 
 // 简历输入（用于撞单检测）
 export interface ConflictCheckInput {
@@ -63,6 +85,28 @@ export function checkConflicts(input: ConflictCheckInput): ConflictCheckResult[]
         matchField: 'name_company' as ConflictMatchField,
         existingResume: existing,
       });
+    }
+  }
+
+  // 4. 模糊姓名匹配（Levenshtein 距离 ≤ 2 或相似度 > 0.8）
+  if (input.candidateName) {
+    const allResumes = findAllResumes();
+    const normalizedName = normalizeForMatch(input.candidateName);
+    for (const existing of allResumes) {
+      if (existing.id === input.resumeId) continue;
+      if (existing.owner_id === input.ownerId) continue;
+      if (results.some(r => r.existingResume?.id === existing.id)) continue;
+      const existingName = normalizeForMatch(existing.name);
+      const dist = levenshtein(normalizedName, existingName);
+      const maxLen = Math.max(normalizedName.length, existingName.length, 1);
+      const similarity = 1 - dist / maxLen;
+      if (dist <= 2 && similarity > 0.8) {
+        results.push({
+          conflict: true,
+          matchField: 'name_company' as ConflictMatchField,
+          existingResume: existing,
+        });
+      }
     }
   }
 

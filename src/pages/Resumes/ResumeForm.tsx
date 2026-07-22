@@ -299,16 +299,16 @@ export default function ResumeForm() {
       </div>
 
       <div className="mb-4">
-        <h1 className="font-serif text-2xl font-bold text-forest-800">
+        <h1 className="font-serif text-2xl font-bold text-forest-800 dark:text-cream-100">
           {isEdit ? '编辑简历' : '新建简历'}
         </h1>
-        <p className="text-sm text-forest-500 mt-1">
+        <p className="text-sm text-forest-500 dark:text-forest-400 mt-1">
           粘贴/上传简历原文，AI 一键解析并自动识别风险/共同点
         </p>
       </div>
 
       {error && (
-        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
           {error}
         </div>
       )}
@@ -316,7 +316,7 @@ export default function ResumeForm() {
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* 左栏：基本信息 */}
         <div className="card p-5">
-          <h2 className="font-serif text-lg font-semibold text-forest-800 mb-4">基本信息</h2>
+          <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-4">基本信息</h2>
           <div className="space-y-3">
             <Field label="姓名" required error={errors.name}>
               <input
@@ -397,8 +397,8 @@ export default function ResumeForm() {
               />
             </Field>
 
-            <hr className="border-forest-100 my-1" />
-            <h3 className="text-sm font-semibold text-forest-700">联系方式</h3>
+            <hr className="border-forest-100 dark:border-forest-800 my-1" />
+            <h3 className="text-sm font-semibold text-forest-700 dark:text-cream-200">联系方式</h3>
             <div className="grid grid-cols-2 gap-3">
               <Field label="手机号" error={errors.phone}>
                 <input
@@ -442,7 +442,7 @@ export default function ResumeForm() {
                 </select>
               </Field>
             </div>
-            <label className="flex items-center gap-2 text-sm text-forest-700">
+            <label className="flex items-center gap-2 text-sm text-forest-700 dark:text-cream-200">
               <input
                 type="checkbox"
                 className="w-4 h-4 rounded accent-forest-600"
@@ -452,7 +452,7 @@ export default function ResumeForm() {
               已加微信
             </label>
 
-            <hr className="border-forest-100 my-1" />
+            <hr className="border-forest-100 dark:border-forest-800 my-1" />
             <Field label="人选备注">
               <textarea
                 className="input min-h-[80px]"
@@ -467,14 +467,14 @@ export default function ResumeForm() {
         {/* 右栏：录入方式 + AI 解析 + 经历 */}
         <div className="space-y-4">
           <div className="card p-5">
-            <div className="flex items-center gap-2 mb-3 border-b border-forest-100 pb-2">
+            <div className="flex items-center gap-2 mb-3 border-b border-forest-100 dark:border-forest-800 pb-2">
               <button
                 type="button"
                 onClick={() => setInputMode('paste')}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm ${
                   inputMode === 'paste'
-                    ? 'bg-forest-100 text-forest-700'
-                    : 'text-forest-500 hover:bg-forest-50'
+                    ? 'bg-forest-100 dark:bg-forest-800 text-forest-700 dark:text-cream-200'
+                    : 'text-forest-500 dark:text-forest-400 hover:bg-forest-50 dark:hover:bg-forest-800/50'
                 }`}
               >
                 <ClipboardPaste className="w-4 h-4" />
@@ -485,8 +485,8 @@ export default function ResumeForm() {
                 onClick={() => setInputMode('upload')}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm ${
                   inputMode === 'upload'
-                    ? 'bg-forest-100 text-forest-700'
-                    : 'text-forest-500 hover:bg-forest-50'
+                    ? 'bg-forest-100 dark:bg-forest-800 text-forest-700 dark:text-cream-200'
+                    : 'text-forest-500 dark:text-forest-400 hover:bg-forest-50 dark:hover:bg-forest-800/50'
                 }`}
               >
                 <Upload className="w-4 h-4" />
@@ -520,21 +520,21 @@ export default function ResumeForm() {
                   type="button"
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
-                  className="w-full border-2 border-dashed border-forest-200 rounded-lg py-8 text-center text-forest-500 hover:bg-forest-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full border-2 border-dashed border-forest-200 dark:border-forest-700 rounded-lg py-8 text-center text-forest-500 dark:text-forest-400 hover:bg-forest-50 dark:hover:bg-forest-800/50 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {uploading ? (
                     <>
-                      <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-forest-400" />
-                      <div className="text-sm text-forest-500">文件上传中，请稍候…</div>
+                      <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-forest-400 dark:text-forest-500" />
+                      <div className="text-sm text-forest-500 dark:text-forest-400">文件上传中，请稍候…</div>
                     </>
                   ) : (
                     <>
                       <Upload className="w-6 h-6 mx-auto mb-2" />
                       <div className="text-sm">点击上传文件</div>
-                      <div className="text-xs text-forest-400 mt-1">
+                      <div className="text-xs text-forest-400 dark:text-forest-500 mt-1">
                         支持 .txt / .pdf / .docx / .xlsx / .xls / .csv / .jpg / .png 等
                       </div>
-                      <div className="text-xs text-forest-400 mt-0.5">
+                      <div className="text-xs text-forest-400 dark:text-forest-500 mt-0.5">
                         自动提取文本 + Excel 多工作表 + 图片多模态识别
                       </div>
                     </>
@@ -544,10 +544,10 @@ export default function ResumeForm() {
                 {/* 上传后展示：原文件信息和图片统计 */}
                 {uploadMeta && (
                   <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
-                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-forest-50 text-forest-700 border border-forest-100">
+                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-forest-50 dark:bg-forest-800/30 text-forest-700 dark:text-cream-200 border border-forest-100 dark:border-forest-800">
                       <FileText className="w-3 h-3" />
                       {uploadMeta.filename}
-                      <span className="text-forest-400">（{uploadMeta.ext}，{uploadMeta.charCount} 字符）</span>
+                      <span className="text-forest-400 dark:text-forest-500">（{uploadMeta.ext}，{uploadMeta.charCount} 字符）</span>
                     </span>
                     {uploadMeta.imageCount > 0 && (
                       <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100">
@@ -563,7 +563,7 @@ export default function ResumeForm() {
                     {uploadImages.map((img, i) => (
                       <div
                         key={`${img.name}-${i}`}
-                        className="relative border border-forest-100 rounded overflow-hidden bg-cream-50"
+                        className="relative border border-forest-100 dark:border-forest-800 rounded overflow-hidden bg-cream-50 dark:bg-forest-800/50"
                         title={`${img.name}（${img.source}）`}
                       >
                         <img
@@ -592,13 +592,13 @@ export default function ResumeForm() {
                 {parsing ? 'AI 解析中...' : 'AI 解析'}
               </button>
               {parseMsg && (
-                <span className="text-xs text-forest-500">{parseMsg}</span>
+                <span className="text-xs text-forest-500 dark:text-forest-400">{parseMsg}</span>
               )}
             </div>
           </div>
 
           <div className="card p-5">
-            <h2 className="font-serif text-lg font-semibold text-forest-800 mb-3">详细经历</h2>
+            <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-3">详细经历</h2>
             <div className="space-y-3">
               <Field label="工作经历（支持 Markdown）">
                 <textarea
@@ -678,8 +678,8 @@ export default function ResumeForm() {
         }
       >
         <div className="flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-ochre-500 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-forest-700">{conflictTip}</p>
+          <AlertTriangle className="w-5 h-5 text-ochre-500 dark:text-ochre-400 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-forest-700 dark:text-cream-200">{conflictTip}</p>
         </div>
       </Modal>
     </div>
@@ -701,10 +701,10 @@ function Field({
     <div>
       <label className="label">
         {label}
-        {required && <span className="text-risk-600 ml-1">*</span>}
+        {required && <span className="text-risk-600 dark:text-risk-400 ml-1">*</span>}
       </label>
       {children}
-      {error && <p className="text-xs text-risk-600 mt-1">{error}</p>}
+      {error && <p className="text-xs text-risk-600 dark:text-risk-400 mt-1">{error}</p>}
     </div>
   );
 }

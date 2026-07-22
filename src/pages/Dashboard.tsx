@@ -1,4 +1,4 @@
-// 总览页：4 个统计卡片 + 转化漏斗图（管理员）+ 快捷入口 + 今日待回访 + 最近匹配
+// 总览页：4 个统计卡片 + 转化漏斗图 + 业绩柱状图 + 趋势折线图（管理员）+ 快捷入口 + 今日待回访 + 最近匹配
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -11,6 +11,8 @@ import {
   ArrowRight,
   Sparkles,
   Clock,
+  BarChart3,
+  LineChart as LineChartIcon,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -19,6 +21,14 @@ import {
   LabelList,
   Tooltip,
   Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  LineChart,
+  Line,
+  Legend,
 } from 'recharts';
 import dayjs from 'dayjs';
 import {
@@ -60,6 +70,8 @@ export default function Dashboard() {
   const [recentMatches, setRecentMatches] = useState<Match[]>([]);
   const [todayPlans, setTodayPlans] = useState<FollowupPlan[]>([]);
   const [error, setError] = useState('');
+  const [trends, setTrends] = useState<{ month: string; matches: number; conversions: number }[]>([]);
+  const [employeePerformance, setEmployeePerformance] = useState<{ name: string; matches: number; onboard: number }[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,7 +79,6 @@ export default function Dashboard() {
       setLoading(true);
       setError('');
       try {
-        // 并发拉数据：在招职位数、简历数、今日待回访、最近匹配、本月入职
         const [
           posRes,
           resRes,
@@ -99,7 +110,6 @@ export default function Dashboard() {
           setRecentMatches(recentRes.value.data || []);
         }
         if (onboardRes.status === 'fulfilled') {
-          // 本月入职：状态为 onboarded 且 updated_at 在本月的匹配数
           const startOfMonth = dayjs().startOf('month');
           const monthCount = (onboardRes.value.data || []).filter((m) =>
             dayjs(m.updated_at).isAfter(startOfMonth) || dayjs(m.updated_at).isSame(startOfMonth)
@@ -107,15 +117,23 @@ export default function Dashboard() {
           next.monthOnboard = monthCount;
         }
 
-        // 管理员才拉漏斗
+        // 管理员才拉漏斗、趋势、业绩
         if (isAdmin) {
-          try {
-            const funnelData = await reportsApi.funnel();
-            // reportsApi.funnel 已解包内层 data 字段，直接拿到 FunnelStage[]
-            if (!cancelled) setFunnel(Array.isArray(funnelData) ? funnelData : []);
-          } catch (e) {
-            // 忽略漏斗错误
-            console.warn('funnel load failed', getErrorMsg(e));
+          const [funnelRes, trendsRes, perfRes] = await Promise.allSettled([
+            reportsApi.funnel(),
+            reportsApi.trends(6),
+            reportsApi.employeePerformance(),
+          ]);
+          if (!cancelled) {
+            if (funnelRes.status === 'fulfilled') {
+              setFunnel(Array.isArray(funnelRes.value) ? funnelRes.value : []);
+            }
+            if (trendsRes.status === 'fulfilled') {
+              setTrends(Array.isArray(trendsRes.value) ? trendsRes.value : []);
+            }
+            if (perfRes.status === 'fulfilled') {
+              setEmployeePerformance(Array.isArray(perfRes.value) ? perfRes.value : []);
+            }
           }
         }
 
@@ -137,16 +155,16 @@ export default function Dashboard() {
     <div className="px-6 py-6 max-w-7xl mx-auto">
       {/* 标题 */}
       <div className="mb-6">
-        <h1 className="font-serif text-2xl font-bold text-forest-800">
+        <h1 className="font-serif text-2xl font-bold text-forest-800 dark:text-cream-100">
           你好，{user?.real_name} 👋
         </h1>
-        <p className="text-sm text-forest-500 mt-1">
+        <p className="text-sm text-forest-500 mt-1 dark:text-forest-400">
           今天也要把每一个求职者稳稳推进到入职。
         </p>
       </div>
 
       {error && (
-        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700 dark:bg-risk-900/20 dark:border-risk-800 dark:text-risk-400">
           {error}
         </div>
       )}
@@ -185,9 +203,9 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* 转化漏斗 */}
-        <div className="card lg:col-span-2 p-5">
+        <div className="card p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-serif text-lg font-semibold text-forest-800">转化漏斗</h2>
+            <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100">转化漏斗</h2>
             <span className="text-xs text-forest-400">简历入库 → 入职</span>
           </div>
           {isAdmin ? (
@@ -203,6 +221,7 @@ export default function Dashboard() {
                         borderRadius: 8,
                         border: '1px solid #dcebe4',
                         fontSize: 12,
+                        background: 'var(--tooltip-bg, #fff)',
                       }}
                     />
                     <Funnel
@@ -230,8 +249,8 @@ export default function Dashboard() {
             )
           ) : (
             <div className="h-72 flex items-center justify-center">
-              <div className="text-center text-sm text-forest-500">
-                <TrendingUp className="w-8 h-8 mx-auto mb-2 text-forest-300" />
+              <div className="text-center text-sm text-forest-500 dark:text-forest-400">
+                <TrendingUp className="w-8 h-8 mx-auto mb-2 text-forest-300 dark:text-forest-600" />
                 团队报表仅管理员可见
               </div>
             </div>
@@ -240,7 +259,7 @@ export default function Dashboard() {
 
         {/* 快捷入口 */}
         <div className="card p-5">
-          <h2 className="font-serif text-lg font-semibold text-forest-800 mb-4">快捷入口</h2>
+          <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-4">快捷入口</h2>
           <div className="space-y-3">
             <QuickAction
               icon={Plus}
@@ -266,18 +285,133 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* 员工业绩 + 趋势图（管理员） */}
+      {isAdmin && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* 员工业绩柱状图 */}
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-forest-600 dark:text-forest-400" />
+                员工业绩
+              </h2>
+            </div>
+            {employeePerformance.length > 0 ? (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={employeePerformance} barGap={4}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 12, fill: '#6b7280' }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 12, fill: '#6b7280' }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: 8,
+                        border: '1px solid #dcebe4',
+                        fontSize: 12,
+                      }}
+                    />
+                    <Legend iconSize={10} wrapperStyle={{ fontSize: 12 }} />
+                    <Bar
+                      dataKey="matches"
+                      name="匹配数"
+                      fill="#2e6350"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="onboard"
+                      name="入职数"
+                      fill="#e69238"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-64 flex items-center justify-center text-sm text-forest-400">
+                暂无业绩数据
+              </div>
+            )}
+          </div>
+
+          {/* 匹配/转化趋势折线图 */}
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 flex items-center gap-2">
+                <LineChartIcon className="w-5 h-5 text-ochre-500" />
+                月度趋势
+              </h2>
+            </div>
+            {trends.length > 0 ? (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={trends}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fontSize: 12, fill: '#6b7280' }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 12, fill: '#6b7280' }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: 8,
+                        border: '1px solid #dcebe4',
+                        fontSize: 12,
+                      }}
+                    />
+                    <Legend iconSize={10} wrapperStyle={{ fontSize: 12 }} />
+                    <Line
+                      type="monotone"
+                      dataKey="matches"
+                      name="匹配数"
+                      stroke="#2e6350"
+                      strokeWidth={2}
+                      dot={{ fill: '#2e6350', r: 3 }}
+                      activeDot={{ r: 5 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="conversions"
+                      name="转化数"
+                      stroke="#e69238"
+                      strokeWidth={2}
+                      dot={{ fill: '#e69238', r: 3 }}
+                      activeDot={{ r: 5 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-64 flex items-center justify-center text-sm text-forest-400">
+                暂无趋势数据
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* 今日待回访 + 最近匹配 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 今日待回访 */}
         <div className="card p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-serif text-lg font-semibold text-forest-800 flex items-center gap-2">
+            <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 flex items-center gap-2">
               <Clock className="w-5 h-5 text-ochre-500" />
               今日待回访 ({todayPlans.length})
             </h2>
             <Link
               to="/followups"
-              className="text-sm text-forest-500 hover:text-forest-700 inline-flex items-center gap-1"
+              className="text-sm text-forest-500 hover:text-forest-700 dark:text-forest-400 dark:hover:text-cream-200 inline-flex items-center gap-1"
             >
               查看全部 <ArrowRight className="w-3 h-3" />
             </Link>
@@ -285,19 +419,19 @@ export default function Dashboard() {
           {todayPlans.length === 0 ? (
             <div className="py-8 text-center">
               <div className="text-4xl mb-2">🎉</div>
-              <p className="text-sm text-forest-500">今天没有待回访的求职者</p>
+              <p className="text-sm text-forest-500 dark:text-forest-400">今天没有待回访的求职者</p>
             </div>
           ) : (
-            <ul className="divide-y divide-forest-100">
+            <ul className="divide-y divide-forest-100 dark:divide-forest-800">
               {todayPlans.slice(0, 3).map((plan) => (
                 <li key={plan.id}>
                   <Link
                     to={`/followups/${plan.id}`}
-                    className="flex items-center gap-3 py-3 hover:bg-cream-50/50 -mx-2 px-2 rounded"
+                    className="flex items-center gap-3 py-3 hover:bg-cream-50/50 dark:hover:bg-forest-800/50 -mx-2 px-2 rounded"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-forest-800 truncate">
+                        <span className="font-medium text-forest-800 dark:text-cream-100 truncate">
                           {plan.resume?.name || '—'}
                         </span>
                         <RiskBadge risk={plan.resume?.risk_warning} />
@@ -309,7 +443,6 @@ export default function Dashboard() {
                         {plan.title}
                       </div>
                     </div>
-                    {/* 「开始回访」：跳转到跟进详情，由详情页进入回访流程 */}
                     <span
                       className="btn-ai text-xs flex items-center gap-1 px-2 py-1 flex-shrink-0 pointer-events-none"
                     >
@@ -326,13 +459,13 @@ export default function Dashboard() {
         {/* 最近匹配 */}
         <div className="card p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-serif text-lg font-semibold text-forest-800 flex items-center gap-2">
-              <GitCompareArrows className="w-5 h-5 text-forest-600" />
+            <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 flex items-center gap-2">
+              <GitCompareArrows className="w-5 h-5 text-forest-600 dark:text-forest-400" />
               最近匹配
             </h2>
             <Link
               to="/matches"
-              className="text-sm text-forest-500 hover:text-forest-700 inline-flex items-center gap-1"
+              className="text-sm text-forest-500 hover:text-forest-700 dark:text-forest-400 dark:hover:text-cream-200 inline-flex items-center gap-1"
             >
               查看全部 <ArrowRight className="w-3 h-3" />
             </Link>
@@ -340,30 +473,30 @@ export default function Dashboard() {
           {recentMatches.length === 0 ? (
             <div className="py-8 text-center">
               <Empty />
-              <p className="text-sm text-forest-500 mt-2">
-                <Link to="/matches/new" className="text-forest-600 underline">
+              <p className="text-sm text-forest-500 dark:text-forest-400 mt-2">
+                <Link to="/matches/new" className="text-forest-600 dark:text-forest-300 underline">
                   立即新建匹配
                 </Link>
               </p>
             </div>
           ) : (
-            <ul className="divide-y divide-forest-100">
+            <ul className="divide-y divide-forest-100 dark:divide-forest-800">
               {recentMatches.map((m) => {
                 const toneClass =
                   m.status === 'lost'
-                    ? 'bg-risk-100 text-risk-700'
+                    ? 'bg-risk-100 text-risk-700 dark:bg-risk-900/30 dark:text-risk-400'
                     : m.status === 'interview_invited'
-                    ? 'bg-ochre-100 text-ochre-700'
-                    : 'bg-forest-100 text-forest-700';
+                    ? 'bg-ochre-100 text-ochre-700 dark:bg-ochre-900/30 dark:text-ochre-400'
+                    : 'bg-forest-100 text-forest-700 dark:bg-forest-800 dark:text-forest-300';
                 return (
                   <li key={m.id}>
                     <Link
                       to={`/matches/${m.id}`}
-                      className="flex items-center gap-3 py-3 hover:bg-cream-50/50 -mx-2 px-2 rounded"
+                      className="flex items-center gap-3 py-3 hover:bg-cream-50/50 dark:hover:bg-forest-800/50 -mx-2 px-2 rounded"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-forest-800 truncate">
+                          <span className="font-medium text-forest-800 dark:text-cream-100 truncate">
                             {m.resume?.name || '—'}
                           </span>
                           <RiskBadge risk={m.resume?.risk_warning} />
@@ -407,19 +540,19 @@ interface StatCardProps {
 }
 function StatCard({ icon: Icon, label, value, tone, link }: StatCardProps) {
   const toneClasses = {
-    forest: 'bg-forest-50 text-forest-700',
-    ochre: 'bg-ochre-50 text-ochre-700',
-    cream: 'bg-cream-100 text-ochre-700',
+    forest: 'bg-forest-50 text-forest-700 dark:bg-forest-800 dark:text-forest-300',
+    ochre: 'bg-ochre-50 text-ochre-700 dark:bg-ochre-900/30 dark:text-ochre-400',
+    cream: 'bg-cream-100 text-ochre-700 dark:bg-forest-800 dark:text-ochre-400',
   }[tone];
   const content = (
     <div className="card p-4 hover:shadow-cardHover transition-shadow h-full">
       <div className="flex items-start justify-between mb-2">
-        <span className="text-sm text-forest-500">{label}</span>
+        <span className="text-sm text-forest-500 dark:text-forest-400">{label}</span>
         <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${toneClasses}`}>
           <Icon className="w-4 h-4" />
         </div>
       </div>
-      <div className="font-mono text-3xl font-bold text-forest-800">{value}</div>
+      <div className="font-mono text-3xl font-bold text-forest-800 dark:text-cream-100">{value}</div>
     </div>
   );
   if (link) return <Link to={link}>{content}</Link>;
@@ -438,15 +571,15 @@ interface QuickActionProps {
 function QuickAction({ icon: Icon, title, desc, to, disabled, disabledHint }: QuickActionProps) {
   if (disabled) {
     return (
-      <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-dashed border-forest-200 bg-cream-50 cursor-not-allowed opacity-70">
-        <div className="w-9 h-9 rounded-lg bg-cream-100 text-forest-400 flex items-center justify-center">
+      <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-dashed border-forest-200 bg-cream-50 cursor-not-allowed opacity-70 dark:border-forest-700 dark:bg-forest-800/50">
+        <div className="w-9 h-9 rounded-lg bg-cream-100 text-forest-400 flex items-center justify-center dark:bg-forest-800 dark:text-forest-500">
           <Icon className="w-4 h-4" />
         </div>
         <div className="flex-1">
-          <div className="text-sm font-medium text-forest-600">{title}</div>
+          <div className="text-sm font-medium text-forest-600 dark:text-cream-200">{title}</div>
           <div className="text-xs text-forest-400">{desc}</div>
         </div>
-        <span className="text-xs px-2 py-0.5 rounded bg-cream-200 text-forest-500">
+        <span className="text-xs px-2 py-0.5 rounded bg-cream-200 text-forest-500 dark:bg-forest-700 dark:text-forest-400">
           {disabledHint || '暂不可用'}
         </span>
       </div>
@@ -455,14 +588,14 @@ function QuickAction({ icon: Icon, title, desc, to, disabled, disabledHint }: Qu
   return (
     <Link
       to={to}
-      className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-forest-100 hover:border-forest-300 hover:bg-forest-50 transition-colors"
+      className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-forest-100 hover:border-forest-300 hover:bg-forest-50 transition-colors dark:border-forest-700 dark:hover:border-forest-600 dark:hover:bg-forest-800"
     >
-      <div className="w-9 h-9 rounded-lg bg-forest-100 text-forest-700 flex items-center justify-center">
+      <div className="w-9 h-9 rounded-lg bg-forest-100 text-forest-700 flex items-center justify-center dark:bg-forest-800 dark:text-forest-300">
         <Icon className="w-4 h-4" />
       </div>
       <div className="flex-1">
-        <div className="text-sm font-medium text-forest-700">{title}</div>
-        <div className="text-xs text-forest-500">{desc}</div>
+        <div className="text-sm font-medium text-forest-700 dark:text-cream-100">{title}</div>
+        <div className="text-xs text-forest-500 dark:text-forest-400">{desc}</div>
       </div>
       <ArrowRight className="w-4 h-4 text-forest-400" />
     </Link>

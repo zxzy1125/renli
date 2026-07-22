@@ -126,13 +126,13 @@ export default function MatchNew() {
       <div className="px-6 py-6 max-w-3xl mx-auto">
         <div className="card p-12 text-center">
           <Sparkles className="w-10 h-10 mx-auto mb-4 animate-pulse text-ochre-500" />
-          <h2 className="font-serif text-xl font-semibold text-forest-800 mb-2">
+          <h2 className="font-serif text-xl font-semibold text-forest-800 dark:text-cream-100 mb-2">
             AI 正在分析匹配度...
           </h2>
-          <p className="text-sm text-forest-500 mb-4">
+          <p className="text-sm text-forest-500 dark:text-forest-400 mb-4">
             正在比对职位要求与简历背景，生成匹配报告（亮点 / 疑虑 / 薪资分析 / 转化概率）
           </p>
-          <div className="flex items-center justify-center gap-2 text-sm text-forest-400">
+          <div className="flex items-center justify-center gap-2 text-sm text-forest-400 dark:text-forest-500">
             <Loader2 className="w-4 h-4 animate-spin" />
             预计 10-30 秒，请稍候
           </div>
@@ -154,14 +154,14 @@ export default function MatchNew() {
         </button>
       </div>
       <div className="mb-4">
-        <h1 className="font-serif text-2xl font-bold text-forest-800">新建匹配</h1>
-        <p className="text-sm text-forest-500 mt-1">
+        <h1 className="font-serif text-2xl font-bold text-forest-800 dark:text-cream-100">新建匹配</h1>
+        <p className="text-sm text-forest-500 dark:text-forest-400 mt-1">
           选择 1 个职位 + 1 份简历，AI 自动生成匹配报告
         </p>
       </div>
 
       {error && (
-        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
           {error}
         </div>
       )}
@@ -171,11 +171,11 @@ export default function MatchNew() {
         {/* 左栏：选职位 */}
         <div className="card p-4 flex flex-col">
           <div className="flex items-center gap-2 mb-3">
-            <Building2 className="w-5 h-5 text-forest-600" />
-            <h2 className="font-serif text-lg font-semibold text-forest-800">选择职位</h2>
+            <Building2 className="w-5 h-5 text-forest-600 dark:text-cream-300" />
+            <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100">选择职位</h2>
           </div>
           <form onSubmit={handlePosSearch} className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-forest-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-forest-400 dark:text-forest-500" />
             <input
               type="text"
               className="input pl-9"
@@ -188,7 +188,7 @@ export default function MatchNew() {
             {posLoading ? (
               <Loading />
             ) : positions.length === 0 ? (
-              <p className="text-sm text-forest-400 text-center py-8">暂无可选职位</p>
+              <p className="text-sm text-forest-400 dark:text-forest-500 text-center py-8">暂无可选职位</p>
             ) : (
               positions.map((p) => (
                 <PositionSelectCard
@@ -206,11 +206,11 @@ export default function MatchNew() {
         {/* 右栏：选简历 */}
         <div className="card p-4 flex flex-col">
           <div className="flex items-center gap-2 mb-3">
-            <Users className="w-5 h-5 text-forest-600" />
-            <h2 className="font-serif text-lg font-semibold text-forest-800">选择简历</h2>
+            <Users className="w-5 h-5 text-forest-600 dark:text-cream-300" />
+            <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100">选择简历</h2>
           </div>
           <form onSubmit={handleResSearch} className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-forest-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-forest-400 dark:text-forest-500" />
             <input
               type="text"
               className="input pl-9"
@@ -223,7 +223,7 @@ export default function MatchNew() {
             {resLoading ? (
               <Loading />
             ) : resumes.length === 0 ? (
-              <p className="text-sm text-forest-400 text-center py-8">暂无可选简历</p>
+              <p className="text-sm text-forest-400 dark:text-forest-500 text-center py-8">暂无可选简历</p>
             ) : (
               resumes.map((r) => (
                 <ResumeSelectCard
@@ -239,16 +239,16 @@ export default function MatchNew() {
       </div>
 
       {/* 底部固定按钮栏 */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-forest-100 shadow-cardHover z-30">
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-forest-900 border-t border-forest-100 dark:border-forest-800 shadow-cardHover z-30">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
-          <div className="text-sm text-forest-600 flex-1 min-w-0">
-            <span className="text-forest-400">已选职位：</span>
-            <span className="font-medium text-forest-800 truncate">
+          <div className="text-sm text-forest-600 dark:text-cream-300 flex-1 min-w-0">
+            <span className="text-forest-400 dark:text-forest-500">已选职位：</span>
+            <span className="font-medium text-forest-800 dark:text-cream-100 truncate">
               {selectedPos ? selectedPos.title : '未选择'}
             </span>
-            <span className="mx-2 text-forest-300">|</span>
-            <span className="text-forest-400">已选简历：</span>
-            <span className="font-medium text-forest-800 truncate">
+            <span className="mx-2 text-forest-300 dark:text-forest-600">|</span>
+            <span className="text-forest-400 dark:text-forest-500">已选简历：</span>
+            <span className="font-medium text-forest-800 dark:text-cream-100 truncate">
               {selectedRes ? selectedRes.name : '未选择'}
             </span>
           </div>
@@ -291,17 +291,17 @@ function PositionSelectCard({
       }`}
     >
       <div className="flex items-start justify-between gap-2 mb-1">
-        <span className="font-medium text-forest-800 flex-1">{position.title}</span>
-        {selected && <Check className="w-4 h-4 text-forest-600 flex-shrink-0" />}
+        <span className="font-medium text-forest-800 dark:text-cream-100 flex-1">{position.title}</span>
+        {selected && <Check className="w-4 h-4 text-forest-600 dark:text-cream-300 flex-shrink-0" />}
       </div>
       {clientName && (
-        <div className="flex items-center gap-1 text-xs text-forest-500 mb-1">
+        <div className="flex items-center gap-1 text-xs text-forest-500 dark:text-forest-400 mb-1">
           <Building2 className="w-3 h-3" />
           <span>{clientName}</span>
           {position.department && <span>· {position.department}</span>}
         </div>
       )}
-      <div className="flex flex-wrap items-center gap-3 text-xs text-forest-500">
+      <div className="flex flex-wrap items-center gap-3 text-xs text-forest-500 dark:text-forest-400">
         {salary && (
           <span className="flex items-center gap-1">
             <Wallet className="w-3 h-3" />
@@ -345,19 +345,19 @@ function ResumeSelectCard({
     >
       <div className="flex items-start justify-between gap-2 mb-1">
         <div className="flex items-center gap-2 flex-1">
-          <span className="font-medium text-forest-800">{resume.name}</span>
-          {resume.age && <span className="text-xs text-forest-400">{resume.age}岁</span>}
+          <span className="font-medium text-forest-800 dark:text-cream-100">{resume.name}</span>
+          {resume.age && <span className="text-xs text-forest-400 dark:text-forest-500">{resume.age}岁</span>}
           <RiskBadge risk={resume.risk_warning} />
         </div>
-        {selected && <Check className="w-4 h-4 text-forest-600 flex-shrink-0" />}
+        {selected && <Check className="w-4 h-4 text-forest-600 dark:text-cream-300 flex-shrink-0" />}
       </div>
-      <div className="flex items-center gap-1 text-xs text-forest-500 mb-1">
+      <div className="flex items-center gap-1 text-xs text-forest-500 dark:text-forest-400 mb-1">
         <Building2 className="w-3 h-3" />
         <span>{resume.current_company || '现公司未知'}</span>
         {resume.current_title && <span>· {resume.current_title}</span>}
       </div>
       {resume.expectation && (
-        <div className="text-xs text-forest-500">
+        <div className="text-xs text-forest-500 dark:text-forest-400">
           期望：{resume.expected_city ? `${resume.expected_city} · ` : ''}
           {resume.expectation}
         </div>

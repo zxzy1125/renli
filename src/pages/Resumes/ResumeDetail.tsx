@@ -149,7 +149,7 @@ export default function ResumeDetail() {
   if (error) {
     return (
       <div className="px-6 py-6 max-w-5xl mx-auto">
-        <div className="px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700 mb-4">
+        <div className="px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400 mb-4">
           {error}
         </div>
         <Link to="/resumes" className="btn-ghost inline-flex items-center gap-1">
@@ -161,7 +161,7 @@ export default function ResumeDetail() {
   if (!resume) {
     return (
       <div className="px-6 py-6 max-w-5xl mx-auto">
-        <p className="text-sm text-forest-500">简历不存在</p>
+        <p className="text-sm text-forest-500 dark:text-forest-400">简历不存在</p>
         <Link to="/resumes" className="btn-ghost inline-flex items-center gap-1 mt-2">
           <ArrowLeft className="w-4 h-4" /> 返回简历库
         </Link>
@@ -181,11 +181,11 @@ export default function ResumeDetail() {
       <div className="card p-6 mb-4">
         <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
           <div>
-            <h1 className="font-serif text-2xl font-bold text-forest-800 flex items-center gap-3">
+            <h1 className="font-serif text-2xl font-bold text-forest-800 dark:text-cream-100 flex items-center gap-3">
               {resume.name}
-              {resume.age && <span className="text-base font-normal text-forest-500">{resume.age}岁</span>}
+              {resume.age && <span className="text-base font-normal text-forest-500 dark:text-forest-400">{resume.age}岁</span>}
             </h1>
-            <div className="flex items-center gap-2 mt-1 text-sm text-forest-500">
+            <div className="flex items-center gap-2 mt-1 text-sm text-forest-500 dark:text-forest-400">
               <StatusBadge status={resume.candidate_status} />
               {ownerName && <span>· 负责人：{ownerName}</span>}
               <span>· 录入于 {dayjs(resume.created_at).format('YYYY-MM-DD HH:mm')}</span>
@@ -219,7 +219,7 @@ export default function ResumeDetail() {
         {/* 左侧：基本信息 */}
         <div className="space-y-4">
           <section className="card p-5">
-            <h2 className="font-serif text-lg font-semibold text-forest-800 mb-3">基本信息</h2>
+            <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-3">基本信息</h2>
             <dl className="space-y-2 text-sm">
               <InfoRow icon={Briefcase} label="现公司" value={resume.current_company ?? undefined} />
               <InfoRow label="现职位" value={resume.current_title ?? undefined} />
@@ -232,7 +232,7 @@ export default function ResumeDetail() {
 
           {/* 联系方式 */}
           <section className="card p-5">
-            <h2 className="font-serif text-lg font-semibold text-forest-800 mb-3">联系方式</h2>
+            <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-3">联系方式</h2>
             <dl className="space-y-2 text-sm">
               <InfoRow icon={Phone} label="手机号" value={resume.phone_masked ?? undefined} mono />
               <InfoRow icon={Mail} label="邮箱" value={resume.email_masked ?? undefined} mono />
@@ -255,7 +255,7 @@ export default function ResumeDetail() {
           {/* 共同点 */}
           {hasCommonGrounds(resume.common_grounds) && (
             <section className="card p-5">
-              <h2 className="font-serif text-lg font-semibold text-forest-800 mb-3">共同点</h2>
+              <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-3">共同点</h2>
               <ul className="space-y-2 text-sm">
                 {resume.common_grounds.alumni && (
                   <CommonItem icon={School} label="校友" value={resume.common_grounds.alumni} />
@@ -276,12 +276,12 @@ export default function ResumeDetail() {
           {/* 标签 */}
           {resume.tags && resume.tags.length > 0 && (
             <section className="card p-5">
-              <h2 className="font-serif text-lg font-semibold text-forest-800 mb-3">标签</h2>
+              <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-3">标签</h2>
               <div className="flex flex-wrap gap-1.5">
                 {resume.tags.map((t, i) => (
                   <span
                     key={i}
-                    className="px-2 py-0.5 rounded text-xs bg-ochre-50 text-ochre-700 border border-ochre-100"
+                    className="px-2 py-0.5 rounded text-xs bg-ochre-50 dark:bg-ochre-900/20 text-ochre-700 dark:text-ochre-400 border border-ochre-100 dark:border-ochre-800"
                   >
                     {t}
                   </span>
@@ -294,11 +294,11 @@ export default function ResumeDetail() {
           {resume.remark && (
             <section className="card p-5">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="font-serif text-lg font-semibold text-forest-800">人选备注</h2>
+                <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100">人选备注</h2>
                 <button
                   type="button"
                   onClick={handleCopyRemark}
-                  className="text-xs text-forest-600 hover:text-forest-800 flex items-center gap-1"
+                  className="text-xs text-forest-600 dark:text-cream-300 hover:text-forest-800 dark:hover:text-cream-100 flex items-center gap-1"
                 >
                   {remarkCopied ? (
                     <>
@@ -311,7 +311,7 @@ export default function ResumeDetail() {
                   )}
                 </button>
               </div>
-              <div className="text-sm text-forest-700 bg-cream-50 rounded p-3 whitespace-pre-wrap">
+              <div className="text-sm text-forest-700 dark:text-cream-200 bg-cream-50 dark:bg-forest-800/50 rounded p-3 whitespace-pre-wrap">
                 {resume.remark}
               </div>
             </section>
@@ -321,37 +321,37 @@ export default function ResumeDetail() {
         {/* 右侧：经历、期望、原文 */}
         <div className="lg:col-span-2 space-y-4">
           <section className="card p-5">
-            <h2 className="font-serif text-lg font-semibold text-forest-800 mb-3">工作经历</h2>
+            <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-3">工作经历</h2>
             <MarkdownView content={resume.work_experience} />
           </section>
           <section className="card p-5">
-            <h2 className="font-serif text-lg font-semibold text-forest-800 mb-3">技能</h2>
+            <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-3">技能</h2>
             <MarkdownView content={resume.skills} />
           </section>
           <section className="card p-5">
-            <h2 className="font-serif text-lg font-semibold text-forest-800 mb-3">项目经历</h2>
+            <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-3">项目经历</h2>
             <MarkdownView content={resume.projects} />
           </section>
           <section className="card p-5">
-            <h2 className="font-serif text-lg font-semibold text-forest-800 mb-3">求职期望</h2>
+            <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-3">求职期望</h2>
             <MarkdownView content={resume.expectation} />
           </section>
 
           {/* 跟进历史 - 真实数据 */}
           <section className="card p-5">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="font-serif text-lg font-semibold text-forest-800">
+              <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100">
                 跟进历史 ({followupRecords.length})
               </h2>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setPlanFormOpen(true)}
-                  className="text-sm text-forest-600 hover:text-forest-800 flex items-center gap-1"
+                  className="text-sm text-forest-600 dark:text-cream-300 hover:text-forest-800 dark:hover:text-cream-100 flex items-center gap-1"
                 >
                   <Plus className="w-3.5 h-3.5" /> 新建回访计划
                 </button>
-                <Link to="/followups" className="text-sm text-forest-500 hover:text-forest-700">
+                <Link to="/followups" className="text-sm text-forest-500 dark:text-forest-400 hover:text-forest-700 dark:hover:text-cream-200">
                   查看全部
                 </Link>
               </div>
@@ -364,10 +364,10 @@ export default function ResumeDetail() {
                   <Link
                     key={p.id}
                     to={`/followups/${p.id}`}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs bg-cream-50 text-forest-700 border border-forest-200 hover:border-forest-400"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs bg-cream-50 dark:bg-forest-800/50 text-forest-700 dark:text-cream-200 border border-forest-200 dark:border-forest-700 hover:border-forest-400"
                   >
                     <span className="font-medium">{p.title}</span>
-                    <span className="text-forest-400">·</span>
+                    <span className="text-forest-400 dark:text-forest-500">·</span>
                     <span>{PLAN_TYPE_LABELS[p.type]}</span>
                     <span className={`badge ${PLAN_STATUS_TONE_CLASS[p.status]}`}>
                       {PLAN_STATUS_LABELS[p.status]}
@@ -378,31 +378,31 @@ export default function ResumeDetail() {
             )}
 
             {followupLoading ? (
-              <div className="py-6 text-center text-sm text-forest-400">
-                <Clock className="w-5 h-5 mx-auto mb-2 animate-pulse text-forest-300" />
+              <div className="py-6 text-center text-sm text-forest-400 dark:text-forest-500">
+                <Clock className="w-5 h-5 mx-auto mb-2 animate-pulse text-forest-300 dark:text-forest-600" />
                 加载中...
               </div>
             ) : followupRecords.length === 0 ? (
-              <div className="py-8 text-center text-sm text-forest-400">
-                <Clock className="w-6 h-6 mx-auto mb-2 text-forest-300" />
+              <div className="py-8 text-center text-sm text-forest-400 dark:text-forest-500">
+                <Clock className="w-6 h-6 mx-auto mb-2 text-forest-300 dark:text-forest-600" />
                 暂无回访记录，点击「新建回访计划」开始跟进
               </div>
             ) : (
               <div className="relative">
                 {/* 时间轴竖线 */}
-                <div className="absolute left-3 top-2 bottom-2 w-px bg-forest-200" />
+                <div className="absolute left-3 top-2 bottom-2 w-px bg-forest-200 dark:bg-forest-700" />
                 <ul className="space-y-3">
                   {followupRecords.map((rec) => (
                     <li key={rec.id} className="relative pl-10">
-                      <div className="absolute left-1.5 top-1.5 w-3 h-3 rounded-full bg-ochre-400 border-2 border-white" />
-                      <div className="rounded-lg border border-forest-100 bg-white p-3">
+                      <div className="absolute left-1.5 top-1.5 w-3 h-3 rounded-full bg-ochre-400 border-2 border-white dark:border-forest-900" />
+                      <div className="rounded-lg border border-forest-100 dark:border-forest-800 bg-white dark:bg-forest-900 p-3">
                         <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                          <span className="text-xs text-forest-500 flex items-center gap-1">
+                          <span className="text-xs text-forest-500 dark:text-forest-400 flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
                             {dayjs(rec.followup_date).format('YYYY-MM-DD')}
                           </span>
                           {rec.contact_channel && (
-                            <span className="badge bg-cream-100 text-forest-700">
+                            <span className="badge bg-cream-100 dark:bg-forest-800/50 text-forest-700 dark:text-cream-200">
                               {CHANNEL_LABELS[rec.contact_channel]}
                             </span>
                           )}
@@ -414,20 +414,20 @@ export default function ResumeDetail() {
                           {rec.plan && (
                             <Link
                               to={`/followups/${rec.plan.id}`}
-                              className="text-xs text-forest-500 hover:text-forest-700"
+                              className="text-xs text-forest-500 dark:text-forest-400 hover:text-forest-700 dark:hover:text-cream-200"
                             >
                               · {rec.plan.title}
                             </Link>
                           )}
                         </div>
                         {rec.note && (
-                          <p className="text-sm text-forest-700 whitespace-pre-wrap leading-relaxed line-clamp-3">
+                          <p className="text-sm text-forest-700 dark:text-cream-200 whitespace-pre-wrap leading-relaxed line-clamp-3">
                             {rec.note}
                           </p>
                         )}
                         {rec.next_action && (
-                          <div className="text-xs text-forest-500 mt-1">
-                            <span className="text-forest-400">下一步：</span>
+                          <div className="text-xs text-forest-500 dark:text-forest-400 mt-1">
+                            <span className="text-forest-400 dark:text-forest-500">下一步：</span>
                             {rec.next_action}
                           </div>
                         )}
@@ -447,13 +447,13 @@ export default function ResumeDetail() {
                 onClick={() => setRawOpen((v) => !v)}
                 className="w-full flex items-center justify-between text-left"
               >
-                <span className="font-serif text-base font-semibold text-forest-700">
+                <span className="font-serif text-base font-semibold text-forest-700 dark:text-cream-200">
                   原始文本（raw_text）
                 </span>
                 {rawOpen ? (
-                  <ChevronDown className="w-4 h-4 text-forest-400" />
+                  <ChevronDown className="w-4 h-4 text-forest-400 dark:text-forest-500" />
                 ) : (
-                  <ChevronRight className="w-4 h-4 text-forest-400" />
+                  <ChevronRight className="w-4 h-4 text-forest-400 dark:text-forest-500" />
                 )}
               </button>
               {rawOpen && (
@@ -503,12 +503,12 @@ function InfoRow({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <dt className="text-forest-500 flex items-center gap-1.5">
-        {Icon && <Icon className="w-3.5 h-3.5 text-forest-400" />}
+      <dt className="text-forest-500 dark:text-forest-400 flex items-center gap-1.5">
+        {Icon && <Icon className="w-3.5 h-3.5 text-forest-400 dark:text-forest-500" />}
         {label}
       </dt>
-      <dd className={`text-forest-800 ${mono ? 'font-mono' : ''}`}>
-        {value || <span className="text-forest-300">—</span>}
+      <dd className={`text-forest-800 dark:text-cream-100 ${mono ? 'font-mono' : ''}`}>
+        {value || <span className="text-forest-300 dark:text-forest-600">—</span>}
       </dd>
     </div>
   );
@@ -525,10 +525,10 @@ function CommonItem({
 }) {
   return (
     <li className="flex items-start gap-2">
-      <Icon className="w-3.5 h-3.5 text-ochre-500 mt-0.5 flex-shrink-0" />
+      <Icon className="w-3.5 h-3.5 text-ochre-500 dark:text-ochre-400 mt-0.5 flex-shrink-0" />
       <div>
-        <span className="text-forest-500 mr-1">{label}：</span>
-        <span className="text-forest-800">{value}</span>
+        <span className="text-forest-500 dark:text-forest-400 mr-1">{label}：</span>
+        <span className="text-forest-800 dark:text-cream-100">{value}</span>
       </div>
     </li>
   );

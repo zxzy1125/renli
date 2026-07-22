@@ -23,6 +23,12 @@ import {
   FileText,
   ChevronRight,
   Briefcase,
+  Clock,
+  MessageSquare,
+  Zap,
+  CheckCircle2,
+  CalendarCheck,
+  PhoneCall,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { chatApi, getErrorMsg } from '@/lib/api';
@@ -44,9 +50,9 @@ const RISK_LEVEL_TEXT: Record<string, string> = {
   high: '高风险',
 };
 const RISK_LEVEL_TONE: Record<string, string> = {
-  low: 'bg-forest-100 text-forest-700 border-forest-200',
+  low: 'bg-forest-100 text-forest-700 border-forest-200 dark:bg-forest-800 dark:text-forest-400 dark:border-forest-700',
   medium: 'bg-ochre-100 text-ochre-700 border-ochre-200',
-  high: 'bg-risk-100 text-risk-700 border-risk-200',
+  high: 'bg-risk-100 text-risk-700 border-risk-200 dark:bg-risk-900/20 dark:text-risk-400 dark:border-risk-800',
 };
 
 export default function ChatSessionPage() {
@@ -77,6 +83,10 @@ export default function ChatSessionPage() {
   // 删除会话
   const [toDelete, setToDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // 历史会话
+  const [historySessions, setHistorySessions] = useState<ChatSessionType[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   // Toast
   const [toast, setToast] = useState('');
@@ -113,6 +123,16 @@ export default function ChatSessionPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
+
+  // 拉取历史会话（同一职位）
+  useEffect(() => {
+    if (!session?.position_id) return;
+    setHistoryLoading(true);
+    chatApi.listSessions({ position_id: session.position_id, pageSize: 20 })
+      .then(({ data }) => setHistorySessions(data.filter((s) => s.id !== id)))
+      .catch(() => {})
+      .finally(() => setHistoryLoading(false));
+  }, [session?.position_id, id]);
 
   // AI 分析：发送求职者消息并获取分析
   const handleAnalyze = async () => {
@@ -221,6 +241,14 @@ export default function ChatSessionPage() {
     }
   };
 
+  // 建议操作 chip：填充输入框
+  const handleUseSuggestion = (text: string) => {
+    setInput(text);
+    // 聚焦输入框
+    const textarea = document.querySelector('textarea');
+    if (textarea) textarea.focus();
+  };
+
   if (loading) {
     return (
       <div className="px-6 py-6 max-w-7xl mx-auto">
@@ -255,10 +283,10 @@ export default function ChatSessionPage() {
             返回
           </Link>
           <div className="min-w-0">
-            <h1 className="font-serif text-xl font-bold text-forest-800 truncate">
+            <h1 className="font-serif text-xl font-bold text-forest-800 dark:text-cream-100 truncate">
               {session.title || session.candidate_name || '未命名会话'}
             </h1>
-            <p className="text-xs text-forest-500 mt-0.5">
+            <p className="text-xs text-forest-500 dark:text-forest-400 mt-0.5">
               创建于 {dayjs(session.created_at).format('YYYY-MM-DD HH:mm')}
               {session.last_message_at && (
                 <> · 最后消息 {dayjs(session.last_message_at).format('MM-DD HH:mm')}</>
@@ -282,7 +310,7 @@ export default function ChatSessionPage() {
           <button
             type="button"
             onClick={() => setToDelete(true)}
-            className="text-xs px-2 py-1 rounded text-risk-600 hover:bg-risk-50 flex items-center gap-1"
+            className="text-xs px-2 py-1 rounded text-risk-600 hover:bg-risk-50 dark:hover:bg-risk-900/20 flex items-center gap-1"
           >
             <Trash2 className="w-3.5 h-3.5" />
             删除
@@ -292,7 +320,7 @@ export default function ChatSessionPage() {
 
       {/* 错误提示 */}
       {error && (
-        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
           {error}
         </div>
       )}
@@ -303,14 +331,14 @@ export default function ChatSessionPage() {
         <div className="space-y-4">
           {/* 职位卡片 */}
           <div className="card p-4">
-            <div className="flex items-center gap-1.5 text-xs text-forest-500 mb-2">
+            <div className="flex items-center gap-1.5 text-xs text-forest-500 dark:text-forest-400 mb-2">
               <Briefcase className="w-3 h-3" />
               咨询职位
             </div>
             {session.position ? (
               <>
-                <h3 className="font-medium text-forest-800">{session.position.title}</h3>
-                <div className="text-xs text-forest-500 mt-2 space-y-1">
+                <h3 className="font-medium text-forest-800 dark:text-cream-100">{session.position.title}</h3>
+                <div className="text-xs text-forest-500 dark:text-forest-400 mt-2 space-y-1">
                   {session.position.salary_min && session.position.salary_max && (
                     <div className="flex items-center gap-1">
                       <Wallet className="w-3 h-3" />
@@ -327,7 +355,7 @@ export default function ChatSessionPage() {
                 {session.position.id && (
                   <Link
                     to={`/positions/${session.position.id}`}
-                    className="text-xs text-forest-600 hover:underline mt-3 flex items-center gap-1"
+                    className="text-xs text-forest-600 dark:text-cream-300 hover:underline mt-3 flex items-center gap-1"
                   >
                     查看职位详情
                     <ChevronRight className="w-3 h-3" />
@@ -335,20 +363,20 @@ export default function ChatSessionPage() {
                 )}
               </>
             ) : (
-              <p className="text-sm text-forest-400">职位信息缺失</p>
+              <p className="text-sm text-forest-400 dark:text-forest-500">职位信息缺失</p>
             )}
           </div>
 
           {/* 简历卡片 */}
           <div className="card p-4">
-            <div className="flex items-center gap-1.5 text-xs text-forest-500 mb-2">
+            <div className="flex items-center gap-1.5 text-xs text-forest-500 dark:text-forest-400 mb-2">
               <FileText className="w-3 h-3" />
               求职者简历
             </div>
             {session.resume ? (
               <>
-                <h3 className="font-medium text-forest-800">{session.resume.name}</h3>
-                <div className="text-xs text-forest-500 mt-2 space-y-1">
+                <h3 className="font-medium text-forest-800 dark:text-cream-100">{session.resume.name}</h3>
+                <div className="text-xs text-forest-500 dark:text-forest-400 mt-2 space-y-1">
                   {session.resume.current_company && (
                     <div className="flex items-center gap-1">
                       <Building2 className="w-3 h-3" />
@@ -365,7 +393,7 @@ export default function ChatSessionPage() {
                 {session.resume.id && (
                   <Link
                     to={`/resumes/${session.resume.id}`}
-                    className="text-xs text-forest-600 hover:underline mt-3 flex items-center gap-1"
+                    className="text-xs text-forest-600 dark:text-cream-300 hover:underline mt-3 flex items-center gap-1"
                   >
                     查看简历详情
                     <ChevronRight className="w-3 h-3" />
@@ -373,7 +401,7 @@ export default function ChatSessionPage() {
                 )}
               </>
             ) : (
-              <div className="text-sm text-forest-400">
+              <div className="text-sm text-forest-400 dark:text-forest-500">
                 <p>未绑定简历</p>
                 <p className="text-xs mt-1">AI 分析将仅基于职位与对话内容</p>
               </div>
@@ -381,12 +409,12 @@ export default function ChatSessionPage() {
           </div>
 
           {/* 使用提示 */}
-          <div className="card p-4 bg-cream-50/60 border-cream-200">
-            <div className="flex items-center gap-1.5 text-xs text-forest-600 font-medium mb-2">
+          <div className="card p-4 bg-cream-50/60 dark:bg-forest-800/50 border-cream-200 dark:border-forest-700">
+            <div className="flex items-center gap-1.5 text-xs text-forest-600 dark:text-cream-300 font-medium mb-2">
               <Lightbulb className="w-3.5 h-3.5" />
               使用方法
             </div>
-            <ol className="text-xs text-forest-500 space-y-1.5 list-decimal list-inside">
+            <ol className="text-xs text-forest-500 dark:text-forest-400 space-y-1.5 list-decimal list-inside">
               <li>在 BOSS 上复制求职者回复</li>
               <li>粘贴到下方输入框</li>
               <li>点击"AI 分析回复"</li>
@@ -394,6 +422,54 @@ export default function ChatSessionPage() {
               <li>可编辑后发送，记录入对话流</li>
             </ol>
           </div>
+
+          {/* 历史会话 */}
+          {historySessions.length > 0 && (
+            <div className="card p-4">
+              <div className="flex items-center gap-1.5 text-xs text-forest-500 dark:text-forest-400 mb-3">
+                <Clock className="w-3 h-3" />
+                同职位历史会话
+                <span className="ml-auto text-forest-400 dark:text-forest-500">{historySessions.length}</span>
+              </div>
+              <div className="space-y-2 max-h-[240px] overflow-y-auto">
+                {historySessions.map((s) => (
+                  <Link
+                    key={s.id}
+                    to={`/chat/${s.id}`}
+                    className="block p-2.5 rounded-lg border border-forest-100 dark:border-forest-800 hover:bg-cream-50 dark:hover:bg-forest-800/50 transition-colors group"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm text-forest-800 dark:text-cream-100 font-medium truncate group-hover:text-forest-600 dark:group-hover:text-cream-200">
+                        {s.candidate_name || s.title || '未命名会话'}
+                      </span>
+                      <span
+                        className={`flex-shrink-0 w-1.5 h-1.5 rounded-full ${
+                          s.status === 'active' ? 'bg-forest-400' : 'bg-forest-300 dark:bg-forest-600'
+                        }`}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 text-xs text-forest-400 dark:text-forest-500">
+                      <span>{dayjs(s.created_at).format('MM-DD HH:mm')}</span>
+                      {s.last_message_at && (
+                        <span className="flex items-center gap-0.5">
+                          <MessageSquare className="w-2.5 h-2.5" />
+                          {dayjs(s.last_message_at).format('MM-DD HH:mm')}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+          {historyLoading && (
+            <div className="card p-4">
+              <div className="flex items-center gap-1.5 text-xs text-forest-500 dark:text-forest-400">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                加载历史会话...
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 中栏：对话流 + 输入框 */}
@@ -401,8 +477,8 @@ export default function ChatSessionPage() {
           {/* 对话流 */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center text-forest-400">
-                <Sparkles className="w-10 h-10 mb-3 text-forest-300" />
+              <div className="h-full flex flex-col items-center justify-center text-center text-forest-400 dark:text-forest-500">
+                <Sparkles className="w-10 h-10 mb-3 text-forest-300 dark:text-forest-600" />
                 <p className="text-sm">还没有对话消息</p>
                 <p className="text-xs mt-1">
                   粘贴求职者在 BOSS 上的第一条回复开始对话
@@ -423,7 +499,7 @@ export default function ChatSessionPage() {
           </div>
 
           {/* 输入区 */}
-          <div className="border-t border-forest-100 p-3 bg-cream-50/40">
+          <div className="border-t border-forest-100 dark:border-forest-800 p-3 bg-cream-50/40 dark:bg-forest-800/30">
             <div className="flex gap-2 items-end">
               <textarea
                 className="input flex-1 resize-none min-h-[60px] max-h-[140px]"
@@ -453,7 +529,7 @@ export default function ChatSessionPage() {
                 {analyzing ? '分析中' : 'AI 分析'}
               </button>
             </div>
-            <div className="flex items-center justify-between mt-1.5 text-xs text-forest-400">
+            <div className="flex items-center justify-between mt-1.5 text-xs text-forest-400 dark:text-forest-500">
               <span>Ctrl/⌘ + Enter 快速分析</span>
               {session.status === 'closed' && (
                 <span className="text-ochre-600">会话已关闭，重新开启后可继续</span>
@@ -472,15 +548,16 @@ export default function ChatSessionPage() {
               onRegenerate={handleRegenerate}
               onSendReply={handleSendReply}
               onCopy={handleCopy}
+              onUseSuggestion={handleUseSuggestion}
               onEdit={(reply) => {
                 setEditReply(reply);
                 setEditContent(reply.content);
               }}
             />
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center text-forest-400 p-6">
-              <Brain className="w-10 h-10 mb-3 text-forest-300" />
-              <p className="text-sm font-medium text-forest-500">AI 资深 HR 分析面板</p>
+            <div className="flex-1 flex flex-col items-center justify-center text-center text-forest-400 dark:text-forest-500 p-6">
+              <Brain className="w-10 h-10 mb-3 text-forest-300 dark:text-forest-600" />
+              <p className="text-sm font-medium text-forest-500 dark:text-forest-400">AI 资深 HR 分析面板</p>
               <p className="text-xs mt-2 leading-relaxed">
                 发送求职者消息后，AI 会以资深 HR 视角分析意图、风险、情绪、画像，
                 并生成 3 套不同策略的回复供你选优发送。
@@ -532,15 +609,15 @@ export default function ChatSessionPage() {
         {editReply && (
           <div className="space-y-3">
             <div>
-              <div className="text-xs text-forest-500 mb-1">策略名</div>
-              <div className="text-sm font-medium text-forest-700">{editReply.strategyName}</div>
+              <div className="text-xs text-forest-500 dark:text-forest-400 mb-1">策略名</div>
+              <div className="text-sm font-medium text-forest-700 dark:text-cream-200">{editReply.strategyName}</div>
             </div>
             <div>
-              <div className="text-xs text-forest-500 mb-1">策略原理</div>
-              <p className="text-xs text-forest-500 leading-relaxed">{editReply.rationale}</p>
+              <div className="text-xs text-forest-500 dark:text-forest-400 mb-1">策略原理</div>
+              <p className="text-xs text-forest-500 dark:text-forest-400 leading-relaxed">{editReply.rationale}</p>
             </div>
             <div>
-              <label className="block text-xs text-forest-500 mb-1">回复内容（可编辑）</label>
+              <label className="block text-xs text-forest-500 dark:text-forest-400 mb-1">回复内容（可编辑）</label>
               <textarea
                 className="input min-h-[180px] resize-y"
                 value={editContent}
@@ -580,14 +657,14 @@ function MessageBubble({
     <div className={`flex ${isCandidate ? 'justify-start' : 'justify-end'}`}>
       <div className={`max-w-[80%] ${isCandidate ? '' : 'text-right'}`}>
         {/* 角色标签 */}
-        <div className={`text-xs text-forest-400 mb-1 ${isCandidate ? 'text-left' : 'text-right'}`}>
+        <div className={`text-xs text-forest-400 dark:text-forest-500 mb-1 ${isCandidate ? 'text-left' : 'text-right'}`}>
           {isCandidate ? '求职者' : '我（HR）'} · {time}
         </div>
         {/* 气泡 */}
         <div
           className={`inline-block px-3.5 py-2.5 rounded-lg text-sm whitespace-pre-wrap break-words text-left ${
             isCandidate
-              ? 'bg-cream-50 border border-forest-100 text-forest-800 rounded-tl-sm'
+              ? 'bg-cream-50 dark:bg-forest-800/50 border border-forest-100 dark:border-forest-800 text-forest-800 dark:text-cream-100 rounded-tl-sm'
               : 'bg-forest-700 text-cream-50 rounded-tr-sm'
           }`}
         >
@@ -598,7 +675,7 @@ function MessageBubble({
           <button
             type="button"
             onClick={() => onCopy(message.content)}
-            className="text-forest-400 hover:text-forest-600 flex items-center gap-0.5"
+            className="text-forest-400 dark:text-forest-500 hover:text-forest-600 flex items-center gap-0.5"
           >
             <Copy className="w-3 h-3" />
             复制
@@ -608,7 +685,7 @@ function MessageBubble({
               type="button"
               onClick={() => onViewAnalysis(message)}
               className={`flex items-center gap-0.5 ${
-                isActiveAnalysis ? 'text-forest-700 font-medium' : 'text-forest-400 hover:text-forest-600'
+                isActiveAnalysis ? 'text-forest-700 dark:text-cream-200 font-medium' : 'text-forest-400 dark:text-forest-500 hover:text-forest-600'
               }`}
             >
               <Sparkles className="w-3 h-3" />
@@ -618,7 +695,7 @@ function MessageBubble({
         </div>
         {/* 已选回复标记 */}
         {isCandidate && message.selected_reply && (
-          <div className="mt-1 text-xs text-forest-500">
+          <div className="mt-1 text-xs text-forest-500 dark:text-forest-400">
             已发送：{message.selected_reply.strategyName}
           </div>
         )}
@@ -626,6 +703,16 @@ function MessageBubble({
     </div>
   );
 }
+
+// ===== 建议操作 chip 定义 =====
+const SUGGESTED_ACTIONS = [
+  { label: '安排面试', icon: CalendarCheck, text: '您好，我们可以安排一次面试，请问您方便的时间是？' },
+  { label: '发送 Offer', icon: CheckCircle2, text: '恭喜您通过面试！我们会尽快为您准备 offer，稍后发给您确认。' },
+  { label: '跟进沟通', icon: PhoneCall, text: '您好，想跟您确认一下之前的沟通情况，您目前考虑得怎么样了？' },
+  { label: '确认意向', icon: Target, text: '您好，想确认一下您对这个职位的意向，是否有其他疑虑需要解答？' },
+  { label: '推荐其他职位', icon: Zap, text: '我们还有几个类似的机会，我觉得也比较适合您，方便简单介绍一下吗？' },
+  { label: '薪资沟通', icon: Wallet, text: '关于薪资方面，您目前的期望是怎样的？我们可以一起看看怎么匹配。' },
+];
 
 // ===== AI 分析面板 =====
 function AnalysisPanel({
@@ -635,6 +722,7 @@ function AnalysisPanel({
   onRegenerate,
   onSendReply,
   onCopy,
+  onUseSuggestion,
   onEdit,
 }: {
   analysis: ChatAnalysisResult;
@@ -643,20 +731,21 @@ function AnalysisPanel({
   onRegenerate: () => void;
   onSendReply: (reply: ChatReply) => void;
   onCopy: (text: string) => void;
+  onUseSuggestion: (text: string) => void;
   onEdit: (reply: ChatReply) => void;
 }) {
   return (
     <div className="flex flex-col h-full">
       {/* 头部 */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-forest-100 bg-cream-50/40">
-        <div className="flex items-center gap-1.5 text-sm font-medium text-forest-700">
-          <Brain className="w-4 h-4 text-forest-600" />
+      <div className="flex items-center justify-between px-4 py-3 border-b border-forest-100 dark:border-forest-800 bg-cream-50/40 dark:bg-forest-800/30">
+        <div className="flex items-center gap-1.5 text-sm font-medium text-forest-700 dark:text-cream-200">
+          <Brain className="w-4 h-4 text-forest-600 dark:text-cream-300" />
           AI 资深 HR 分析
         </div>
         <button
           type="button"
           onClick={onRegenerate}
-          className="text-xs text-forest-500 hover:text-forest-700 flex items-center gap-0.5"
+          className="text-xs text-forest-500 dark:text-forest-400 hover:text-forest-700 flex items-center gap-0.5"
           disabled={regenerating}
         >
           {regenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
@@ -667,13 +756,13 @@ function AnalysisPanel({
       {/* 滚动区 */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {/* 转化概率 */}
-        <div className="rounded-lg bg-gradient-to-br from-forest-50 to-cream-50 border border-forest-100 p-3">
+        <div className="rounded-lg bg-gradient-to-br from-forest-50 to-cream-50 border border-forest-100 dark:from-forest-800 dark:to-forest-900 dark:border-forest-700 p-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-xs text-forest-500">
+            <div className="flex items-center gap-1.5 text-xs text-forest-500 dark:text-forest-400">
               <TrendingUp className="w-3.5 h-3.5" />
               转化入职概率
             </div>
-            <span className="text-2xl font-bold font-mono text-forest-700">
+            <span className="text-2xl font-bold font-mono text-forest-700 dark:text-cream-200">
               {analysis.conversionProbability}%
             </span>
           </div>
@@ -681,10 +770,10 @@ function AnalysisPanel({
 
         {/* 意图 */}
         <AnalysisBlock icon={<Target className="w-3.5 h-3.5" />} title="求职意图">
-          <div className="text-sm text-forest-700">{analysis.intent}</div>
+          <div className="text-sm text-forest-700 dark:text-cream-200">{analysis.intent}</div>
           {analysis.intentType && (
             <div className="mt-1">
-              <span className="badge bg-forest-100 text-forest-700 text-xs">{analysis.intentType}</span>
+              <span className="badge bg-forest-100 dark:bg-forest-800 text-forest-700 dark:text-forest-400 text-xs">{analysis.intentType}</span>
             </div>
           )}
         </AnalysisBlock>
@@ -699,7 +788,7 @@ function AnalysisPanel({
             {RISK_LEVEL_TEXT[analysis.riskLevel] || analysis.riskLevel}
           </span>
           {analysis.riskReasons && analysis.riskReasons.length > 0 && (
-            <ul className="mt-2 text-xs text-forest-600 space-y-1 list-disc list-inside">
+            <ul className="mt-2 text-xs text-forest-600 dark:text-cream-300 space-y-1 list-disc list-inside">
               {analysis.riskReasons.map((r, i) => (
                 <li key={i}>{r}</li>
               ))}
@@ -709,27 +798,49 @@ function AnalysisPanel({
 
         {/* 情绪 */}
         <AnalysisBlock icon={<Heart className="w-3.5 h-3.5" />} title="情绪状态">
-          <div className="text-sm text-forest-700">{analysis.emotion}</div>
+          <div className="text-sm text-forest-700 dark:text-cream-200">{analysis.emotion}</div>
         </AnalysisBlock>
 
         {/* 画像分类 */}
         <AnalysisBlock icon={<Brain className="w-3.5 h-3.5" />} title="求职者画像">
-          <div className="text-sm text-forest-700">{analysis.profileCategory}</div>
+          <div className="text-sm text-forest-700 dark:text-cream-200">{analysis.profileCategory}</div>
         </AnalysisBlock>
 
         {/* 总策略 */}
         <AnalysisBlock icon={<Lightbulb className="w-3.5 h-3.5" />} title="应对策略">
-          <div className="text-xs text-forest-600 leading-relaxed">{analysis.strategy}</div>
+          <div className="text-xs text-forest-600 dark:text-cream-300 leading-relaxed">{analysis.strategy}</div>
         </AnalysisBlock>
 
         {/* 下一步 */}
         <AnalysisBlock icon={<ArrowRight className="w-3.5 h-3.5" />} title="下一步建议">
-          <div className="text-xs text-forest-600 leading-relaxed">{analysis.nextStep}</div>
+          <div className="text-xs text-forest-600 dark:text-cream-300 leading-relaxed">{analysis.nextStep}</div>
         </AnalysisBlock>
+
+        {/* 建议操作 Chips */}
+        <div className="flex flex-wrap gap-1.5">
+          {SUGGESTED_ACTIONS.map((action) => {
+            const Icon = action.icon;
+            return (
+              <button
+                key={action.label}
+                type="button"
+                onClick={() => onUseSuggestion(action.text)}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium
+                  bg-forest-50 text-forest-700 border border-forest-200 hover:bg-forest-100
+                  dark:bg-forest-800 dark:text-forest-300 dark:border-forest-700 dark:hover:bg-forest-700
+                  transition-colors cursor-pointer"
+                title={action.text}
+              >
+                <Icon className="w-3 h-3" />
+                {action.label}
+              </button>
+            );
+          })}
+        </div>
 
         {/* 3 套回复策略 */}
         <div className="pt-2">
-          <div className="text-xs font-medium text-forest-700 mb-2 flex items-center gap-1.5">
+          <div className="text-xs font-medium text-forest-700 dark:text-cream-200 mb-2 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-ochre-500" />
             3 套回复策略（选优发送）
           </div>
@@ -762,8 +873,8 @@ function AnalysisBlock({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-forest-100 bg-white p-3">
-      <div className="flex items-center gap-1.5 text-xs text-forest-500 mb-1.5">
+    <div className="rounded-lg border border-forest-100 dark:border-forest-800 bg-white dark:bg-forest-900 p-3">
+      <div className="flex items-center gap-1.5 text-xs text-forest-500 dark:text-forest-400 mb-1.5">
         {icon}
         {title}
       </div>
@@ -787,17 +898,17 @@ function ReplyCard({
   onEdit: () => void;
 }) {
   return (
-    <div className="rounded-lg border border-forest-200 bg-cream-50/40 p-3">
+    <div className="rounded-lg border border-forest-200 dark:border-forest-700 bg-cream-50/40 dark:bg-forest-800/30 p-3">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-xs font-medium text-forest-700 px-2 py-0.5 rounded bg-forest-100">
+        <div className="text-xs font-medium text-forest-700 dark:text-cream-200 px-2 py-0.5 rounded bg-forest-100 dark:bg-forest-800">
           {reply.strategyName}
         </div>
       </div>
-      <div className="text-sm text-forest-800 whitespace-pre-wrap leading-relaxed">
+      <div className="text-sm text-forest-800 dark:text-cream-100 whitespace-pre-wrap leading-relaxed">
         {reply.content}
       </div>
       {reply.rationale && (
-        <div className="mt-2 text-xs text-forest-500 leading-relaxed border-t border-forest-100 pt-2">
+        <div className="mt-2 text-xs text-forest-500 dark:text-forest-400 leading-relaxed border-t border-forest-100 dark:border-forest-800 pt-2">
           <span className="font-medium">原理：</span>
           {reply.rationale}
         </div>
@@ -825,7 +936,7 @@ function ReplyCard({
         <button
           type="button"
           onClick={onCopy}
-          className="text-xs px-2 py-1 rounded text-forest-500 hover:bg-forest-50 flex items-center gap-1"
+          className="text-xs px-2 py-1 rounded text-forest-500 dark:text-forest-400 hover:bg-forest-50 dark:hover:bg-forest-800/50 flex items-center gap-1"
         >
           <Copy className="w-3 h-3" />
           复制

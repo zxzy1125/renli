@@ -14,6 +14,8 @@ import {
 import { findPositionById } from '../repositories/positionRepo.js';
 import { findResumeById } from '../repositories/resumeRepo.js';
 import { callByPromptKey } from '../services/aiService.js';
+import { createMatchSchema, updateMatchStatusSchema, validateBody, validateQuery, paginationSchema, keywordSearchSchema } from '../schemas/index.js';
+import { writeAudit } from '../services/auditService.js';
 
 export const matchesRouter = Router();
 
@@ -55,11 +57,8 @@ matchesRouter.get('/:id', asyncHandler(async (req, res) => {
 }));
 
 // POST /api/matches（创建匹配，调 AI 生成匹配报告）
-matchesRouter.post('/', asyncHandler(async (req, res) => {
-  const { position_id, resume_id } = req.body ?? {};
-  if (!position_id || !resume_id) {
-    throw new ApiError(400, 'position_id 和 resume_id 不能为空');
-  }
+matchesRouter.post('/', validateBody(createMatchSchema), asyncHandler(async (req, res) => {
+  const { position_id, resume_id } = req.body;
   const position = findPositionById(String(position_id));
   if (!position) throw new ApiError(404, '职位不存在');
   const resume = findResumeById(String(resume_id));
@@ -117,17 +116,18 @@ matchesRouter.post('/', asyncHandler(async (req, res) => {
   }
 
   const finalMatch = findMatchById(match.id);
+  writeAudit({ userId: req.user!.id, action: 'create', entityType: 'match', entityId: match.id, detail: { position_id, resume_id } });
   res.status(201).json({ data: finalMatch, aiReport });
 }));
 
 // PATCH /api/matches/:id/status（推进状态）
-matchesRouter.patch('/:id/status', asyncHandler(async (req, res) => {
+matchesRouter.patch('/:id/status', validateBody(updateMatchStatusSchema), asyncHandler(async (req, res) => {
   const m = findMatchById(String(req.params.id));
   if (!m) throw new ApiError(404, '匹配不存在');
   assertOwnerOrAdmin(m, req.user);
-  const { status } = req.body ?? {};
-  if (!status) throw new ApiError(400, 'status 不能为空');
+  const { status } = req.body;
   const updated = updateMatchStatus(String(req.params.id), String(status));
+  writeAudit({ userId: req.user!.id, action: 'update_status', entityType: 'match', entityId: String(req.params.id), detail: { status } });
   res.json({ data: updated });
 }));
 

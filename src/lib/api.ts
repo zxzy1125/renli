@@ -168,6 +168,8 @@ export const resumesApi = {
   update: (id: string, body: Partial<Resume> & { phone?: string; email?: string }) =>
     api.put<unknown, { data: Resume }>(`/resumes/${id}`, body).then((r) => r.data),
   remove: (id: string) => api.delete<unknown, { ok: boolean }>(`/resumes/${id}`),
+  batchImport: (resumes: Partial<Resume>[]) =>
+    api.post<unknown, { imported: number; skipped: number; errors: string[] }>('/resumes/batch-import', { resumes }),
   upload: (file: File) => {
     const fd = new FormData();
     fd.append('file', file);
@@ -230,10 +232,46 @@ export const reportsApi = {
     api.get<unknown, { data: unknown[] }>('/reports/employee-performance').then((r) => r.data ?? []),
   clientSummary: () =>
     api.get<unknown, { data: unknown[] }>('/reports/client-summary').then((r) => r.data ?? []),
+  trends: (months = 6) =>
+    api.get<unknown, { data: { month: string; matches: number; conversions: number }[] }>('/reports/trends', { params: { months } }).then((r) => r.data ?? []),
+  export: (type: 'positions' | 'resumes' | 'matches', format: 'xlsx' | 'pdf' = 'xlsx') =>
+    api.get(`/reports/export/${type}`, { params: { format }, responseType: 'blob' as any }),
+};
+
+// ===== 全局搜索 API =====
+export const searchApi = {
+  search: (q: string, limit = 6) =>
+    api.get<unknown, { positions: Position[]; resumes: Resume[]; clients: Client[] }>('/search', { params: { q, limit } }),
+};
+
+// ===== 通知 API =====
+export interface Notification {
+  id: string;
+  type: string;
+  title: string;
+  content: string;
+  link?: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export const notificationsApi = {
+  list: (params: { page?: number; pageSize?: number; is_read?: boolean } = {}) =>
+    api.get<unknown, Paginated<Notification>>('/notifications', { params }),
+  unreadCount: () =>
+    api.get<unknown, { count: number }>('/notifications/unread-count').then((r) => r.count),
+  markRead: (id: string) =>
+    api.put(`/notifications/${id}/read`),
+  markAllRead: () =>
+    api.put('/notifications/read-all'),
 };
 
 // ===== AI 调用 API（员工/管理员） =====
 export const aiApi = {
+  batchMatch: (position_id: string, resume_ids: string[]) =>
+    api
+      .post<unknown, { data: Match[] }>('/ai/batch-match', { position_id, resume_ids })
+      .then((r) => r.data),
   parsePosition: (raw_text: string, images?: Array<{ name: string; mime: string; base64: string }>) =>
     api.post<unknown, { data: unknown }>('/ai/parse-position', { raw_text, images }),
   parseResume: (raw_text: string, images?: Array<{ name: string; mime: string; base64: string }>) =>

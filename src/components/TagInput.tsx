@@ -49,20 +49,20 @@ export default function TagInput({
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center gap-1 px-2 py-1.5 rounded-lg border border-forest-200 bg-white focus-within:ring-2 focus-within:ring-forest-400 focus-within:border-transparent transition',
+        'flex flex-wrap items-center gap-1 px-2 py-1.5 rounded-lg border border-forest-200 bg-white dark:bg-forest-900 dark:border-forest-700 focus-within:ring-2 focus-within:ring-forest-400 focus-within:border-transparent transition',
         className
       )}
     >
       {value.map((tag, i) => (
         <span
           key={tag + i}
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-forest-50 text-forest-700 border border-forest-200"
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-forest-50 text-forest-700 border border-forest-200 dark:bg-forest-800 dark:text-forest-300 dark:border-forest-700"
         >
           {tag}
           <button
             type="button"
             onClick={() => removeTag(i)}
-            className="text-forest-400 hover:text-risk-600"
+            className="text-forest-400 hover:text-risk-600 dark:text-forest-500 dark:hover:text-risk-400"
             aria-label={`删除 ${tag}`}
           >
             <X className="w-3 h-3" />
@@ -70,7 +70,7 @@ export default function TagInput({
         </span>
       ))}
       <div className="flex items-center gap-1 flex-1 min-w-[120px]">
-        <Plus className="w-3 h-3 text-forest-400" />
+        <Plus className="w-3 h-3 text-forest-400 dark:text-forest-500" />
         <input
           type="text"
           className="flex-1 px-1 py-0.5 text-sm bg-transparent outline-none border-0 focus:ring-0"

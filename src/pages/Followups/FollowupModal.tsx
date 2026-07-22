@@ -311,7 +311,7 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
       )}
 
       {/* Tab 切换 */}
-      <div className="flex items-center gap-1 mb-4 border-b border-forest-100">
+      <div className="flex items-center gap-1 mb-4 border-b border-forest-100 dark:border-forest-800">
         <TabButton
           active={activeTab === 'card'}
           onClick={() => setActiveTab('card')}
@@ -337,7 +337,7 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
       {/* Tab 1: AI 作战卡片 */}
       {activeTab === 'card' && (
         <div>
-          <div className="mb-3 px-3 py-2 rounded-lg bg-ochre-50 border border-ochre-100 text-xs text-ochre-700 flex items-center gap-1.5">
+          <div className="mb-3 px-3 py-2 rounded-lg bg-ochre-50 border border-ochre-100 text-xs text-ochre-700 flex items-center gap-1.5 dark:bg-ochre-900/20 dark:border-ochre-800 dark:text-ochre-400">
             <AlertTriangle className="w-3.5 h-3.5" />
             此卡片供参考，请结合实际情况灵活运用
           </div>
@@ -349,7 +349,7 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
           {preError && !preLoading && (
             <div className="py-8 text-center">
               <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-risk-500" />
-              <p className="text-sm text-risk-700 mb-3">{preError}</p>
+              <p className="text-sm text-risk-700 dark:text-risk-400 mb-3">{preError}</p>
               <button type="button" className="btn-secondary" onClick={fetchPreAnalysis}>
                 <RefreshCw className="w-4 h-4 mr-1 inline" /> 重新生成
               </button>
@@ -360,7 +360,7 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
             <div className="space-y-3">
               {/* 求职者画像速览 */}
               <CardBlock title="求职者画像速览" icon={<Target className="w-4 h-4" />}>
-                <p className="text-sm text-forest-700 leading-relaxed whitespace-pre-wrap">
+                <p className="text-sm text-forest-700 dark:text-cream-200 leading-relaxed whitespace-pre-wrap">
                   {preAnalysis.profileSummary}
                 </p>
               </CardBlock>
@@ -368,7 +368,7 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
               {/* 本次回访目标 */}
               <CardBlock title="本次回访目标" icon={<Target className="w-4 h-4" />}>
                 {preAnalysis.followupGoals?.length ? (
-                  <ol className="list-decimal pl-5 text-sm text-forest-700 space-y-1">
+                  <ol className="list-decimal pl-5 text-sm text-forest-700 dark:text-cream-200 space-y-1">
                     {preAnalysis.followupGoals.map((g, i) => (
                       <li key={i}>{g}</li>
                     ))}
@@ -385,7 +385,7 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
                 tone="ochre"
               >
                 {preAnalysis.predictedConcerns?.length ? (
-                  <ol className="list-decimal pl-5 text-sm text-forest-700 space-y-1">
+                  <ol className="list-decimal pl-5 text-sm text-forest-700 dark:text-cream-200 space-y-1">
                     {preAnalysis.predictedConcerns.map((c, i) => (
                       <li key={i}>{c}</li>
                     ))}
@@ -407,7 +407,7 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
                     return (
                       <div
                         key={i}
-                        className="p-3 rounded-lg bg-cream-50 border border-forest-100"
+                        className="p-3 rounded-lg bg-cream-50 dark:bg-forest-800/50 border border-forest-100 dark:border-forest-800"
                       >
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <div className="text-xs font-medium text-ochre-700">
@@ -416,12 +416,12 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
                           <button
                             type="button"
                             onClick={() => handleCopy(s.content)}
-                            className="text-xs text-forest-500 hover:text-forest-700 flex items-center gap-0.5 flex-shrink-0"
+                            className="text-xs text-forest-500 dark:text-forest-400 hover:text-forest-700 dark:hover:text-cream-200 flex items-center gap-0.5 flex-shrink-0"
                           >
                             <Copy className="w-3 h-3" /> 复制
                           </button>
                         </div>
-                        <p className="text-sm text-forest-800 whitespace-pre-wrap leading-relaxed">
+                        <p className="text-sm text-forest-800 dark:text-cream-100 whitespace-pre-wrap leading-relaxed">
                           {s.content}
                         </p>
                       </div>
@@ -461,11 +461,11 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
                   </span>
                 </div>
                 {preAnalysis.strategy && (
-                  <div className="mt-2 p-3 rounded-lg bg-forest-50 border border-forest-100">
-                    <div className="text-xs text-forest-600 mb-1 flex items-center gap-1">
+                  <div className="mt-2 p-3 rounded-lg bg-forest-50 dark:bg-forest-800 border border-forest-100 dark:border-forest-800">
+                    <div className="text-xs text-forest-600 dark:text-cream-300 mb-1 flex items-center gap-1">
                       <Lightbulb className="w-3.5 h-3.5" /> 建议策略
                     </div>
-                    <p className="text-sm text-forest-700 leading-relaxed whitespace-pre-wrap">
+                    <p className="text-sm text-forest-700 dark:text-cream-200 leading-relaxed whitespace-pre-wrap">
                       {preAnalysis.strategy}
                     </p>
                   </div>
@@ -492,7 +492,7 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
       {activeTab === 'form' && (
         <div className="space-y-4">
           {formError && (
-            <div className="px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+            <div className="px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
               {formError}
             </div>
           )}
@@ -545,8 +545,8 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
                       onClick={() => togglePosition(p.id)}
                       className={`px-2.5 py-1 rounded text-xs border transition-all ${
                         checked
-                          ? 'bg-forest-100 text-forest-700 border-forest-400'
-                          : 'bg-white text-forest-600 border-forest-200 hover:border-forest-400'
+                          ? 'bg-forest-100 dark:bg-forest-800 text-forest-700 dark:text-forest-300 border-forest-400'
+                          : 'bg-white dark:bg-forest-900 text-forest-600 dark:text-cream-300 border-forest-200 dark:border-forest-700 hover:border-forest-400'
                       }`}
                     >
                       {checked && <Check className="w-3 h-3 inline mr-0.5" />}
@@ -612,8 +612,8 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
           </div>
 
           {createdRecord && (
-            <div className="mt-2 p-3 rounded-lg bg-forest-50 border border-forest-100 text-sm text-forest-700 flex items-center gap-2">
-              <Check className="w-4 h-4 text-forest-600" />
+            <div className="mt-2 p-3 rounded-lg bg-forest-50 border border-forest-100 text-sm text-forest-700 flex items-center gap-2 dark:bg-forest-800 dark:border-forest-800 dark:text-cream-200">
+              <Check className="w-4 h-4 text-forest-600 dark:text-forest-400" />
               <span>已保存回访记录，AI 深度分析正在生成中...</span>
               <button
                 type="button"
@@ -632,8 +632,8 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
         <div>
           {!createdRecord && (
             <div className="py-12 text-center">
-              <ClipboardList className="w-10 h-10 mx-auto mb-3 text-forest-300" />
-              <p className="text-sm text-forest-500 mb-2">请先在「录入回访」Tab 填写并保存</p>
+              <ClipboardList className="w-10 h-10 mx-auto mb-3 text-forest-300 dark:text-forest-600" />
+              <p className="text-sm text-forest-500 dark:text-forest-400 mb-2">请先在「录入回访」Tab 填写并保存</p>
               <button
                 type="button"
                 onClick={() => setActiveTab('form')}
@@ -662,7 +662,7 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
             <div className="space-y-3">
               {/* 员工回访记录原始 */}
               <CardBlock title="员工回访记录（原始）" icon={<ClipboardList className="w-4 h-4" />}>
-                <p className="text-sm text-forest-700 leading-relaxed whitespace-pre-wrap bg-cream-50 p-3 rounded-lg border border-forest-100">
+                <p className="text-sm text-forest-700 leading-relaxed whitespace-pre-wrap bg-cream-50 p-3 rounded-lg border border-forest-100 dark:text-cream-200 dark:bg-forest-800/50 dark:border-forest-800">
                   {createdRecord.note || '（无记录）'}
                 </p>
                 <div className="flex flex-wrap gap-2 mt-2 text-xs text-forest-500">
@@ -694,17 +694,17 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
                     {postAnalysis.concerns.map((c, i) => (
                       <div
                         key={i}
-                        className="p-3 rounded-lg bg-cream-50 border border-forest-100"
+                        className="p-3 rounded-lg bg-cream-50 border border-forest-100 dark:bg-forest-800/50 dark:border-forest-800"
                       >
                         <div className="flex items-start justify-between gap-2 mb-1">
-                          <div className="text-sm font-medium text-forest-800">
+                          <div className="text-sm font-medium text-forest-800 dark:text-cream-100">
                             顾虑{i + 1}：{c.concern}
                           </div>
                           <span className={`badge ${strengthToneClass(c.strength)} flex-shrink-0`}>
                             {c.strength}
                           </span>
                         </div>
-                        <p className="text-sm text-forest-700 leading-relaxed mt-1">
+                        <p className="text-sm text-forest-700 dark:text-cream-200 leading-relaxed mt-1">
                           <span className="text-forest-500">分析：</span>
                           {c.analysis}
                         </p>
@@ -727,10 +727,10 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
                     {postAnalysis.strategies.map((s, i) => (
                       <div
                         key={i}
-                        className="p-3 rounded-lg bg-cream-50 border border-forest-100"
+                        className="p-3 rounded-lg bg-cream-50 border border-forest-100 dark:bg-forest-800/50 dark:border-forest-800"
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="text-sm font-medium text-forest-800">
+                          <div className="text-sm font-medium text-forest-800 dark:text-cream-100">
                             策略{i + 1}：{s.strategy}
                           </div>
                           <span className={`badge ${priorityToneClass(s.priority)} flex-shrink-0`}>
@@ -794,22 +794,22 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
               <CardBlock title="下次回访建议" icon={<Calendar className="w-4 h-4" />}>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <div className="text-xs text-forest-500 mb-0.5">建议时间</div>
-                    <div className="text-sm font-medium text-forest-800">
+                    <div className="text-xs text-forest-500 dark:text-forest-400 mb-0.5">建议时间</div>
+                    <div className="text-sm font-medium text-forest-800 dark:text-cream-100">
                       {postAnalysis.nextFollowup?.suggestedDate
                         ? dayjs(postAnalysis.nextFollowup.suggestedDate).format('YYYY-MM-DD')
                         : '—'}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-forest-500 mb-0.5">重点</div>
-                    <div className="text-sm text-forest-700">
+                    <div className="text-xs text-forest-500 dark:text-forest-400 mb-0.5">重点</div>
+                    <div className="text-sm text-forest-700 dark:text-cream-200">
                       {postAnalysis.nextFollowup?.focus || '—'}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-forest-500 mb-0.5">准备物料</div>
-                    <div className="text-sm text-forest-700">
+                    <div className="text-xs text-forest-500 dark:text-forest-400 mb-0.5">准备物料</div>
+                    <div className="text-sm text-forest-700 dark:text-cream-200">
                       {postAnalysis.nextFollowup?.preparation?.length
                         ? postAnalysis.nextFollowup.preparation.join('、')
                         : '—'}
@@ -825,7 +825,7 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
                   icon={<MessageSquare className="w-4 h-4" />}
                   tone="ochre"
                 >
-                  <p className="text-xs text-forest-500 mb-2">
+                  <p className="text-xs text-forest-500 dark:text-forest-400 mb-2">
                     针对每个顾虑生成 3 渠道（微信/电话/站内信）应对话术
                   </p>
                   <div className="space-y-2">
@@ -834,13 +834,13 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
                         key={i}
                         type="button"
                         onClick={() => handleGeneratePitch(c.concern, c.analysis)}
-                        className="w-full text-left p-3 rounded-lg border border-ochre-200 bg-ochre-50/50 hover:bg-ochre-50 transition-colors flex items-center justify-between gap-2"
+                        className="w-full text-left p-3 rounded-lg border border-ochre-200 dark:border-ochre-800 bg-ochre-50/50 dark:bg-ochre-900/20 hover:bg-ochre-50 dark:hover:bg-ochre-900/30 transition-colors flex items-center justify-between gap-2"
                       >
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-forest-800">
+                          <div className="text-sm font-medium text-forest-800 dark:text-cream-100">
                             顾虑{i + 1}：{c.concern}
                           </div>
-                          <div className="text-xs text-forest-500 mt-0.5">
+                          <div className="text-xs text-forest-500 dark:text-forest-400 mt-0.5">
                             生成针对此顾虑的 3 渠道话术
                           </div>
                         </div>
@@ -910,16 +910,16 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
             {PITCH_CHANNELS.map((ch) => (
               <div
                 key={ch}
-                className="p-3 rounded-lg bg-cream-50 border border-forest-100"
+                className="p-3 rounded-lg bg-cream-50 dark:bg-forest-800/50 border border-forest-100 dark:border-forest-800"
               >
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <div className="text-xs font-medium text-ochre-700">
+                  <div className="text-xs font-medium text-ochre-700 dark:text-ochre-400">
                     {CHANNEL_LABELS[ch]}
                   </div>
                   <button
                     type="button"
                     onClick={() => handleCopy(pitches[ch], ch)}
-                    className="text-xs text-forest-500 hover:text-forest-700 flex items-center gap-0.5"
+                    className="text-xs text-forest-500 dark:text-forest-400 hover:text-forest-700 dark:hover:text-cream-200 flex items-center gap-0.5"
                   >
                     {copiedChannel === ch ? (
                       <>
@@ -932,7 +932,7 @@ export default function FollowupModal({ open, onClose, plan, onRecorded }: Follo
                     )}
                   </button>
                 </div>
-                <p className="text-sm text-forest-800 whitespace-pre-wrap leading-relaxed">
+                <p className="text-sm text-forest-800 dark:text-cream-100 whitespace-pre-wrap leading-relaxed">
                   {pitches[ch]}
                 </p>
               </div>
@@ -968,8 +968,8 @@ function TabButton({
       title={hint}
       className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px flex items-center gap-1.5 ${
         active
-          ? 'border-ochre-500 text-forest-800'
-          : 'border-transparent text-forest-500 hover:text-forest-700'
+          ? 'border-ochre-500 text-forest-800 dark:text-cream-100'
+          : 'border-transparent text-forest-500 dark:text-forest-400 hover:text-forest-700 dark:hover:text-cream-200'
       } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
     >
       {icon}
@@ -1004,10 +1004,10 @@ function CardBlock({
   children: React.ReactNode;
   tone?: 'forest' | 'ochre';
 }) {
-  const titleColor = tone === 'ochre' ? 'text-ochre-700' : 'text-forest-700';
-  const iconColor = tone === 'ochre' ? 'text-ochre-500' : 'text-forest-500';
+  const titleColor = tone === 'ochre' ? 'text-ochre-700' : 'text-forest-700 dark:text-cream-200';
+  const iconColor = tone === 'ochre' ? 'text-ochre-500' : 'text-forest-500 dark:text-forest-400';
   return (
-    <div className="rounded-lg border border-forest-100 bg-white p-4">
+    <div className="rounded-lg border border-forest-100 dark:border-forest-800 bg-white dark:bg-forest-900 p-4">
       <div className={`flex items-center gap-1.5 font-medium text-sm mb-2 ${titleColor}`}>
         <span className={iconColor}>{icon}</span>
         {title}

@@ -327,16 +327,16 @@ export default function PositionForm() {
       </div>
 
       <div className="mb-4">
-        <h1 className="font-serif text-2xl font-bold text-forest-800">
+        <h1 className="font-serif text-2xl font-bold text-forest-800 dark:text-cream-100">
           {isEdit ? '编辑职位' : '新建职位'}
         </h1>
-        <p className="text-sm text-forest-500 mt-1">
+        <p className="text-sm text-forest-500 dark:text-forest-400 mt-1">
           {isEdit ? '修改职位信息后保存' : '粘贴/上传客户原文，AI 一键解析后入库'}
         </p>
       </div>
 
       {error && (
-        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
           {error}
         </div>
       )}
@@ -344,7 +344,7 @@ export default function PositionForm() {
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* 左栏：基本信息 */}
         <div className="card p-5">
-          <h2 className="font-serif text-lg font-semibold text-forest-800 mb-4">基本信息</h2>
+          <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-4">基本信息</h2>
           <div className="space-y-3">
             <Field label="职位标题" required error={errors.title}>
               <input
@@ -500,14 +500,14 @@ export default function PositionForm() {
         <div className="space-y-4">
           <div className="card p-5">
             {/* 录入方式 Tab */}
-            <div className="flex items-center gap-2 mb-3 border-b border-forest-100 pb-2">
+            <div className="flex items-center gap-2 mb-3 border-b border-forest-100 dark:border-forest-800 pb-2">
               <button
                 type="button"
                 onClick={() => setInputMode('paste')}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm ${
                   inputMode === 'paste'
                     ? 'bg-forest-100 text-forest-700'
-                    : 'text-forest-500 hover:bg-forest-50'
+                    : 'text-forest-500 dark:text-forest-400 hover:bg-forest-50 dark:hover:bg-forest-800/30'
                 }`}
               >
                 <ClipboardPaste className="w-4 h-4" />
@@ -519,7 +519,7 @@ export default function PositionForm() {
                 className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm ${
                   inputMode === 'upload'
                     ? 'bg-forest-100 text-forest-700'
-                    : 'text-forest-500 hover:bg-forest-50'
+                    : 'text-forest-500 dark:text-forest-400 hover:bg-forest-50 dark:hover:bg-forest-800/30'
                 }`}
               >
                 <Upload className="w-4 h-4" />
@@ -554,31 +554,31 @@ export default function PositionForm() {
                   type="button"
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
-                  className="w-full border-2 border-dashed border-forest-200 rounded-lg py-8 text-center text-forest-500 hover:bg-forest-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full border-2 border-dashed border-forest-200 dark:border-forest-700 rounded-lg py-8 text-center text-forest-500 dark:text-forest-400 hover:bg-forest-50 dark:hover:bg-forest-800/30 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {uploading ? (
                     <>
-                      <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-forest-400" />
-                      <div className="text-sm text-forest-500">文件上传中，请稍候…</div>
+                      <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-forest-400 dark:text-forest-500" />
+                      <div className="text-sm text-forest-500 dark:text-forest-400">文件上传中，请稍候…</div>
                     </>
                   ) : (
                     <>
                       <Upload className="w-6 h-6 mx-auto mb-2" />
                       <div className="text-sm">点击上传文件</div>
-                      <div className="text-xs text-forest-400 mt-1">
+                      <div className="text-xs text-forest-400 dark:text-forest-500 mt-1">
                         支持 .txt / .pdf / .docx / .xlsx / .xls / .csv / .jpg / .png 等
                       </div>
-                      <div className="text-xs text-forest-400 mt-0.5">
+                      <div className="text-xs text-forest-400 dark:text-forest-500 mt-0.5">
                         自动提取文本 + Excel 多工作表 + Word/Excel 嵌入附件 + 图片多模态识别
                       </div>
                     </>
                   )}
                 </button>
                 {form.source_filename && (
-                  <div className="mt-2 flex items-center gap-1.5 text-xs text-forest-600 bg-forest-50 px-2 py-1.5 rounded">
+                  <div className="mt-2 flex items-center gap-1.5 text-xs text-forest-600 dark:text-cream-300 bg-forest-50 dark:bg-forest-800/30 px-2 py-1.5 rounded">
                     <FileText className="w-3.5 h-3.5" />
                     <span className="truncate">原文件：{form.source_filename}</span>
-                    <span className="text-forest-400">（{form.source_ext}）</span>
+                    <span className="text-forest-400 dark:text-forest-500">（{form.source_ext}）</span>
                   </div>
                 )}
 
@@ -586,7 +586,7 @@ export default function PositionForm() {
                 {uploadMeta && (uploadMeta.sheetCount > 0 || uploadMeta.imageCount > 0 || uploadMeta.attachmentCount > 0) && (
                   <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
                     {uploadMeta.sheetCount > 0 && (
-                      <span className="px-1.5 py-0.5 rounded bg-ochre-50 text-ochre-700 border border-ochre-100">
+                      <span className="px-1.5 py-0.5 rounded bg-ochre-50 dark:bg-ochre-900/20 text-ochre-700 dark:text-ochre-400 border border-ochre-100 dark:border-ochre-800">
                         {uploadMeta.sheetCount} 个工作表
                       </span>
                     )}
@@ -596,7 +596,7 @@ export default function PositionForm() {
                       </span>
                     )}
                     {uploadMeta.attachmentCount > 0 && (
-                      <span className="px-1.5 py-0.5 rounded bg-cream-100 text-forest-700 border border-forest-100">
+                      <span className="px-1.5 py-0.5 rounded bg-cream-100 dark:bg-forest-800/50 text-forest-700 dark:text-cream-200 border border-forest-100 dark:border-forest-800">
                         {uploadMeta.attachmentCount} 个嵌入附件
                       </span>
                     )}
@@ -609,7 +609,7 @@ export default function PositionForm() {
                     {uploadImages.map((img, i) => (
                       <div
                         key={`${img.name}-${i}`}
-                        className="relative border border-forest-100 rounded overflow-hidden bg-cream-50"
+                        className="relative border border-forest-100 dark:border-forest-800 rounded overflow-hidden bg-cream-50 dark:bg-forest-800/50"
                         title={`${img.name}（${img.source}）`}
                       >
                         <img
@@ -628,16 +628,16 @@ export default function PositionForm() {
                 {/* 嵌入附件清单 */}
                 {uploadAttachments.length > 0 && (
                   <div className="mt-2 text-xs">
-                    <div className="text-forest-500 mb-1">嵌入附件清单：</div>
+                    <div className="text-forest-500 dark:text-forest-400 mb-1">嵌入附件清单：</div>
                     <ul className="space-y-0.5">
                       {uploadAttachments.map((att, i) => (
                         <li
                           key={`${att.name}-${i}`}
-                          className="flex items-center gap-1.5 text-forest-600"
+                          className="flex items-center gap-1.5 text-forest-600 dark:text-cream-300"
                         >
-                          <FileText className="w-3 h-3 text-forest-400" />
+                          <FileText className="w-3 h-3 text-forest-400 dark:text-forest-500" />
                           <span className="truncate">{att.name}</span>
-                          <span className="text-forest-400">
+                          <span className="text-forest-400 dark:text-forest-500">
                             （{att.ext}，{(att.size / 1024).toFixed(1)} KB，来源 {att.source}）
                           </span>
                         </li>
@@ -659,7 +659,7 @@ export default function PositionForm() {
                 {parsing ? 'AI 解析中...' : 'AI 解析'}
               </button>
               {parseMsg && (
-                <span className="text-xs text-forest-500">{parseMsg}</span>
+                <span className="text-xs text-forest-500 dark:text-forest-400">{parseMsg}</span>
               )}
             </div>
 
@@ -670,7 +670,7 @@ export default function PositionForm() {
           </div>
 
           <div className="card p-5">
-            <h2 className="font-serif text-lg font-semibold text-forest-800 mb-3">详细内容</h2>
+            <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-3">详细内容</h2>
             <div className="space-y-3">
               <Field label="岗位职责（支持 Markdown）">
                 <textarea
@@ -746,10 +746,10 @@ function Field({
     <div>
       <label className="label">
         {label}
-        {required && <span className="text-risk-600 ml-1">*</span>}
+        {required && <span className="text-risk-600 dark:text-risk-400 ml-1">*</span>}
       </label>
       {children}
-      {error && <p className="text-xs text-risk-600 mt-1">{error}</p>}
+      {error && <p className="text-xs text-risk-600 dark:text-risk-400 mt-1">{error}</p>}
     </div>
   );
 }
@@ -850,43 +850,43 @@ function AiMetaPanel({ meta }: { meta: AiMeta }) {
     confLevel === 'high' ? 'text-emerald-600 bg-emerald-50 border-emerald-100' :
     confLevel === 'medium' ? 'text-amber-600 bg-amber-50 border-amber-100' :
     confLevel === 'low' ? 'text-risk-600 bg-risk-50 border-risk-100' :
-    'text-forest-500 bg-forest-50 border-forest-100';
+    'text-forest-500 dark:text-forest-400 bg-forest-50 dark:bg-forest-800/30 border-forest-100 dark:border-forest-800';
 
   return (
-    <div className="mt-3 border border-forest-100 rounded-lg p-3 bg-cream-50 space-y-2">
+    <div className="mt-3 border border-forest-100 dark:border-forest-800 rounded-lg p-3 bg-cream-50 dark:bg-forest-800/50 space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs font-semibold text-forest-700">AI 解析结果</span>
+        <span className="text-xs font-semibold text-forest-700 dark:text-cream-200">AI 解析结果</span>
         {confidence !== null && (
           <span className={`text-xs px-2 py-0.5 rounded border ${confColor}`}>
             置信度 {(confidence * 100).toFixed(0)}%
           </span>
         )}
         {clientCompany && (
-          <span className="text-xs text-forest-500">
-            客户公司：<span className="text-forest-700">{clientCompany}</span>
+          <span className="text-xs text-forest-500 dark:text-forest-400">
+            客户公司：<span className="text-forest-700 dark:text-cream-200">{clientCompany}</span>
           </span>
         )}
         {salaryUnit && (
-          <span className="text-xs text-forest-500">
-            薪资单位：<span className="text-forest-700">{salaryUnit}</span>
+          <span className="text-xs text-forest-500 dark:text-forest-400">
+            薪资单位：<span className="text-forest-700 dark:text-cream-200">{salaryUnit}</span>
           </span>
         )}
       </div>
 
       {summary && (
-        <div className="text-xs text-forest-600 bg-white rounded p-2 border border-forest-100">
-          <span className="font-medium text-forest-700">原文摘要：</span>
+        <div className="text-xs text-forest-600 dark:text-cream-300 bg-white dark:bg-forest-900 rounded p-2 border border-forest-100 dark:border-forest-800">
+          <span className="font-medium text-forest-700 dark:text-cream-200">原文摘要：</span>
           {summary}
         </div>
       )}
 
       {highlights.length > 0 && (
         <div className="text-xs">
-          <div className="font-medium text-forest-700 mb-1 flex items-center gap-1">
+          <div className="font-medium text-forest-700 dark:text-cream-200 mb-1 flex items-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
             职位亮点
           </div>
-          <ul className="list-disc list-inside text-forest-600 space-y-0.5">
+          <ul className="list-disc list-inside text-forest-600 dark:text-cream-300 space-y-0.5">
             {highlights.map((h, i) => (
               <li key={i}>{h}</li>
             ))}

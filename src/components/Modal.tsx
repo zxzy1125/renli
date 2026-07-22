@@ -55,18 +55,18 @@ export default function Modal({
       {/* 内容 */}
       <div
         className={cn(
-          'relative bg-white rounded-xl shadow-cardHover w-full max-h-[90vh] flex flex-col',
+          'relative bg-white dark:bg-forest-900 rounded-xl shadow-cardHover w-full max-h-[90vh] flex flex-col',
           sizeClasses[size],
           className
         )}
       >
         {title && (
-          <div className="flex items-center justify-between px-5 py-3 border-b border-forest-100">
-            <h3 className="text-base font-semibold text-forest-800">{title}</h3>
+          <div className="flex items-center justify-between px-5 py-3 border-b border-forest-100 dark:border-forest-800">
+            <h3 className="text-base font-semibold text-forest-800 dark:text-cream-100">{title}</h3>
             <button
               type="button"
               onClick={onClose}
-              className="p-1 rounded hover:bg-forest-50 text-forest-500"
+              className="p-1 rounded hover:bg-forest-50 dark:hover:bg-forest-800 text-forest-500 dark:text-forest-400"
               aria-label="关闭"
             >
               <X className="w-4 h-4" />
@@ -75,7 +75,7 @@ export default function Modal({
         )}
         <div className="px-5 py-4 overflow-y-auto flex-1">{children}</div>
         {footer && (
-          <div className="px-5 py-3 border-t border-forest-100 flex justify-end gap-2">
+          <div className="px-5 py-3 border-t border-forest-100 dark:border-forest-800 flex justify-end gap-2">
             {footer}
           </div>
         )}

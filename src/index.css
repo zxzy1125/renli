@@ -15,6 +15,11 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.dark {
+  color: #fdfbf7;
+  background-color: #0c1f1a;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -25,6 +30,11 @@ body {
   background-color: #fdfbf7;
 }
 
+.dark body {
+  background-color: #0c1f1a;
+  color: #fdfbf7;
+}
+
 /* 滚动条美化 */
 ::-webkit-scrollbar {
   width: 8px;
@@ -33,12 +43,21 @@ body {
 ::-webkit-scrollbar-track {
   background: #faf6ec;
 }
+.dark ::-webkit-scrollbar-track {
+  background: #0c1f1a;
+}
 ::-webkit-scrollbar-thumb {
   background: #bbd7c9;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #8fbaa6;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #1a3d30;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #264d3e;
 }
 
 /* AI 按钮渐变 */
@@ -47,25 +66,32 @@ body {
     @apply bg-gradient-to-r from-ai-from to-ai-to text-white font-medium px-4 py-2 rounded-lg shadow-sm hover:shadow-md hover:brightness-110 transition-all;
   }
   .btn-primary {
-    @apply bg-forest-600 text-white font-medium px-4 py-2 rounded-lg hover:bg-forest-700 transition-colors;
+    @apply bg-forest-600 text-white font-medium px-4 py-2 rounded-lg hover:bg-forest-700 transition-colors
+           dark:bg-forest-500 dark:hover:bg-forest-600;
   }
   .btn-secondary {
-    @apply bg-cream-100 text-forest-700 font-medium px-4 py-2 rounded-lg hover:bg-cream-200 transition-colors border border-forest-200;
+    @apply bg-cream-100 text-forest-700 font-medium px-4 py-2 rounded-lg hover:bg-cream-200 transition-colors border border-forest-200
+           dark:bg-forest-800 dark:text-cream-100 dark:border-forest-700 dark:hover:bg-forest-700;
   }
   .btn-danger {
-    @apply bg-risk-600 text-white font-medium px-4 py-2 rounded-lg hover:bg-risk-700 transition-colors;
+    @apply bg-risk-600 text-white font-medium px-4 py-2 rounded-lg hover:bg-risk-700 transition-colors
+           dark:bg-risk-500 dark:hover:bg-risk-600;
   }
   .btn-ghost {
-    @apply text-forest-600 font-medium px-3 py-2 rounded-lg hover:bg-forest-50 transition-colors;
+    @apply text-forest-600 font-medium px-3 py-2 rounded-lg hover:bg-forest-50 transition-colors
+           dark:text-forest-300 dark:hover:bg-forest-800;
   }
   .card {
-    @apply bg-white rounded-xl shadow-card border border-forest-100;
+    @apply bg-white rounded-xl shadow-card border border-forest-100
+           dark:bg-forest-900 dark:border-forest-800 dark:shadow-none;
   }
   .input {
-    @apply w-full px-3 py-2 rounded-lg border border-forest-200 bg-white focus:outline-none focus:ring-2 focus:ring-forest-400 focus:border-transparent transition;
+    @apply w-full px-3 py-2 rounded-lg border border-forest-200 bg-white focus:outline-none focus:ring-2 focus:ring-forest-400 focus:border-transparent transition
+           dark:bg-forest-800 dark:border-forest-700 dark:text-cream-100 dark:placeholder-forest-500 dark:focus:ring-forest-500;
   }
   .label {
-    @apply block text-sm font-medium text-forest-700 mb-1;
+    @apply block text-sm font-medium text-forest-700 mb-1
+           dark:text-cream-200;
   }
   .badge {
     @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
@@ -73,15 +99,15 @@ body {
 }
 
 /* Markdown 渲染 */
-.markdown-body h1 { @apply text-xl font-bold text-forest-800 mt-4 mb-2; }
-.markdown-body h2 { @apply text-lg font-bold text-forest-800 mt-4 mb-2; }
-.markdown-body h3 { @apply text-base font-semibold text-forest-700 mt-3 mb-1; }
-.markdown-body p { @apply my-2 text-sm text-forest-800 leading-relaxed; }
-.markdown-body ul { @apply list-disc pl-5 my-2 text-sm text-forest-800; }
-.markdown-body ol { @apply list-decimal pl-5 my-2 text-sm text-forest-800; }
+.markdown-body h1 { @apply text-xl font-bold text-forest-800 mt-4 mb-2 dark:text-cream-100; }
+.markdown-body h2 { @apply text-lg font-bold text-forest-800 mt-4 mb-2 dark:text-cream-100; }
+.markdown-body h3 { @apply text-base font-semibold text-forest-700 mt-3 mb-1 dark:text-cream-200; }
+.markdown-body p { @apply my-2 text-sm text-forest-800 leading-relaxed dark:text-cream-200; }
+.markdown-body ul { @apply list-disc pl-5 my-2 text-sm text-forest-800 dark:text-cream-200; }
+.markdown-body ol { @apply list-decimal pl-5 my-2 text-sm text-forest-800 dark:text-cream-200; }
 .markdown-body li { @apply my-1; }
-.markdown-body code { @apply bg-cream-100 text-ochre-700 px-1 py-0.5 rounded text-sm font-mono; }
+.markdown-body code { @apply bg-cream-100 text-ochre-700 px-1 py-0.5 rounded text-sm font-mono dark:bg-forest-800 dark:text-ochre-400; }
 .markdown-body pre { @apply bg-forest-900 text-cream-50 p-3 rounded-lg overflow-x-auto my-2; }
 .markdown-body pre code { @apply bg-transparent text-current p-0; }
-.markdown-body strong { @apply font-semibold text-forest-900; }
-.markdown-body blockquote { @apply border-l-4 border-ochre-300 pl-3 italic text-forest-600 my-2; }
+.markdown-body strong { @apply font-semibold text-forest-900 dark:text-cream-50; }
+.markdown-body blockquote { @apply border-l-4 border-ochre-300 pl-3 italic text-forest-600 my-2 dark:text-forest-400; }

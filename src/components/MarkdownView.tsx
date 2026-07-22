@@ -10,7 +10,7 @@ interface MarkdownViewProps {
 
 export default function MarkdownView({ content, className }: MarkdownViewProps) {
   if (!content || !content.trim()) {
-    return <p className="text-sm text-forest-400 italic">（无内容）</p>;
+    return <p className="text-sm text-forest-400 dark:text-forest-500 italic">（无内容）</p>;
   }
   return (
     <div className={cn('markdown-body', className)}>

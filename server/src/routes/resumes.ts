@@ -17,6 +17,8 @@ import { maskPhone, hashPhone, maskEmail } from '../utils/crypto.js';
 import { isExcelFile, parseExcelFile } from '../utils/xlsxParser.js';
 import { detectAndCreateConflicts } from '../services/conflictService.js';
 import { parseFileToText } from '../utils/fileParser.js';
+import { createResumeSchema, updateResumeSchema, validateBody, validateQuery, paginationSchema, keywordSearchSchema } from '../schemas/index.js';
+import { writeAudit } from '../services/auditService.js';
 
 export const resumesRouter = Router();
 
@@ -87,9 +89,8 @@ resumesRouter.get('/:id', asyncHandler(async (req, res) => {
 }));
 
 // POST /api/resumes（员工录入自己的，自动设置 owner_id，含手机号脱敏+哈希，触发撞单检测）
-resumesRouter.post('/', asyncHandler(async (req, res) => {
-  const b = req.body ?? {};
-  if (!b.name) throw new ApiError(400, '姓名不能为空');
+resumesRouter.post('/', validateBody(createResumeSchema), asyncHandler(async (req, res) => {
+  const b = req.body;
 
   // 手机号脱敏 + 哈希
   let phoneMasked: string | null = null;
@@ -147,16 +148,17 @@ resumesRouter.post('/', asyncHandler(async (req, res) => {
   });
 
   res.status(201).json({ data: sanitizeResume(resume), conflictCount });
+  writeAudit({ userId: req.user!.id, action: 'create', entityType: 'resume', entityId: resume.id, detail: { name: resume.name } });
 }));
 
 // PUT /api/resumes/:id（owner 或 admin）
-resumesRouter.put('/:id', asyncHandler(async (req, res) => {
+resumesRouter.put('/:id', validateBody(updateResumeSchema), asyncHandler(async (req, res) => {
   const existing = findResumeById(String(req.params.id));
   if (!existing) throw new ApiError(404, '简历不存在');
   if (!isAdmin(req.user) && existing.owner_id !== req.user!.id) {
     throw new ApiError(403, '无权修改此简历');
   }
-  const b = req.body ?? {};
+  const b = req.body;
 
   // 重新计算手机号脱敏+哈希、邮箱脱敏
   let phoneMasked: string | null | undefined = undefined;
@@ -223,6 +225,7 @@ resumesRouter.put('/:id', asyncHandler(async (req, res) => {
   }
 
   res.json({ data: sanitizeResume(updated) });
+  writeAudit({ userId: req.user!.id, action: 'update', entityType: 'resume', entityId: String(req.params.id) });
 }));
 
 // DELETE /api/resumes/:id（owner 或 admin）
@@ -233,6 +236,7 @@ resumesRouter.delete('/:id', asyncHandler(async (req, res) => {
     throw new ApiError(403, '无权删除此简历');
   }
   deleteResume(String(req.params.id));
+  writeAudit({ userId: req.user!.id, action: 'delete', entityType: 'resume', entityId: String(req.params.id) });
   res.json({ ok: true });
 }));
 
@@ -269,4 +273,138 @@ resumesRouter.post('/upload', upload.single('file'), asyncHandler(async (req, re
     // 无论成功失败都删除临时文件
     try { fs.unlinkSync(req.file.path); } catch { /* ignore */ }
   }
+}));
+
+// POST /api/resumes/batch-import（批量导入简历，JSON 数组）
+resumesRouter.post('/batch-import', asyncHandler(async (req, res) => {
+  const items = Array.isArray(req.body) ? req.body : req.body?.items;
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new ApiError(400, '请提供 items 数组（最多 100 条）');
+  }
+  if (items.length > 100) throw new ApiError(400, '单次最多导入 100 条简历');
+
+  let imported = 0;
+  let skipped = 0;
+  const errors: { index: number; error: string }[] = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (!item?.name?.trim()) {
+      errors.push({ index: i, error: '姓名不能为空' });
+      skipped++;
+      continue;
+    }
+    try {
+      let phoneMasked: string | null = null;
+      let phoneHash: string | null = null;
+      if (item.phone) {
+        phoneMasked = maskPhone(String(item.phone));
+        phoneHash = hashPhone(String(item.phone));
+      }
+      let emailMasked: string | null = null;
+      let emailOriginal: string | null = null;
+      if (item.email) {
+        emailOriginal = String(item.email).trim();
+        emailMasked = maskEmail(emailOriginal);
+      }
+
+      createResume({
+        id: nanoid(),
+        name: String(item.name).trim(),
+        age: item.age ?? null,
+        education: item.education ?? null,
+        current_company: item.current_company ?? null,
+        current_title: item.current_title ?? null,
+        work_experience: item.work_experience ?? null,
+        skills: item.skills ?? null,
+        projects: item.projects ?? null,
+        expectation: item.expectation ?? null,
+        expected_city: item.expected_city ?? null,
+        raw_text: item.raw_text ?? null,
+        source: item.source ?? 'batch_import',
+        phone_masked: phoneMasked,
+        phone_hash: phoneHash,
+        email_masked: emailMasked,
+        email_original: emailOriginal,
+        has_wechat: item.has_wechat ? 1 : 0,
+        wechat_id: item.wechat_id ?? null,
+        contact_preference: item.contact_preference ?? 'wechat',
+        candidate_status: item.candidate_status ?? 'passive',
+        expected_onboard_date: item.expected_onboard_date ?? null,
+        tags: Array.isArray(item.tags) ? item.tags : [],
+        common_grounds: item.common_grounds ?? {},
+        risk_warning: item.risk_warning ?? { isRisky: false, reasons: [] },
+        remark: item.remark ?? null,
+        owner_id: req.user!.id,
+      });
+      imported++;
+    } catch (err: any) {
+      errors.push({ index: i, error: err?.message || '导入失败' });
+      skipped++;
+    }
+  }
+
+  writeAudit({ userId: req.user!.id, action: 'batch_import', entityType: 'resume', detail: { imported, skipped } });
+  res.status(201).json({ imported, skipped, errors });
+}));
+
+// POST /api/resumes/extension-import（Chrome 插件专用：从 BOSS 直聘采集简历）
+resumesRouter.post('/extension-import', asyncHandler(async (req, res) => {
+  const b = req.body ?? {};
+  if (!b.name?.trim()) throw new ApiError(400, '姓名不能为空');
+
+  let phoneMasked: string | null = null;
+  let phoneHash: string | null = null;
+  if (b.phone) {
+    phoneMasked = maskPhone(String(b.phone));
+    phoneHash = hashPhone(String(b.phone));
+  }
+  let emailMasked: string | null = null;
+  let emailOriginal: string | null = null;
+  if (b.email) {
+    emailOriginal = String(b.email).trim();
+    emailMasked = maskEmail(emailOriginal);
+  }
+
+  const resume = createResume({
+    id: nanoid(),
+    name: String(b.name).trim(),
+    age: b.age ?? null,
+    education: b.education ?? null,
+    current_company: b.current_company ?? null,
+    current_title: b.current_title ?? null,
+    work_experience: b.work_experience ?? null,
+    skills: b.skills ?? null,
+    projects: b.projects ?? null,
+    expectation: b.expectation ?? null,
+    expected_city: b.expected_city ?? null,
+    raw_text: b.raw_text ?? null,
+    source: 'boss_extension',
+    phone_masked: phoneMasked,
+    phone_hash: phoneHash,
+    email_masked: emailMasked,
+    email_original: emailOriginal,
+    has_wechat: 0,
+    wechat_id: null,
+    contact_preference: 'phone',
+    candidate_status: 'passive',
+    expected_onboard_date: null,
+    tags: [],
+    common_grounds: {},
+    risk_warning: { isRisky: false, reasons: [] },
+    remark: b.remark ?? `来源：BOSS直聘插件采集，页面URL: ${b.source_url ?? '未知'}`,
+    owner_id: req.user!.id,
+  });
+
+  const conflictCount = detectAndCreateConflicts({
+    resumeId: resume.id,
+    candidateName: resume.name,
+    phoneHash: resume.phone_hash ?? null,
+    email: emailOriginal,
+    currentCompany: resume.current_company ?? null,
+    ownerId: resume.owner_id,
+  });
+
+  writeAudit({ userId: req.user!.id, action: 'extension_import', entityType: 'resume', entityId: resume.id, detail: { name: resume.name } });
+  res.status(201).json({ data: sanitizeResume(resume), conflictCount });
 }));

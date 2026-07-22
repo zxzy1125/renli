@@ -80,6 +80,14 @@ export const updateMatchStatusSchema = z.object({
 export type CreateMatchInput = z.infer<typeof createMatchSchema>;
 export type UpdateMatchStatusInput = z.infer<typeof updateMatchStatusSchema>;
 
+// ===== 登录 Schema =====
+export const loginSchema = z.object({
+  username: z.string().min(1, '用户名不能为空'),
+  password: z.string().min(1, '密码不能为空'),
+});
+
+export type LoginInput = z.infer<typeof loginSchema>;
+
 // ===== 通用查询 Schema =====
 export const paginationSchema = z.object({
   page: z.coerce.number().int().positive().default(1),

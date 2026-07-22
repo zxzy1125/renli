@@ -173,29 +173,29 @@ export default function AIConfigPage() {
 
   return (
     <div>
-      <h2 className="font-serif text-lg font-semibold text-forest-800 mb-1">AI 配置</h2>
-      <p className="text-sm text-forest-500 mb-4">
+      <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-1">AI 配置</h2>
+      <p className="text-sm text-forest-500 dark:text-forest-400 mb-4">
         配置 AI 服务商与凭证，用于简历解析、话术生成、回访分析等
       </p>
 
       {error && (
-        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
           {error}
         </div>
       )}
       {success && (
-        <div className="mb-4 px-3 py-2 rounded-lg bg-forest-50 border border-forest-100 text-sm text-forest-700">
+        <div className="mb-4 px-3 py-2 rounded-lg bg-forest-50 dark:bg-forest-800/50 border border-forest-100 dark:border-forest-800 text-sm text-forest-700 dark:text-cream-200">
           {success}
         </div>
       )}
 
       <form onSubmit={handleSave} className="space-y-4">
         {/* ===== 文本模型配置 ===== */}
-        <div className="p-4 rounded-lg bg-cream-50 border border-cream-200">
+        <div className="p-4 rounded-lg bg-cream-50 dark:bg-forest-800 border border-cream-200 dark:border-forest-700">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="w-4 h-4 text-ochre-500" />
-            <span className="text-sm font-medium text-forest-800">文本模型</span>
-            <span className="text-xs text-forest-500">· 用于话术生成、匹配分析、回访分析等纯文本任务</span>
+            <span className="text-sm font-medium text-forest-800 dark:text-cream-100">文本模型</span>
+            <span className="text-xs text-forest-500 dark:text-forest-400">· 用于话术生成、匹配分析、回访分析等纯文本任务</span>
           </div>
 
           <div className="space-y-3">
@@ -236,7 +236,7 @@ export default function AIConfigPage() {
                 placeholder={`当前已配置：${maskedKey}（填写新值将覆盖）`}
                 autoComplete="off"
               />
-              <p className="text-xs text-forest-400 mt-1">
+              <p className="text-xs text-forest-400 dark:text-forest-500 mt-1">
                 当前：{maskedKey}。留空保存表示不修改；填写新值将覆盖。
               </p>
             </div>
@@ -264,11 +264,11 @@ export default function AIConfigPage() {
                     onChange={(e) => setTemperature(Number(e.target.value))}
                     className="flex-1 accent-forest-600"
                   />
-                  <span className="font-mono text-sm text-forest-700 w-12 text-right">
+                  <span className="font-mono text-sm text-forest-700 dark:text-cream-200 w-12 text-right">
                     {temperature.toFixed(1)}
                   </span>
                 </div>
-                <p className="text-xs text-forest-400 mt-1">
+                <p className="text-xs text-forest-400 dark:text-forest-500 mt-1">
                   值越高输出越发散，越低越确定。建议话术类 0.7-0.9，解析类 0.1-0.3。
                 </p>
               </div>
@@ -290,8 +290,8 @@ export default function AIConfigPage() {
               <div
                 className={`flex items-start gap-2 px-3 py-2 rounded-lg border text-sm ${
                   testResult.ok
-                    ? 'bg-forest-50 border-forest-100 text-forest-700'
-                    : 'bg-risk-50 border-risk-100 text-risk-700'
+                    ? 'bg-forest-50 dark:bg-forest-800/50 border-forest-100 dark:border-forest-800 text-forest-700 dark:text-cream-200'
+                    : 'bg-risk-50 dark:bg-risk-900/20 border-risk-100 dark:border-risk-800 text-risk-700'
                 }`}
               >
                 {testResult.ok ? (
@@ -309,12 +309,12 @@ export default function AIConfigPage() {
         </div>
 
         {/* ===== 多模态模型配置 ===== */}
-        <div className="p-4 rounded-lg bg-ochre-50/40 border border-ochre-200">
+        <div className="p-4 rounded-lg bg-ochre-50/40 dark:bg-ochre-900/20 border border-ochre-200 dark:border-ochre-800">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <ImageIcon className="w-4 h-4 text-ochre-600" />
-              <span className="text-sm font-medium text-forest-800">多模态模型（图片解析）</span>
-              <span className="text-xs text-forest-500">· 文件含图片时自动调用</span>
+              <span className="text-sm font-medium text-forest-800 dark:text-cream-100">多模态模型（图片解析）</span>
+              <span className="text-xs text-forest-500 dark:text-forest-400">· 文件含图片时自动调用</span>
             </div>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -323,12 +323,12 @@ export default function AIConfigPage() {
                 onChange={(e) => setMmEnabled(e.target.checked)}
                 className="w-4 h-4 accent-ochre-600"
               />
-              <span className="text-xs text-forest-700">启用独立多模态配置</span>
+              <span className="text-xs text-forest-700 dark:text-cream-200">启用独立多模态配置</span>
             </label>
           </div>
 
           {!mmEnabled ? (
-            <div className="text-xs text-forest-500 px-3 py-2 bg-cream-50 rounded border border-cream-200">
+            <div className="text-xs text-forest-500 dark:text-forest-400 px-3 py-2 bg-cream-50 dark:bg-forest-800 rounded border border-cream-200 dark:border-forest-700">
               未启用时，文件解析有图片会回退到上方「文本模型」处理（要求文本模型本身支持视觉，如 gpt-4o / glm-4v-plus）。
               启用后可单独配置多模态专用模型，文本任务继续用文本模型，互不影响。
             </div>
@@ -375,7 +375,7 @@ export default function AIConfigPage() {
                   placeholder={`当前：${maskedMmKey}（留空表示回退到文本模型 Key）`}
                   autoComplete="off"
                 />
-                <p className="text-xs text-forest-400 mt-1">
+                <p className="text-xs text-forest-400 dark:text-forest-500 mt-1">
                   留空保存则使用文本模型的 API Key（适用于多模态模型和文本模型同服务商的情况）。
                 </p>
               </div>
@@ -389,7 +389,7 @@ export default function AIConfigPage() {
                   onChange={(e) => setMmBaseUrl(e.target.value)}
                   placeholder="留空表示回退到文本模型的 Base URL"
                 />
-                <p className="text-xs text-forest-400 mt-1">
+                <p className="text-xs text-forest-400 dark:text-forest-500 mt-1">
                   留空则使用文本模型的 Base URL（适用于同服务商不同模型的情况）。
                 </p>
               </div>
@@ -410,8 +410,8 @@ export default function AIConfigPage() {
                 <div
                   className={`flex items-start gap-2 px-3 py-2 rounded-lg border text-sm ${
                     testMmResult.ok
-                      ? 'bg-forest-50 border-forest-100 text-forest-700'
-                      : 'bg-risk-50 border-risk-100 text-risk-700'
+                      ? 'bg-forest-50 dark:bg-forest-800/50 border-forest-100 dark:border-forest-800 text-forest-700 dark:text-cream-200'
+                      : 'bg-risk-50 dark:bg-risk-900/20 border-risk-100 dark:border-risk-800 text-risk-700'
                   }`}
                 >
                   {testMmResult.ok ? (
@@ -443,12 +443,12 @@ export default function AIConfigPage() {
       </form>
 
       {/* 提示词说明 */}
-      <div className="mt-6 p-4 rounded-lg bg-cream-50 border border-cream-200">
+      <div className="mt-6 p-4 rounded-lg bg-cream-50 dark:bg-forest-800 border border-cream-200 dark:border-forest-700">
         <div className="flex items-center gap-2 mb-2">
           <Sparkles className="w-4 h-4 text-ochre-500" />
-          <span className="text-sm font-medium text-forest-700">已内置 11 套提示词</span>
+          <span className="text-sm font-medium text-forest-700 dark:text-cream-200">已内置 11 套提示词</span>
         </div>
-        <p className="text-xs text-forest-500">
+        <p className="text-xs text-forest-500 dark:text-forest-400">
           包括：职位解析、简历解析、匹配分析、18 条话术生成、回访前作战卡片、回访后深度分析、应对话术、话术润色、BOSS 岗位发布文案等。
           职位/简历解析均支持多模态图片识别（需配置多模态模型）。
         </p>

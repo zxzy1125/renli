@@ -15,7 +15,7 @@ export function RiskBadge({ risk, className }: RiskBadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-risk-100 text-risk-700',
+        'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-risk-100 text-risk-700 dark:bg-risk-900/30 dark:text-risk-400',
         className
       )}
     >
@@ -31,7 +31,7 @@ export function RiskBanner({ risk, className }: RiskBadgeProps) {
   return (
     <div
       className={cn(
-        'flex items-start gap-3 px-4 py-3 rounded-lg bg-risk-50 border border-risk-100 text-risk-700',
+        'flex items-start gap-3 px-4 py-3 rounded-lg bg-risk-50 border border-risk-100 text-risk-700 dark:bg-risk-900/20 dark:border-risk-800 dark:text-risk-400',
         className
       )}
     >

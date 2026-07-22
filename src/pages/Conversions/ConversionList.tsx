@@ -55,21 +55,21 @@ const STATUS_BAR_COLORS: Record<MatchStatus, string> = {
 
 // 状态分布卡片色调
 const CARD_TONES: Record<MatchStatus, string> = {
-  consulting: 'bg-forest-50 border-forest-200',
+  consulting: 'bg-forest-50 border-forest-200 dark:bg-forest-800 dark:border-forest-700',
   interview_invited: 'bg-ochre-50 border-ochre-200',
-  interview_passed: 'bg-forest-50 border-forest-200',
-  offer_sent: 'bg-cream-100 border-cream-300',
-  onboarded: 'bg-forest-100 border-forest-300',
-  lost: 'bg-risk-50 border-risk-200',
+  interview_passed: 'bg-forest-50 border-forest-200 dark:bg-forest-800 dark:border-forest-700',
+  offer_sent: 'bg-cream-100 border-cream-300 dark:bg-forest-800',
+  onboarded: 'bg-forest-100 border-forest-300 dark:bg-forest-800 dark:border-forest-700',
+  lost: 'bg-risk-50 border-risk-200 dark:bg-risk-900/20 dark:border-risk-800',
 };
 
 const CARD_TEXT_TONES: Record<MatchStatus, string> = {
-  consulting: 'text-forest-700',
+  consulting: 'text-forest-700 dark:text-cream-200',
   interview_invited: 'text-ochre-700',
-  interview_passed: 'text-forest-700',
+  interview_passed: 'text-forest-700 dark:text-cream-200',
   offer_sent: 'text-ochre-700',
-  onboarded: 'text-forest-800',
-  lost: 'text-risk-700',
+  onboarded: 'text-forest-800 dark:text-cream-100',
+  lost: 'text-risk-700 dark:text-risk-400',
 };
 
 // 状态下拉选项
@@ -205,11 +205,11 @@ export default function ConversionList() {
       {/* 页面标题 */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="font-serif text-2xl font-bold text-forest-800 flex items-center gap-2">
+          <h1 className="font-serif text-2xl font-bold text-forest-800 dark:text-cream-100 flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-ochre-500" />
             转化跟踪
           </h1>
-          <p className="text-sm text-forest-500 mt-1">
+          <p className="text-sm text-forest-500 dark:text-cream-300 mt-1">
             {isAdmin ? '团队全链路状态漏斗，一眼看出每阶段转化情况' : '你的匹配状态总览，关注每一步推进'}
           </p>
         </div>
@@ -217,7 +217,7 @@ export default function ConversionList() {
 
       {/* 错误提示 */}
       {error && (
-        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
           {error}
         </div>
       )}
@@ -225,8 +225,8 @@ export default function ConversionList() {
       {/* ===== Section 1：转化漏斗 ===== */}
       <section className="card p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-serif text-lg font-semibold text-forest-800">转化漏斗</h2>
-          <span className="text-xs text-forest-400">
+          <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100">转化漏斗</h2>
+          <span className="text-xs text-forest-400 dark:text-forest-500">
             共 {totalCount} 条匹配 · 占咨询中比例
           </span>
         </div>
@@ -235,7 +235,7 @@ export default function ConversionList() {
         ) : totalCount === 0 ? (
           <div className="py-8">
             <Empty />
-            <p className="text-center text-sm text-forest-500 mt-2">暂无匹配数据</p>
+            <p className="text-center text-sm text-forest-500 dark:text-cream-300 mt-2">暂无匹配数据</p>
           </div>
         ) : (
           <div className="h-72">
@@ -290,7 +290,7 @@ export default function ConversionList() {
       <section className="mb-6">
         <div className="flex items-center gap-2 mb-3">
           <Filter className="w-5 h-5 text-forest-500" />
-          <h2 className="font-serif text-lg font-semibold text-forest-800">状态分布</h2>
+          <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100">状态分布</h2>
         </div>
         {loadingStats ? (
           <Loading />
@@ -308,8 +308,8 @@ export default function ConversionList() {
                   <div className={`text-xs ${CARD_TEXT_TONES[status]} mb-2`}>
                     {MATCH_STATUS_LABELS[status]}
                   </div>
-                  <div className="font-mono text-2xl font-bold text-forest-800">{count}</div>
-                  <div className="text-xs text-forest-400 mt-1">占比 {ratio}%</div>
+                  <div className="font-mono text-2xl font-bold text-forest-800 dark:text-cream-100">{count}</div>
+                  <div className="text-xs text-forest-400 dark:text-forest-500 mt-1">占比 {ratio}%</div>
                 </Link>
               );
             })}
@@ -321,13 +321,13 @@ export default function ConversionList() {
       <section className="mb-6">
         <div className="flex items-center gap-2 mb-3">
           <Users className="w-5 h-5 text-forest-500" />
-          <h2 className="font-serif text-lg font-semibold text-forest-800">匹配记录</h2>
+          <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100">匹配记录</h2>
         </div>
 
         {/* 筛选栏 */}
         <form onSubmit={handleSearch} className="card p-4 mb-4 flex flex-wrap items-center gap-3">
           <div className="flex-1 min-w-[200px] relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-forest-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-forest-400 dark:text-forest-500" />
             <input
               type="text"
               className="input pl-9"
@@ -358,9 +358,9 @@ export default function ConversionList() {
         ) : list.length === 0 ? (
           <div className="card p-12">
             <Empty />
-            <p className="text-center text-sm text-forest-500 mt-2">
+            <p className="text-center text-sm text-forest-500 dark:text-cream-300 mt-2">
               暂无匹配记录，{''}
-              <Link to="/matches/new" className="text-forest-600 underline">
+              <Link to="/matches/new" className="text-forest-600 dark:text-cream-300 underline">
                 立即新建匹配
               </Link>
             </p>
@@ -371,7 +371,7 @@ export default function ConversionList() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-cream-100 text-forest-600 text-left">
+                    <tr className="bg-cream-100 dark:bg-forest-800 text-forest-600 dark:text-cream-300 text-left">
                       <th className="px-4 py-3 font-medium">求职者</th>
                       <th className="px-4 py-3 font-medium">职位</th>
                       <th className="px-4 py-3 font-medium">匹配度</th>
@@ -413,31 +413,31 @@ function ConversionRow({ match, onView }: { match: Match; onView: () => void }) 
 
   const toneClass =
     match.status === 'lost'
-      ? 'bg-risk-100 text-risk-700'
+      ? 'bg-risk-100 text-risk-700 dark:bg-risk-900/20 dark:text-risk-400'
       : match.status === 'interview_invited'
       ? 'bg-ochre-100 text-ochre-700'
-      : 'bg-forest-100 text-forest-700';
+      : 'bg-forest-100 text-forest-700 dark:bg-forest-800 dark:text-cream-200';
 
   return (
     <tr
-      className="border-t border-forest-50 hover:bg-cream-50/50 cursor-pointer"
+      className="border-t border-forest-50 dark:border-forest-800 hover:bg-cream-50/50 dark:hover:bg-forest-800/50 cursor-pointer"
       onClick={onView}
     >
       {/* 求职者 */}
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-forest-800">{resumeName}</span>
+          <span className="font-medium text-forest-800 dark:text-cream-100">{resumeName}</span>
           {isRisky && <RiskBadge risk={match.resume?.risk_warning} />}
         </div>
         {match.resume?.current_company && (
-          <div className="text-xs text-forest-400 mt-0.5">{match.resume.current_company}</div>
+          <div className="text-xs text-forest-400 dark:text-forest-500 mt-0.5">{match.resume.current_company}</div>
         )}
       </td>
       {/* 职位 */}
       <td className="px-4 py-3">
-        <div className="text-forest-700">{positionTitle}</div>
+        <div className="text-forest-700 dark:text-cream-200">{positionTitle}</div>
         {match.position?.location && (
-          <div className="text-xs text-forest-400 mt-0.5">{match.position.location}</div>
+          <div className="text-xs text-forest-400 dark:text-forest-500 mt-0.5">{match.position.location}</div>
         )}
       </td>
       {/* 匹配度 */}
@@ -445,22 +445,22 @@ function ConversionRow({ match, onView }: { match: Match; onView: () => void }) 
         <div className={`font-mono font-semibold text-lg ${scoreColorClass(match.score)}`}>
           {match.score}
         </div>
-        <div className="text-xs text-forest-400">/ 100</div>
+        <div className="text-xs text-forest-400 dark:text-forest-500">/ 100</div>
       </td>
       {/* 转化概率 */}
       <td className="px-4 py-3">
-        <span className="font-mono text-forest-700">{match.conversion_probability}%</span>
+        <span className="font-mono text-forest-700 dark:text-cream-200">{match.conversion_probability}%</span>
       </td>
       {/* 状态 */}
       <td className="px-4 py-3">
         <span className={`badge ${toneClass}`}>{MATCH_STATUS_LABELS[match.status]}</span>
       </td>
       {/* 创建时间 */}
-      <td className="px-4 py-3 text-forest-500 text-xs">
+      <td className="px-4 py-3 text-forest-500 dark:text-cream-300 text-xs">
         {dayjs(match.created_at).format('YYYY-MM-DD HH:mm')}
       </td>
       {/* 最后更新 */}
-      <td className="px-4 py-3 text-forest-500 text-xs">
+      <td className="px-4 py-3 text-forest-500 dark:text-cream-300 text-xs">
         {dayjs(match.updated_at).format('YYYY-MM-DD HH:mm')}
       </td>
       {/* 操作 */}
@@ -522,13 +522,13 @@ function AdminReports({ onToast }: { onToast: (msg: string) => void }) {
     <section className="mb-6">
       <div className="flex items-center gap-2 mb-3">
         <Sparkles className="w-5 h-5 text-ochre-500" />
-        <h2 className="font-serif text-lg font-semibold text-forest-800">团队报表</h2>
-        <span className="text-xs px-2 py-0.5 rounded bg-forest-100 text-forest-700">管理员</span>
+        <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100">团队报表</h2>
+        <span className="text-xs px-2 py-0.5 rounded bg-forest-100 dark:bg-forest-800 text-forest-700 dark:text-cream-200">管理员</span>
       </div>
 
       <div className="card">
         {/* Tab 切换 */}
-        <div className="flex items-center border-b border-forest-100">
+        <div className="flex items-center border-b border-forest-100 dark:border-forest-800">
           <TabButton
             active={tab === 'employee'}
             onClick={() => setTab('employee')}
@@ -546,7 +546,7 @@ function AdminReports({ onToast }: { onToast: (msg: string) => void }) {
         {loading ? (
           <Loading />
         ) : error ? (
-          <div className="px-4 py-8 text-center text-sm text-risk-600">{error}</div>
+          <div className="px-4 py-8 text-center text-sm text-risk-600 dark:text-risk-400">{error}</div>
         ) : tab === 'employee' ? (
           <EmployeeTable rows={empRows} />
         ) : (
@@ -575,8 +575,8 @@ function TabButton({
       onClick={onClick}
       className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px inline-flex items-center gap-1.5 ${
         active
-          ? 'border-forest-500 text-forest-800'
-          : 'border-transparent text-forest-500 hover:text-forest-700'
+          ? 'border-forest-500 text-forest-800 dark:text-cream-100'
+          : 'border-transparent text-forest-500 dark:text-cream-300 hover:text-forest-700 dark:hover:text-cream-100'
       }`}
     >
       <Icon className="w-4 h-4" />
@@ -591,7 +591,7 @@ function EmployeeTable({ rows }: { rows: Record<string, unknown>[] }) {
     return (
       <div className="py-8">
         <Empty />
-        <p className="text-center text-sm text-forest-500 mt-2">暂无员工绩效数据</p>
+        <p className="text-center text-sm text-forest-500 dark:text-cream-300 mt-2">暂无员工绩效数据</p>
       </div>
     );
   }
@@ -599,7 +599,7 @@ function EmployeeTable({ rows }: { rows: Record<string, unknown>[] }) {
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-cream-50 text-forest-600 text-left border-b border-forest-100">
+          <tr className="bg-cream-50 dark:bg-forest-800 text-forest-600 dark:text-cream-300 text-left border-b border-forest-100 dark:border-forest-800">
             <th className="px-4 py-2.5 font-medium">员工名</th>
             <th className="px-4 py-2.5 font-medium">部门</th>
             <th className="px-4 py-2.5 font-medium text-right">简历数</th>
@@ -609,32 +609,32 @@ function EmployeeTable({ rows }: { rows: Record<string, unknown>[] }) {
             <th className="px-4 py-2.5 font-medium text-right">转化率</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-forest-100">
+        <tbody className="divide-y divide-forest-100 dark:divide-forest-800">
           {rows.map((row, i) => {
             const matchCount = Number(row.match_count || 0);
             const onboardedCount = Number(row.onboarded_count || 0);
             const rate = matchCount > 0 ? Math.round((onboardedCount / matchCount) * 100) : 0;
             return (
-              <tr key={(row.employee_id as string) || i} className="hover:bg-cream-50/50">
-                <td className="px-4 py-3 font-medium text-forest-800">
+              <tr key={(row.employee_id as string) || i} className="hover:bg-cream-50/50 dark:hover:bg-forest-800/50">
+                <td className="px-4 py-3 font-medium text-forest-800 dark:text-cream-100">
                   {String(row.real_name || '—')}
                 </td>
-                <td className="px-4 py-3 text-forest-600">
+                <td className="px-4 py-3 text-forest-600 dark:text-cream-300">
                   {String(row.department || '—')}
                 </td>
-                <td className="px-4 py-3 text-right font-mono text-forest-700">
+                <td className="px-4 py-3 text-right font-mono text-forest-700 dark:text-cream-200">
                   {Number(row.resume_count || 0)}
                 </td>
-                <td className="px-4 py-3 text-right font-mono text-forest-700">
+                <td className="px-4 py-3 text-right font-mono text-forest-700 dark:text-cream-200">
                   {matchCount}
                 </td>
                 <td className="px-4 py-3 text-right font-mono text-ochre-700">
                   {Number(row.offered_count || 0)}
                 </td>
-                <td className="px-4 py-3 text-right font-mono text-forest-700 font-semibold">
+                <td className="px-4 py-3 text-right font-mono text-forest-700 dark:text-cream-200 font-semibold">
                   {onboardedCount}
                 </td>
-                <td className="px-4 py-3 text-right font-mono text-forest-700">{rate}%</td>
+                <td className="px-4 py-3 text-right font-mono text-forest-700 dark:text-cream-200">{rate}%</td>
               </tr>
             );
           })}
@@ -650,7 +650,7 @@ function ClientTable({ rows }: { rows: Record<string, unknown>[] }) {
     return (
       <div className="py-8">
         <Empty />
-        <p className="text-center text-sm text-forest-500 mt-2">暂无客户公司汇总数据</p>
+        <p className="text-center text-sm text-forest-500 dark:text-cream-300 mt-2">暂无客户公司汇总数据</p>
       </div>
     );
   }
@@ -658,7 +658,7 @@ function ClientTable({ rows }: { rows: Record<string, unknown>[] }) {
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-cream-50 text-forest-600 text-left border-b border-forest-100">
+          <tr className="bg-cream-50 dark:bg-forest-800 text-forest-600 dark:text-cream-300 text-left border-b border-forest-100 dark:border-forest-800">
             <th className="px-4 py-2.5 font-medium">客户名</th>
             <th className="px-4 py-2.5 font-medium">行业</th>
             <th className="px-4 py-2.5 font-medium text-right">职位数</th>
@@ -667,29 +667,29 @@ function ClientTable({ rows }: { rows: Record<string, unknown>[] }) {
             <th className="px-4 py-2.5 font-medium text-right">转化率</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-forest-100">
+        <tbody className="divide-y divide-forest-100 dark:divide-forest-800">
           {rows.map((row, i) => {
             const matchCount = Number(row.match_count || 0);
             const onboardedCount = Number(row.onboarded_count || 0);
             const rate = matchCount > 0 ? Math.round((onboardedCount / matchCount) * 100) : 0;
             return (
-              <tr key={(row.client_id as string) || i} className="hover:bg-cream-50/50">
-                <td className="px-4 py-3 font-medium text-forest-800">
+              <tr key={(row.client_id as string) || i} className="hover:bg-cream-50/50 dark:hover:bg-forest-800/50">
+                <td className="px-4 py-3 font-medium text-forest-800 dark:text-cream-100">
                   {String(row.client_name || '—')}
                 </td>
-                <td className="px-4 py-3 text-forest-600">
+                <td className="px-4 py-3 text-forest-600 dark:text-cream-300">
                   {String(row.industry || '—')}
                 </td>
-                <td className="px-4 py-3 text-right font-mono text-forest-700">
+                <td className="px-4 py-3 text-right font-mono text-forest-700 dark:text-cream-200">
                   {Number(row.position_count || 0)}
                 </td>
-                <td className="px-4 py-3 text-right font-mono text-forest-700">
+                <td className="px-4 py-3 text-right font-mono text-forest-700 dark:text-cream-200">
                   {matchCount}
                 </td>
-                <td className="px-4 py-3 text-right font-mono text-forest-700 font-semibold">
+                <td className="px-4 py-3 text-right font-mono text-forest-700 dark:text-cream-200 font-semibold">
                   {onboardedCount}
                 </td>
-                <td className="px-4 py-3 text-right font-mono text-forest-700">{rate}%</td>
+                <td className="px-4 py-3 text-right font-mono text-forest-700 dark:text-cream-200">{rate}%</td>
               </tr>
             );
           })}

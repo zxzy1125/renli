@@ -41,7 +41,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-cream-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-cream-50 dark:bg-forest-950 px-4">
       <div className="w-full max-w-md">
         {/* 深墨绿顶色条 */}
         <div className="h-2 bg-forest-700 rounded-t-xl" />
@@ -51,8 +51,8 @@ export default function Login() {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-ochre-300 to-ochre-500 flex items-center justify-center font-serif text-2xl font-bold text-forest-900 mb-3">
               代
             </div>
-            <h1 className="font-serif text-2xl font-bold text-forest-800">代招助手</h1>
-            <p className="text-sm text-forest-500 mt-1">人力代招招聘辅助工具</p>
+            <h1 className="font-serif text-2xl font-bold text-forest-800 dark:text-cream-100">代招助手</h1>
+            <p className="text-sm text-forest-500 dark:text-forest-400 mt-1">人力代招招聘辅助工具</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -88,7 +88,7 @@ export default function Login() {
             </div>
 
             {error && (
-              <div className="text-sm text-risk-600 bg-risk-50 border border-risk-100 rounded-lg px-3 py-2">
+              <div className="text-sm text-risk-600 bg-risk-50 border border-risk-100 dark:text-risk-400 dark:bg-risk-900/20 dark:border-risk-800 rounded-lg px-3 py-2">
                 {error}
               </div>
             )}
@@ -108,7 +108,7 @@ export default function Login() {
           </form>
 
         </div>
-        <div className="text-center text-xs text-forest-400 mt-4">
+        <div className="text-center text-xs text-forest-400 dark:text-forest-500 mt-4">
           © 2026 代招助手 · 仅供授权用户使用
         </div>
       </div>

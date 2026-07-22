@@ -15,6 +15,8 @@ import {
   deletePosition,
 } from '../repositories/positionRepo.js';
 import { parseFileToText } from '../utils/fileParser.js';
+import { createPositionSchema, updatePositionSchema, validateBody, validateQuery, paginationSchema, keywordSearchSchema } from '../schemas/index.js';
+import { writeAudit } from '../services/auditService.js';
 
 export const positionsRouter = Router();
 
@@ -73,9 +75,8 @@ positionsRouter.get('/:id', asyncHandler(async (req, res) => {
 }));
 
 // POST /api/positions（管理员，含 raw_text）
-positionsRouter.post('/', requireAdmin, asyncHandler(async (req, res) => {
-  const b = req.body ?? {};
-  if (!b.title) throw new ApiError(400, '职位标题不能为空');
+positionsRouter.post('/', requireAdmin, validateBody(createPositionSchema), asyncHandler(async (req, res) => {
+  const b = req.body;
   const p = createPosition({
     id: nanoid(),
     title: String(b.title).trim(),
@@ -101,37 +102,17 @@ positionsRouter.post('/', requireAdmin, asyncHandler(async (req, res) => {
     source_ext: b.source_ext ?? null,
     created_by: req.user!.id,
   });
+  writeAudit({ userId: req.user!.id, action: 'create', entityType: 'position', entityId: p.id, detail: { title: p.title } });
   res.status(201).json({ data: p });
 }));
 
 // PUT /api/positions/:id（管理员）
-positionsRouter.put('/:id', requireAdmin, asyncHandler(async (req, res) => {
+positionsRouter.put('/:id', requireAdmin, validateBody(updatePositionSchema), asyncHandler(async (req, res) => {
   const existing = findPositionById(String(req.params.id));
   if (!existing) throw new ApiError(404, '职位不存在');
-  const b = req.body ?? {};
-  const updated = updatePosition(String(req.params.id), {
-    title: b.title,
-    client_id: b.client_id,
-    department: b.department,
-    location: b.location,
-    headcount: b.headcount !== undefined ? (b.headcount === null ? null : Number(b.headcount)) : undefined,
-    salary_min: b.salary_min,
-    salary_max: b.salary_max,
-    experience: b.experience,
-    education: b.education,
-    job_type: b.job_type,
-    work_mode: b.work_mode,
-    priority: b.priority,
-    status: b.status,
-    jd: b.jd,
-    requirements: b.requirements,
-    bonus: b.bonus,
-    keywords: Array.isArray(b.keywords) ? b.keywords : undefined,
-    raw_text: b.raw_text,
-    ai_meta: b.ai_meta,
-    source_filename: b.source_filename,
-    source_ext: b.source_ext,
-  });
+  const b = req.body;
+  const updated = updatePosition(String(req.params.id), b);
+  writeAudit({ userId: req.user!.id, action: 'update', entityType: 'position', entityId: String(req.params.id) });
   res.json({ data: updated });
 }));
 
@@ -142,6 +123,7 @@ positionsRouter.patch('/:id/status', requireAdmin, asyncHandler(async (req, res)
   const { status } = req.body ?? {};
   if (!status) throw new ApiError(400, 'status 不能为空');
   const updated = updatePositionStatus(String(req.params.id), String(status));
+  writeAudit({ userId: req.user!.id, action: 'update_status', entityType: 'position', entityId: String(req.params.id), detail: { status } });
   res.json({ data: updated });
 }));
 
@@ -150,6 +132,7 @@ positionsRouter.delete('/:id', requireAdmin, asyncHandler(async (req, res) => {
   const existing = findPositionById(String(req.params.id));
   if (!existing) throw new ApiError(404, '职位不存在');
   deletePosition(String(req.params.id));
+  writeAudit({ userId: req.user!.id, action: 'delete', entityType: 'position', entityId: String(req.params.id) });
   res.json({ ok: true });
 }));
 

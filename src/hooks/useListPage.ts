@@ -1,4 +1,4 @@
-// 通用列表页面 Hook：封装搜索/筛选/分页/加载/错误状态
+// 通用列表页面 Hook：封装搜索/筛选/分页/加载/错误状态 + 批量选择
 import { useState, useCallback, useEffect } from 'react';
 import { getErrorMsg } from '@/lib/api';
 
@@ -17,7 +17,7 @@ export interface UseListPageOptions<T> {
   autoFetch?: boolean;
 }
 
-export function useListPage<T>({
+export function useListPage<T extends { id: string }>({
   fetchApi,
   defaultPageSize = 12,
   defaultKeyword = '',
@@ -32,6 +32,29 @@ export function useListPage<T>({
   const [statusFilter, setStatusFilter] = useState(defaultStatus);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // 批量选择状态
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => {
+    setSelectedIds((prev) => {
+      if (prev.size === list.length && list.length > 0) return new Set();
+      return new Set(list.map((item) => item.id));
+    });
+  }, [list]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -92,6 +115,11 @@ export function useListPage<T>({
     // 操作
     fetchList,
     handleSearch,
+    // 批量选择
+    selectedIds,
+    toggleSelect,
+    selectAll,
+    clearSelection,
   };
 }
 

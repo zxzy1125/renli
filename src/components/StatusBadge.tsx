@@ -74,11 +74,11 @@ const STATUS_TEXT: Record<string, string> = {
 };
 
 const toneClasses: Record<Tone, string> = {
-  green: 'bg-forest-100 text-forest-700',
-  yellow: 'bg-ochre-100 text-ochre-700',
-  gray: 'bg-gray-100 text-gray-600',
-  red: 'bg-risk-100 text-risk-700',
-  blue: 'bg-blue-100 text-blue-700',
+  green: 'bg-forest-100 text-forest-700 dark:bg-forest-800 dark:text-forest-300',
+  yellow: 'bg-ochre-100 text-ochre-700 dark:bg-ochre-900/30 dark:text-ochre-400',
+  gray: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+  red: 'bg-risk-100 text-risk-700 dark:bg-risk-900/30 dark:text-risk-400',
+  blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
 };
 
 export function statusLabel(status?: string | null): string {

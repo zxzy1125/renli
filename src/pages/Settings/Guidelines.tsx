@@ -60,13 +60,13 @@ export default function Guidelines() {
 
   return (
     <div>
-      <h2 className="font-serif text-lg font-semibold text-forest-800 mb-1">运营规范知识库</h2>
-      <p className="text-sm text-forest-500 mb-4">
+      <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-1">运营规范知识库</h2>
+      <p className="text-sm text-forest-500 dark:text-forest-400 mb-4">
         内置 BOSS 直聘运营规范与 HR 招聘话术方法论，AI 调用时强制注入硬约束
       </p>
 
       {/* Tab */}
-      <div className="border-b border-forest-100 mb-4 flex gap-2">
+      <div className="border-b border-forest-100 dark:border-forest-800 mb-4 flex gap-2">
         <GuidelineTab active={tab === 'boss'} onClick={() => setTab('boss')} icon={BookOpen}>
           BOSS 规范
         </GuidelineTab>
@@ -78,19 +78,19 @@ export default function Guidelines() {
       {current.loading ? (
         <Loading />
       ) : current.error ? (
-        <div className="px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+        <div className="px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
           {current.error}
           <button
             type="button"
             onClick={() => fetchDoc(tab)}
-            className="ml-2 underline text-risk-700"
+            className="ml-2 underline text-risk-700 dark:text-risk-400"
           >
             重试
           </button>
         </div>
       ) : (
         <article className="prose prose-sm max-w-none">
-          <h1 className="font-serif text-xl font-bold text-forest-800 mb-4">{current.title}</h1>
+          <h1 className="font-serif text-xl font-bold text-forest-800 dark:text-cream-100 mb-4">{current.title}</h1>
           <MarkdownView content={current.content} />
         </article>
       )}
@@ -116,8 +116,8 @@ function GuidelineTab({
       className={cn(
         'flex items-center gap-1.5 px-4 py-2 text-sm border-b-2 -mb-px',
         active
-          ? 'border-forest-600 text-forest-700 font-medium'
-          : 'border-transparent text-forest-500 hover:text-forest-700'
+          ? 'border-forest-600 text-forest-700 dark:text-cream-200 font-medium'
+          : 'border-transparent text-forest-500 dark:text-forest-400 hover:text-forest-700 dark:hover:text-cream-200'
       )}
     >
       <Icon className="w-4 h-4" />

@@ -312,7 +312,7 @@ export default function PlanForm({
       }
     >
       {error && (
-        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
           {error}
         </div>
       )}
@@ -321,12 +321,12 @@ export default function PlanForm({
         {/* 关联简历 */}
         <Field label="关联简历" required error={errors.resume_id}>
           {selectedResume ? (
-            <div className="flex items-center justify-between p-3 rounded-lg border border-forest-200 bg-cream-50">
+            <div className="flex items-center justify-between p-3 rounded-lg border border-forest-200 dark:border-forest-700 bg-cream-50 dark:bg-forest-800/50">
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Users className="w-4 h-4 text-forest-500 flex-shrink-0" />
-                <span className="font-medium text-forest-800">{selectedResume.name}</span>
+                <span className="font-medium text-forest-800 dark:text-cream-100">{selectedResume.name}</span>
                 {selectedResume.current_company && (
-                  <span className="text-xs text-forest-500 truncate">
+                  <span className="text-xs text-forest-500 dark:text-forest-400 truncate">
                     · {selectedResume.current_company}
                   </span>
                 )}
@@ -380,15 +380,15 @@ export default function PlanForm({
                   onClick={() => update('type', opt.value)}
                   className={`text-left p-3 rounded-lg border transition-all ${
                     active
-                      ? 'border-forest-500 bg-forest-50 ring-1 ring-forest-400'
-                      : 'border-forest-100 hover:border-forest-300 hover:bg-cream-50'
+                      ? 'border-forest-500 bg-forest-50 dark:bg-forest-800 ring-1 ring-forest-400'
+                      : 'border-forest-100 dark:border-forest-800 hover:border-forest-300 hover:bg-cream-50 dark:hover:bg-forest-800/50'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-forest-800">{opt.label}</span>
+                    <span className="font-medium text-forest-800 dark:text-cream-100">{opt.label}</span>
                     {active && <Check className="w-3.5 h-3.5 text-forest-600" />}
                   </div>
-                  <p className="text-xs text-forest-500">{opt.desc}</p>
+                  <p className="text-xs text-forest-500 dark:text-forest-400">{opt.desc}</p>
                 </button>
               );
             })}
@@ -407,7 +407,7 @@ export default function PlanForm({
                 onChange={(e) => update('remind_date', e.target.value)}
               />
             </div>
-            <p className="text-xs text-forest-400 mt-1">一次性计划：到日期回访一次后自动结束</p>
+            <p className="text-xs text-forest-400 dark:text-forest-500 mt-1">一次性计划：到日期回访一次后自动结束</p>
           </Field>
         )}
 
@@ -422,7 +422,7 @@ export default function PlanForm({
                   value={form.interval_days}
                   onChange={(e) => update('interval_days', e.target.value)}
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-forest-400">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-forest-400 dark:text-forest-500">
                   天
                 </span>
               </div>
@@ -436,12 +436,12 @@ export default function PlanForm({
                   value={form.max_times}
                   onChange={(e) => update('max_times', e.target.value)}
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-forest-400">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-forest-400 dark:text-forest-500">
                   次
                 </span>
               </div>
             </Field>
-            <p className="col-span-2 text-xs text-forest-400 -mt-2">
+            <p className="col-span-2 text-xs text-forest-400 dark:text-forest-500 -mt-2">
               周期性计划：每次回访后自动顺延 N 天，达到最大次数后自动结束
             </p>
           </div>
@@ -479,7 +479,7 @@ export default function PlanForm({
                 <Plus className="w-4 h-4" /> 添加日期
               </button>
             </div>
-            <p className="text-xs text-forest-400 mt-1">自定义计划：按指定日期依次回访，全部完成后结束</p>
+            <p className="text-xs text-forest-400 dark:text-forest-500 mt-1">自定义计划：按指定日期依次回访，全部完成后结束</p>
           </Field>
         )}
 
@@ -500,7 +500,7 @@ export default function PlanForm({
               {selectedPositions.map((p) => (
                 <span
                   key={p.id}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-forest-50 text-forest-700 border border-forest-200"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-forest-50 dark:bg-forest-800 text-forest-700 dark:text-forest-300 border border-forest-200 dark:border-forest-700"
                 >
                   {p.title}
                   <button
@@ -565,19 +565,19 @@ export default function PlanForm({
                 }}
                 className={`w-full text-left p-3 rounded-lg border transition-all ${
                   form.resume_id === r.id
-                    ? 'border-forest-500 bg-forest-50 ring-1 ring-forest-400'
-                    : 'border-forest-100 hover:border-forest-300 hover:bg-cream-50'
+                    ? 'border-forest-500 bg-forest-50 dark:bg-forest-800 ring-1 ring-forest-400'
+                    : 'border-forest-100 dark:border-forest-800 hover:border-forest-300 hover:bg-cream-50 dark:hover:bg-forest-800/50'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-forest-800">{r.name}</span>
-                  {r.age && <span className="text-xs text-forest-400">{r.age}岁</span>}
+                  <span className="font-medium text-forest-800 dark:text-cream-100">{r.name}</span>
+                  {r.age && <span className="text-xs text-forest-400 dark:text-forest-500">{r.age}岁</span>}
                   <RiskBadge risk={r.risk_warning} />
                   {form.resume_id === r.id && (
                     <Check className="w-4 h-4 text-forest-600 ml-auto" />
                   )}
                 </div>
-                <div className="flex items-center gap-1 text-xs text-forest-500">
+                <div className="flex items-center gap-1 text-xs text-forest-500 dark:text-forest-400">
                   <Building2 className="w-3 h-3" />
                   <span>{r.current_company || '现公司未知'}</span>
                   {r.current_title && <span>· {r.current_title}</span>}
@@ -635,15 +635,15 @@ export default function PlanForm({
                   onClick={() => togglePosition(p.id)}
                   className={`w-full text-left p-3 rounded-lg border transition-all ${
                     checked
-                      ? 'border-forest-500 bg-forest-50 ring-1 ring-forest-400'
-                      : 'border-forest-100 hover:border-forest-300 hover:bg-cream-50'
+                      ? 'border-forest-500 bg-forest-50 dark:bg-forest-800 ring-1 ring-forest-400'
+                      : 'border-forest-100 dark:border-forest-800 hover:border-forest-300 hover:bg-cream-50 dark:hover:bg-forest-800/50'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="font-medium text-forest-800">{p.title}</span>
+                    <span className="font-medium text-forest-800 dark:text-cream-100">{p.title}</span>
                     {checked && <Check className="w-4 h-4 text-forest-600" />}
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-forest-500">
+                  <div className="flex items-center gap-1 text-xs text-forest-500 dark:text-forest-400">
                     <Building2 className="w-3 h-3" />
                     {p.department || '—'}
                     {p.location && <span>· {p.location}</span>}
@@ -676,7 +676,7 @@ function Field({
         {required && <span className="text-risk-600 ml-1">*</span>}
       </label>
       {children}
-      {error && <p className="text-xs text-risk-600 mt-1">{error}</p>}
+      {error && <p className="text-xs text-risk-600 dark:text-risk-400 mt-1">{error}</p>}
     </div>
   );
 }

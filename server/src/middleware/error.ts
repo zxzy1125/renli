@@ -26,7 +26,7 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   if (err instanceof Error) {
     logger.error('未处理错误', err.message);
     logger.error('堆栈', err.stack ?? '');
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: '服务器内部错误' });
     return;
   }
   logger.error('未知错误', String(err));

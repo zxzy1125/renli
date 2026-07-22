@@ -3,7 +3,11 @@ import jwt from 'jsonwebtoken';
 import type { SafeUser } from '../types/index.js';
 
 // 支持环境变量配置（生产环境务必修改）
-export const JWT_SECRET = process.env.JWT_SECRET || 'trae-recruit-secret-key-2026';
+if (!process.env.JWT_SECRET) {
+  console.error('[FATAL] 环境变量 JWT_SECRET 未设置，服务无法启动');
+  process.exit(1);
+}
+export const JWT_SECRET = process.env.JWT_SECRET;
 // 24 小时过期
 export const JWT_EXPIRES_IN = '24h';
 

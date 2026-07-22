@@ -44,12 +44,12 @@ export default function NotificationToast() {
       <div
         className={`card shadow-lg border-l-4 p-4 max-w-sm ${
           isCompleted
-            ? 'border-l-forest-500 bg-white'
+            ? 'border-l-forest-500 bg-white dark:bg-forest-900'
             : 'border-l-risk-500 bg-risk-50'
         }`}
       >
         <div className="flex items-start gap-3">
-          <div className={`mt-0.5 ${isCompleted ? 'text-forest-500' : 'text-risk-500'}`}>
+          <div className={`mt-0.5 ${isCompleted ? 'text-forest-500 dark:text-forest-400' : 'text-risk-500'}`}>
             {isCompleted ? (
               <CheckCircle2 className="w-5 h-5" />
             ) : (
@@ -57,10 +57,10 @@ export default function NotificationToast() {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-forest-800">
+            <p className="text-sm font-medium text-forest-800 dark:text-cream-100">
               {isCompleted ? '文案生成完成' : '文案生成失败'}
             </p>
-            <p className="text-xs text-forest-500 mt-0.5 truncate">
+            <p className="text-xs text-forest-500 dark:text-forest-400 mt-0.5 truncate">
               {latest.positionTitle}
             </p>
             {isCompleted && (
@@ -84,7 +84,7 @@ export default function NotificationToast() {
               markNotified(latest.id);
               setVisible(false);
             }}
-            className="text-forest-400 hover:text-forest-600"
+            className="text-forest-400 dark:text-forest-500 hover:text-forest-600 dark:hover:text-cream-200"
           >
             <X className="w-4 h-4" />
           </button>
@@ -115,7 +115,7 @@ export function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative p-2 rounded-lg hover:bg-forest-50 text-forest-600"
+        className="relative p-2 rounded-lg hover:bg-forest-50 dark:hover:bg-forest-800/50 text-forest-600 dark:text-cream-300"
         title="生成通知"
       >
         <Sparkles className="w-5 h-5" />
@@ -130,11 +130,11 @@ export function NotificationBell() {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full mt-2 w-80 card shadow-xl z-50 max-h-96 overflow-y-auto">
-            <div className="px-4 py-3 border-b border-forest-100">
-              <h3 className="text-sm font-semibold text-forest-800">生成记录</h3>
+            <div className="px-4 py-3 border-b border-forest-100 dark:border-forest-800">
+              <h3 className="text-sm font-semibold text-forest-800 dark:text-cream-100">生成记录</h3>
             </div>
             {recent.length === 0 ? (
-              <div className="px-4 py-6 text-center text-xs text-forest-400">
+              <div className="px-4 py-6 text-center text-xs text-forest-400 dark:text-forest-500">
                 暂无生成记录
               </div>
             ) : (
@@ -176,22 +176,22 @@ function TaskItem({
 
   return (
     <div
-      className={`px-4 py-3 border-b border-forest-50 hover:bg-forest-50 transition-colors ${
+      className={`px-4 py-3 border-b border-forest-50 dark:border-forest-800 hover:bg-forest-50 dark:hover:bg-forest-800/50 transition-colors ${
         !task.notified ? 'bg-ochre-50/40' : ''
       }`}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {isCompleted ? (
-            <CheckCircle2 className="w-4 h-4 text-forest-500 flex-shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-forest-500 dark:text-forest-400 flex-shrink-0" />
           ) : (
             <XCircle className="w-4 h-4 text-risk-500 flex-shrink-0" />
           )}
           <div className="min-w-0">
-            <p className="text-xs font-medium text-forest-800 truncate">
+            <p className="text-xs font-medium text-forest-800 dark:text-cream-100 truncate">
               {task.positionTitle}
             </p>
-            <p className="text-[11px] text-forest-400">{timeAgo}</p>
+            <p className="text-[11px] text-forest-400 dark:text-forest-500">{timeAgo}</p>
           </div>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
@@ -207,7 +207,7 @@ function TaskItem({
           <button
             type="button"
             onClick={() => onRemove(task.id)}
-            className="text-[11px] text-forest-400 hover:text-risk-600 px-1"
+            className="text-[11px] text-forest-400 dark:text-forest-500 hover:text-risk-600 dark:hover:text-risk-400 px-1"
             title="删除"
           >
             <X className="w-3 h-3" />

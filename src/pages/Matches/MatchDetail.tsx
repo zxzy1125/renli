@@ -42,10 +42,10 @@ import {
 
 // 话术状态徽章色调
 const PITCH_TONE_CLASS: Record<string, string> = {
-  green: 'bg-forest-100 text-forest-700',
-  yellow: 'bg-ochre-100 text-ochre-700',
+  green: 'bg-forest-100 text-forest-700 dark:bg-forest-800 dark:text-cream-200',
+  yellow: 'bg-ochre-100 text-ochre-700 dark:bg-ochre-900/20 dark:text-ochre-400',
   gray: 'bg-gray-100 text-gray-500',
-  red: 'bg-risk-100 text-risk-700',
+  red: 'bg-risk-100 text-risk-700 dark:bg-risk-900/20 dark:text-risk-400',
 };
 
 export default function MatchDetail() {
@@ -352,7 +352,7 @@ export default function MatchDetail() {
   if (error && !match) {
     return (
       <div className="px-6 py-6 max-w-5xl mx-auto">
-        <div className="px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700 mb-4">
+        <div className="px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400 mb-4">
           {error}
         </div>
         <Link to="/matches" className="btn-ghost inline-flex items-center gap-1">
@@ -364,7 +364,7 @@ export default function MatchDetail() {
   if (!match) {
     return (
       <div className="px-6 py-6 max-w-5xl mx-auto">
-        <p className="text-sm text-forest-500">匹配记录不存在</p>
+        <p className="text-sm text-forest-500 dark:text-forest-400">匹配记录不存在</p>
         <Link to="/matches" className="btn-ghost inline-flex items-center gap-1 mt-2">
           <ArrowLeft className="w-4 h-4" /> 返回匹配列表
         </Link>
@@ -396,7 +396,7 @@ export default function MatchDetail() {
       </div>
 
       {error && (
-        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 border border-risk-100 text-sm text-risk-700">
+        <div className="mb-4 px-3 py-2 rounded-lg bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-sm text-risk-700 dark:text-risk-400">
           {error}
         </div>
       )}
@@ -405,20 +405,20 @@ export default function MatchDetail() {
       <div className="card p-6 mb-4">
         <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
           <div>
-            <h1 className="font-serif text-2xl font-bold text-forest-800 flex items-center gap-3">
+            <h1 className="font-serif text-2xl font-bold text-forest-800 dark:text-cream-100 flex items-center gap-3">
               <span>{resumeName}</span>
-              <span className="text-forest-300 text-base">×</span>
+              <span className="text-forest-300 dark:text-forest-600 text-base">×</span>
               <span>{positionTitle}</span>
             </h1>
-            <div className="flex items-center gap-2 mt-1 text-sm text-forest-500">
+            <div className="flex items-center gap-2 mt-1 text-sm text-forest-500 dark:text-forest-400">
               {match.resume?.current_company && <span>{match.resume.current_company}</span>}
               {match.position?.location && (
                 <>
-                  <span className="text-forest-300">·</span>
+                  <span className="text-forest-300 dark:text-forest-600">·</span>
                   <span>{match.position.location}</span>
                 </>
               )}
-              <span className="text-forest-300">·</span>
+              <span className="text-forest-300 dark:text-forest-600">·</span>
               <span>{dayjs(match.created_at).format('YYYY-MM-DD HH:mm')}</span>
             </div>
           </div>
@@ -445,12 +445,12 @@ export default function MatchDetail() {
         {/* 匹配报告 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* 大号评分 */}
-          <div className="lg:col-span-1 bg-cream-50 rounded-lg p-5 flex flex-col items-center justify-center text-center">
-            <div className="text-xs text-forest-500 mb-1">匹配度评分</div>
+          <div className="lg:col-span-1 bg-cream-50 dark:bg-forest-800 rounded-lg p-5 flex flex-col items-center justify-center text-center">
+            <div className="text-xs text-forest-500 dark:text-forest-400 mb-1">匹配度评分</div>
             <div className={`font-mono font-bold text-5xl ${scoreColorClass(match.score)}`}>
               {match.score}
             </div>
-            <div className="text-forest-400 text-sm mb-2">/ 100</div>
+            <div className="text-forest-400 dark:text-forest-500 text-sm mb-2">/ 100</div>
             <div className={`text-2xl ${scoreColorClass(match.score)}`}>{scoreStars(match.score)}</div>
           </div>
 
@@ -458,40 +458,40 @@ export default function MatchDetail() {
           <div className="lg:col-span-2 space-y-3">
             {/* 亮点 */}
             <div>
-              <div className="flex items-center gap-1.5 text-forest-700 font-medium text-sm mb-1">
-                <CheckCircle2 className="w-4 h-4 text-forest-600" />
+              <div className="flex items-center gap-1.5 text-forest-700 dark:text-cream-200 font-medium text-sm mb-1">
+                <CheckCircle2 className="w-4 h-4 text-forest-600 dark:text-cream-300" />
                 匹配亮点
               </div>
               {match.highlights && match.highlights.length > 0 ? (
                 <ul className="space-y-1">
                   {match.highlights.map((h, i) => (
-                    <li key={i} className="text-sm text-forest-700 flex items-start gap-1.5">
-                      <Check className="w-3.5 h-3.5 text-forest-500 flex-shrink-0 mt-0.5" />
+                    <li key={i} className="text-sm text-forest-700 dark:text-cream-200 flex items-start gap-1.5">
+                      <Check className="w-3.5 h-3.5 text-forest-500 dark:text-forest-400 flex-shrink-0 mt-0.5" />
                       <span>{h}</span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-forest-400">暂无亮点</p>
+                <p className="text-sm text-forest-400 dark:text-forest-500">暂无亮点</p>
               )}
             </div>
             {/* 疑虑 */}
             <div>
-              <div className="flex items-center gap-1.5 text-ochre-700 font-medium text-sm mb-1">
+              <div className="flex items-center gap-1.5 text-ochre-700 dark:text-ochre-400 font-medium text-sm mb-1">
                 <AlertTriangle className="w-4 h-4 text-ochre-500" />
                 潜在疑虑
               </div>
               {match.concerns && match.concerns.length > 0 ? (
                 <ul className="space-y-1">
                   {match.concerns.map((c, i) => (
-                    <li key={i} className="text-sm text-forest-700 flex items-start gap-1.5">
+                    <li key={i} className="text-sm text-forest-700 dark:text-cream-200 flex items-start gap-1.5">
                       <AlertTriangle className="w-3.5 h-3.5 text-ochre-500 flex-shrink-0 mt-0.5" />
                       <span>{c}</span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-forest-400">暂无疑虑</p>
+                <p className="text-sm text-forest-400 dark:text-forest-500">暂无疑虑</p>
               )}
             </div>
           </div>
@@ -499,26 +499,26 @@ export default function MatchDetail() {
 
         {/* 薪资分析 + 转化概率 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <div className="bg-cream-50 rounded-lg p-4">
-            <div className="flex items-center gap-1.5 text-forest-600 font-medium text-sm mb-2">
-              <Wallet className="w-4 h-4 text-forest-500" />
+          <div className="bg-cream-50 dark:bg-forest-800 rounded-lg p-4">
+            <div className="flex items-center gap-1.5 text-forest-600 dark:text-cream-300 font-medium text-sm mb-2">
+              <Wallet className="w-4 h-4 text-forest-500 dark:text-forest-400" />
               薪资分析
             </div>
-            <p className="text-sm text-forest-700 leading-relaxed">
+            <p className="text-sm text-forest-700 dark:text-cream-200 leading-relaxed">
               {match.salary_analysis || '暂无薪资分析'}
             </p>
           </div>
-          <div className="bg-cream-50 rounded-lg p-4">
-            <div className="flex items-center gap-1.5 text-forest-600 font-medium text-sm mb-2">
-              <TrendingUp className="w-4 h-4 text-forest-500" />
+          <div className="bg-cream-50 dark:bg-forest-800 rounded-lg p-4">
+            <div className="flex items-center gap-1.5 text-forest-600 dark:text-cream-300 font-medium text-sm mb-2">
+              <TrendingUp className="w-4 h-4 text-forest-500 dark:text-forest-400" />
               转化可能性
             </div>
             <div className="flex items-baseline gap-2 mb-1">
-              <span className="font-mono font-bold text-3xl text-forest-700">
+              <span className="font-mono font-bold text-3xl text-forest-700 dark:text-cream-200">
                 {match.conversion_probability}%
               </span>
             </div>
-            <p className="text-xs text-forest-500">
+            <p className="text-xs text-forest-500 dark:text-forest-400">
               基于 matching 评分、求职者状态与薪资匹配度综合预测
             </p>
           </div>
@@ -527,7 +527,7 @@ export default function MatchDetail() {
 
       {/* 第二段：状态流转条 */}
       <div className="card p-5 mb-4">
-        <h2 className="font-serif text-lg font-semibold text-forest-800 mb-4">状态流转</h2>
+        <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100 mb-4">状态流转</h2>
         {/* 横向流程图 */}
         <div className="flex items-center gap-1 mb-4 overflow-x-auto pb-2">
           {STATUS_PIPELINE.map((s, idx) => {
@@ -540,14 +540,14 @@ export default function MatchDetail() {
                     isCurrent
                       ? 'bg-forest-600 text-white'
                       : isPassed
-                      ? 'bg-forest-100 text-forest-600'
-                      : 'bg-cream-100 text-forest-400'
+                      ? 'bg-forest-100 dark:bg-forest-800 text-forest-600 dark:text-forest-300'
+                      : 'bg-cream-100 dark:bg-forest-800/50 text-forest-400 dark:text-forest-500'
                   }`}
                 >
                   {MATCH_STATUS_LABELS[s]}
                 </div>
                 {idx < STATUS_PIPELINE.length - 1 && (
-                  <ChevronRight className="w-4 h-4 text-forest-300 mx-0.5 flex-shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-forest-300 dark:text-forest-600 mx-0.5 flex-shrink-0" />
                 )}
               </div>
             );
@@ -597,13 +597,13 @@ export default function MatchDetail() {
             })
           )}
           {statusUpdating && (
-            <span className="text-sm text-forest-400 flex items-center gap-1">
+            <span className="text-sm text-forest-400 dark:text-forest-500 flex items-center gap-1">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
               更新中...
             </span>
           )}
           {nextStatuses.length === 0 && match.status !== 'lost' && (
-            <span className="text-sm text-forest-400">已达终态</span>
+            <span className="text-sm text-forest-400 dark:text-forest-500">已达终态</span>
           )}
         </div>
       </div>
@@ -612,8 +612,8 @@ export default function MatchDetail() {
       <div className="card p-5">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
-            <h2 className="font-serif text-lg font-semibold text-forest-800">话术矩阵（18 条）</h2>
-            <p className="text-xs text-forest-500 mt-0.5">3 渠道 × 6 场景 · 半人工审核</p>
+            <h2 className="font-serif text-lg font-semibold text-forest-800 dark:text-cream-100">话术矩阵（18 条）</h2>
+            <p className="text-xs text-forest-500 dark:text-forest-400 mt-0.5">3 渠道 × 6 场景 · 半人工审核</p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -652,7 +652,7 @@ export default function MatchDetail() {
 
         {/* 生成中提示 */}
         {generating && (
-          <div className="mb-4 px-4 py-3 rounded-lg bg-ochre-50 border border-ochre-100 text-sm text-ochre-700 flex items-center gap-2">
+          <div className="mb-4 px-4 py-3 rounded-lg bg-ochre-50 dark:bg-ochre-900/20 border border-ochre-100 dark:border-ochre-800 text-sm text-ochre-700 dark:text-ochre-400 flex items-center gap-2">
             <Sparkles className="w-4 h-4 animate-pulse" />
             AI 正在生成 18 条话术（3 渠道 × 6 场景），预计 30-60 秒，请勿离开页面...
           </div>
@@ -661,9 +661,9 @@ export default function MatchDetail() {
         {/* 空状态 */}
         {pitches.length === 0 && !generating ? (
           <div className="py-12 text-center">
-            <Sparkles className="w-10 h-10 mx-auto mb-3 text-ochre-400" />
-            <p className="text-sm text-forest-500 mb-2">暂无话术</p>
-            <p className="text-xs text-forest-400">点击「生成全部 18 条」开始</p>
+            <Sparkles className="w-10 h-10 mx-auto mb-3 text-ochre-400 dark:text-ochre-500" />
+            <p className="text-sm text-forest-500 dark:text-forest-400 mb-2">暂无话术</p>
+            <p className="text-xs text-forest-400 dark:text-forest-500">点击「生成全部 18 条」开始</p>
           </div>
         ) : (
           /* 矩阵表格 */
@@ -671,13 +671,13 @@ export default function MatchDetail() {
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr>
-                  <th className="border border-forest-100 bg-cream-100 px-3 py-2 text-left text-forest-600 font-medium w-28">
+                  <th className="border border-forest-100 dark:border-forest-800 bg-cream-100 dark:bg-forest-800/50 px-3 py-2 text-left text-forest-600 dark:text-forest-300 font-medium w-28">
                     场景 \ 渠道
                   </th>
                   {PITCH_CHANNELS.map((ch) => (
                     <th
                       key={ch}
-                      className="border border-forest-100 bg-cream-100 px-3 py-2 text-center text-forest-600 font-medium"
+                      className="border border-forest-100 dark:border-forest-800 bg-cream-100 dark:bg-forest-800/50 px-3 py-2 text-center text-forest-600 dark:text-forest-300 font-medium"
                     >
                       {PITCH_CHANNEL_LABELS[ch]}
                     </th>
@@ -687,7 +687,7 @@ export default function MatchDetail() {
               <tbody>
                 {PITCH_SCENES.map((scene) => (
                   <tr key={scene}>
-                    <th className="border border-forest-100 bg-cream-50 px-3 py-2 text-left text-forest-700 font-medium align-top">
+                    <th className="border border-forest-100 dark:border-forest-800 bg-cream-50 dark:bg-forest-800/30 px-3 py-2 text-left text-forest-700 dark:text-cream-200 font-medium align-top">
                       {PITCH_SCENE_LABELS[scene]}
                     </th>
                     {PITCH_CHANNELS.map((ch) => {
@@ -695,7 +695,7 @@ export default function MatchDetail() {
                       return (
                         <td
                           key={ch}
-                          className="border border-forest-100 px-2 py-2 align-top"
+                          className="border border-forest-100 dark:border-forest-800 px-2 py-2 align-top"
                         >
                           <PitchCell
                             pitch={pitch}
@@ -740,7 +740,7 @@ export default function MatchDetail() {
           </>
         }
       >
-        <p className="text-sm text-forest-600 mb-3">请填写流失原因（可选）：</p>
+        <p className="text-sm text-forest-600 dark:text-cream-300 mb-3">请填写流失原因（可选）：</p>
         <textarea
           className="input"
           rows={4}
@@ -771,7 +771,7 @@ export default function MatchDetail() {
           footer={
             <div className="flex flex-wrap items-center justify-between gap-2 w-full">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-forest-500">状态：</span>
+                <span className="text-xs text-forest-500 dark:text-forest-400">状态：</span>
                 <span className={`badge ${PITCH_TONE_CLASS[PITCH_STATUS_TONES[reviewPitch.status]]}`}>
                   {PITCH_STATUS_LABELS[reviewPitch.status]}
                 </span>
@@ -790,7 +790,7 @@ export default function MatchDetail() {
                   type="button"
                   disabled={reviewBusy}
                   onClick={handlePolish}
-                  className="btn-ghost text-xs flex items-center gap-1 text-ochre-600"
+                  className="btn-ghost text-xs flex items-center gap-1 text-ochre-600 dark:text-ochre-400"
                 >
                   {reviewBusy ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -835,7 +835,7 @@ export default function MatchDetail() {
               type="button"
               disabled={reviewBusy}
               onClick={() => setRegenConfirm(true)}
-              className="btn-ghost flex items-center gap-1 text-ochre-600"
+              className="btn-ghost flex items-center gap-1 text-ochre-600 dark:text-ochre-400"
             >
               <RefreshCw className="w-4 h-4" />
               重新生成
@@ -844,13 +844,13 @@ export default function MatchDetail() {
               type="button"
               disabled={reviewBusy}
               onClick={handleDiscard}
-              className="btn-ghost flex items-center gap-1 text-risk-600 hover:bg-risk-50"
+              className="btn-ghost flex items-center gap-1 text-risk-600 dark:text-risk-400 hover:bg-risk-50 dark:hover:bg-risk-900/20"
             >
               <XCircle className="w-4 h-4" />
               放弃
             </button>
             {reviewBusy && (
-              <span className="text-xs text-forest-400 flex items-center gap-1">
+              <span className="text-xs text-forest-400 dark:text-forest-500 flex items-center gap-1">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 处理中...
               </span>
@@ -877,10 +877,10 @@ export default function MatchDetail() {
 function StatusPill({ status }: { status: MatchStatus }) {
   const toneClass =
     status === 'lost'
-      ? 'bg-risk-100 text-risk-700'
+      ? 'bg-risk-100 dark:bg-risk-900/30 text-risk-700 dark:text-risk-400'
       : status === 'interview_invited'
-      ? 'bg-ochre-100 text-ochre-700'
-      : 'bg-forest-100 text-forest-700';
+      ? 'bg-ochre-100 dark:bg-ochre-900/30 text-ochre-700 dark:text-ochre-400'
+      : 'bg-forest-100 dark:bg-forest-800 text-forest-700 dark:text-forest-300';
   return <span className={`badge ${toneClass} text-sm px-2.5 py-1`}>{MATCH_STATUS_LABELS[status]}</span>;
 }
 
@@ -943,9 +943,9 @@ function PitchCell({
     <button
       type="button"
       onClick={onReview}
-      className="w-full min-h-[80px] rounded-lg border border-forest-100 hover:border-forest-300 hover:bg-cream-50 p-2 text-left transition-colors"
+      className="w-full min-h-[80px] rounded-lg border border-forest-100 dark:border-forest-800 hover:border-forest-300 hover:bg-cream-50 dark:hover:bg-forest-800/50 p-2 text-left transition-colors"
     >
-      <div className="text-xs text-forest-700 line-clamp-3">
+      <div className="text-xs text-forest-700 dark:text-cream-200 line-clamp-3">
         {pitch.content.slice(0, 80)}
         {pitch.content.length > 80 ? '...' : ''}
       </div>
