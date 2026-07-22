@@ -120,17 +120,31 @@ PULL_OUT=$(git pull 2>&1) || { update_status "pull" "error" "$PULL_OUT"; exit 1;
 update_status "pull" "success" "$PULL_OUT"
 
 # Step 2: npm install（仅当 package 文件有变更时）
+# 用 --no-audit --no-fund 加速；--omit=optional 可跳过 skia-canvas 等原生可选依赖避免编译失败
 if echo "$PULL_OUT" | grep -q "package"; then
   update_status "install" "running"
-  INSTALL_OUT=$(npm install 2>&1) || { update_status "install" "error" "$INSTALL_OUT"; exit 1; }
-  update_status "install" "success"
+  # 先尝试正常安装（含可选依赖）；若失败则降级为 --omit=optional 重试，保证核心依赖就绪
+  INSTALL_OUT=$(npm install --no-audit --no-fund 2>&1) || {
+    INSTALL_OUT2=$(npm install --no-audit --no-fund --omit=optional 2>&1) || { update_status "install" "error" "$INSTALL_OUT2"; exit 1; }
+    INSTALL_OUT="$INSTALL_OUT\\n[可选依赖安装失败，已降级跳过]"
+  }
+  update_status "install" "success" "$INSTALL_OUT"
 else
   update_status "install" "skipped"
 fi
 
 # Step 3: npm run build
+# 完整日志落盘到 logs/build.log 方便排查；status 只存摘要（前端显示会截断多行）
 update_status "build" "running"
-BUILD_OUT=$(npm run build 2>&1) || { update_status "build" "error" "$BUILD_OUT"; exit 1; }
+BUILD_OUT=$(npm run build 2>&1)
+BUILD_EXIT=$?
+echo "$BUILD_OUT" > "$PROJECT_ROOT/logs/build.log"
+if [ $BUILD_EXIT -ne 0 ]; then
+  # 提取最后 10 行作为摘要，完整日志见 build.log
+  ERR_SUMMARY=$(echo "$BUILD_OUT" | tail -n 10 | tr '\\n' ' ' | head -c 500)
+  update_status "build" "error" "$ERR_SUMMARY（完整日志见 logs/build.log）"
+  exit 1
+fi
 update_status "build" "success"
 
 # Step 4: 部署前端

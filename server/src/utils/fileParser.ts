@@ -563,6 +563,8 @@ async function compressImages(images: ParsedImage[]): Promise<ParsedImage[]> {
   let loadImage: any;
   let Canvas: any;
   try {
+    // skia-canvas 为 optionalDependencies，服务器可能未安装；运行时缺失会走 catch 回退原图
+    // @ts-ignore - 可选原生模块，未安装时类型声明不存在
     const skia = await import('skia-canvas');
     loadImage = skia.loadImage;
     Canvas = skia.Canvas;

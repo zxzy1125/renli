@@ -230,25 +230,27 @@ export default function SystemUpdatePage() {
             {STEPS.map((s) => {
               const stepData = status.steps?.[s.key];
               return (
-                <div key={s.key} className="flex items-center gap-2">
-                  <StepIcon status={stepData?.status} />
-                  <span className={`text-sm ${
-                    stepData?.status === 'error'
-                      ? 'text-risk-600 dark:text-risk-400'
-                      : 'text-forest-700 dark:text-forest-300'
-                  }`}>
-                    {s.label}
-                  </span>
-                  {stepData?.status === 'running' && (
-                    <Loader2 className="w-3 h-3 text-ochre-500 animate-spin" />
-                  )}
-                  {stepData?.status === 'skipped' && (
-                    <span className="text-xs text-forest-400 dark:text-forest-500">（跳过）</span>
-                  )}
-                  {stepData?.message && stepData.status === 'error' && (
-                    <span className="text-xs text-risk-500 dark:text-risk-400 truncate max-w-xs">
-                      {stepData.message}
+                <div key={s.key}>
+                  <div className="flex items-center gap-2">
+                    <StepIcon status={stepData?.status} />
+                    <span className={`text-sm ${
+                      stepData?.status === 'error'
+                        ? 'text-risk-600 dark:text-risk-400'
+                        : 'text-forest-700 dark:text-forest-300'
+                    }`}>
+                      {s.label}
                     </span>
+                    {stepData?.status === 'running' && (
+                      <Loader2 className="w-3 h-3 text-ochre-500 animate-spin" />
+                    )}
+                    {stepData?.status === 'skipped' && (
+                      <span className="text-xs text-forest-400 dark:text-forest-500">（跳过）</span>
+                    )}
+                  </div>
+                  {stepData?.message && stepData.status === 'error' && (
+                    <div className="ml-6 mt-1 px-2 py-1.5 rounded bg-risk-50 dark:bg-risk-900/20 border border-risk-100 dark:border-risk-800 text-xs text-risk-600 dark:text-risk-400 break-all whitespace-pre-wrap">
+                      {stepData.message}
+                    </div>
                   )}
                 </div>
               );
