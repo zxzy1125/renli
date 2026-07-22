@@ -139,29 +139,19 @@ mkdir -p /var/www/renli
 cp -r dist/* /var/www/renli/ || { update_status "copy" "error" "复制前端文件失败"; exit 1; }
 update_status "copy" "success"
 
-# Step 5: 标记完成（在 restart 之前写入，因为 restart 会重启 Node）
+# Step 5: 重启服务（setsid 创建独立进程，避免 pm2 restart 杀掉父进程树）
+# 先标记全部完成（前端 5 秒倒计时足够 pm2 重启完毕）
 node -e "
   const fs = require('fs');
   const s = JSON.parse(fs.readFileSync(process.argv[1],'utf8'));
   s.status = 'completed';
   s.completedAt = new Date().toISOString();
   s.step = 'restart';
-  s.steps['restart'] = { status: 'running' };
-  fs.writeFileSync(process.argv[1], JSON.stringify(s, null, 2));
-" "$STATUS_FILE"
-
-# Step 6: 重启服务
-pm2 restart recruit-api
-
-# Step 7: 更新 restart 状态（pm2 重启后 Node 已恢复，脚本继续执行）
-sleep 2
-node -e "
-  const fs = require('fs');
-  const s = JSON.parse(fs.readFileSync(process.argv[1],'utf8'));
   s.steps['restart'] = { status: 'success' };
-  s.updatedAt = new Date().toISOString();
   fs.writeFileSync(process.argv[1], JSON.stringify(s, null, 2));
 " "$STATUS_FILE"
+
+setsid bash -c 'sleep 1 && pm2 restart recruit-api' &
 `;
 
   fs.writeFileSync(SCRIPT_FILE, script, { mode: 0o755 });
