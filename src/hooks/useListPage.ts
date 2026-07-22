@@ -17,12 +17,15 @@ export interface UseListPageOptions<T> {
   autoFetch?: boolean;
 }
 
+// 稳定的空对象引用，避免每次渲染创建新 {} 导致 useCallback 依赖变化
+const EMPTY_PARAMS: Record<string, any> = {};
+
 export function useListPage<T extends { id: string }>({
   fetchApi,
   defaultPageSize = 12,
   defaultKeyword = '',
   defaultStatus = '',
-  extraParams = {},
+  extraParams = EMPTY_PARAMS,
   autoFetch = true,
 }: UseListPageOptions<T>) {
   const [list, setList] = useState<T[]>([]);
