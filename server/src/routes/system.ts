@@ -133,11 +133,8 @@ update_status "build" "running"
 BUILD_OUT=$(npm run build 2>&1) || { update_status "build" "error" "$BUILD_OUT"; exit 1; }
 update_status "build" "success"
 
-# Step 4: 部署前端
-update_status "copy" "running"
-mkdir -p /var/www/renli
-cp -r dist/* /var/www/renli/ || { update_status "copy" "error" "复制前端文件失败"; exit 1; }
-update_status "copy" "success"
+# Step 4: 部署前端（Nginx 直接从 dist 目录读取，无需复制）
+update_status "copy" "success" "Nginx 从 dist 目录直接读取，无需复制"
 
 # Step 5: 标记完成（在 restart 之前写入，因为 restart 会重启 Node）
 node -e "
