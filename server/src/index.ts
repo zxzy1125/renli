@@ -47,12 +47,15 @@ seedDatabase();
 
 const app = express();
 
+// Nginx 反向代理后信任 X-Forwarded-* 头
+app.set('trust proxy', 1);
+
 // 安全中间件
 app.use(helmet());
 // CORS 白名单（可通过 CORS_ORIGINS 环境变量配置，逗号分隔）
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
-  : ['http://localhost:5173', 'http://localhost:3000'];
+  : ['http://localhost:5173', 'http://localhost:3000', 'https://renli.xiaoqingai.top'];
 app.use(cors({
   origin: (origin, cb) => {
     if (!origin || allowedOrigins.includes(origin)) {
