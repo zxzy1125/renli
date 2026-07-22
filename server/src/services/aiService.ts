@@ -77,12 +77,16 @@ export function parseAIJson(content: string): any {
 // - messages: ChatMessage[]，content 可为纯文本或多模态数组
 // - options.images: 可选图片资产数组，会作为 image_url 段追加到 user 消息末尾
 //   当有图片时，若 ai_config.mm_enabled=1 且 mm_model 非空，自动切换到多模态模型配置
+// - options.stream: 是否把流式 chunk 通过 onChunk 回调推送给调用方（用于 SSE 实时推送）
 export async function callAI(
   messages: ChatMessage[],
   options?: {
     temperature?: number;
     timeoutMs?: number;
     images?: ChatImage[];
+    maxTokens?: number;
+    // 流式回调：每收到一个 delta 就触发一次，供外层 SSE 实时推给前端
+    onChunk?: (delta: string, fullContent: string) => void;
   }
 ): Promise<string> {
   const cfg = getConfig();
@@ -121,18 +125,21 @@ export async function callAI(
     });
   }
 
-  const body = {
+  const body: Record<string, unknown> = {
     model,
     messages: finalMessages,
-    temperature: options?.temperature ?? cfg.temperature,
+    // 结构化解析类任务用 temperature=0（确定性输出，更快更稳）
+    temperature: options?.temperature ?? 0,
     stream: true,
+    // 限制输出长度，防止 AI 跑题生成超长 JSON
+    max_tokens: options?.maxTokens ?? 4000,
   };
   // 多模态调用通常更慢，给更长默认超时
   const timeoutMs = options?.timeoutMs ?? (imgs.length > 0 ? 120000 : 60000);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   const tag = useMultimodal ? '[AI/MM]' : '[AI]';
-  logger.info(`${tag} 请求 ${url}  model=${model}  imgs=${imgs.length}  timeout=${timeoutMs}ms  stream=true`);
+  logger.info(`${tag} 请求 ${url}  model=${model}  imgs=${imgs.length}  timeout=${timeoutMs}ms  stream=true  max_tokens=${body.max_tokens}`);
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -169,7 +176,11 @@ export async function callAI(
         try {
           const chunk = JSON.parse(data);
           const delta = chunk?.choices?.[0]?.delta?.content;
-          if (delta) content += delta;
+          if (delta) {
+            content += delta;
+            // 实时推送给外层（SSE 用）
+            if (options?.onChunk) options.onChunk(delta, content);
+          }
           // 记录原始 chunk 用于诊断
           if (!rawChunks && !delta) rawChunks = JSON.stringify(chunk).slice(0, 500);
         } catch {
@@ -196,7 +207,7 @@ export async function callAI(
 // 调用 AI 并容错解析 JSON
 export async function callAIJson<T = any>(
   messages: ChatMessage[],
-  options?: { temperature?: number; timeoutMs?: number; images?: ChatImage[] }
+  options?: { temperature?: number; timeoutMs?: number; images?: ChatImage[]; maxTokens?: number; onChunk?: (delta: string, fullContent: string) => void }
 ): Promise<T> {
   const content = await callAI(messages, options);
   try {
@@ -211,7 +222,7 @@ export async function callAIJson<T = any>(
 export async function callByPromptKey(
   promptKey: string,
   variables: Record<string, string>,
-  options?: { temperature?: number; timeoutMs?: number; images?: ChatImage[] }
+  options?: { temperature?: number; timeoutMs?: number; images?: ChatImage[]; maxTokens?: number; onChunk?: (delta: string, fullContent: string) => void }
 ): Promise<any> {
   // 优先用数据库中的自定义提示词，回退到代码默认
   const cfg = getAiConfig();

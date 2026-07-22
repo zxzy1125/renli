@@ -15,9 +15,13 @@ export const aiRouter = Router();
 
 aiRouter.use(requireAuth);
 
-// POST /api/ai/parse-position（管理员，支持多模态）
+// POST /api/ai/parse-position（管理员，支持多模态，SSE 流式推送）
 // body: { raw_text: string, images?: [{ name, mime, base64 }] }
 // 有图片时自动切换到多模态模型配置（mm_*）
+// 响应：text/event-stream
+//   event: chunk  data: {delta}            —— AI 实时输出片段（前端可显示进度）
+//   event: done   data: {data: <json>}     —— 完整解析结果
+//   event: error  data: {message}          —— 错误信息
 aiRouter.post('/parse-position', requireAdmin, asyncHandler(async (req, res) => {
   const { raw_text, images } = req.body ?? {};
   if (!raw_text) throw new ApiError(400, 'raw_text 不能为空');
@@ -28,10 +32,37 @@ aiRouter.post('/parse-position', requireAdmin, asyncHandler(async (req, res) => 
         .map((img: any) => ({ name: String(img.name || 'image'), mime: String(img.mime), base64: String(img.base64) }))
         .slice(0, 12) // 服务端再设一次上限，避免前端发太多
     : [];
-  const result = await callByPromptKey('parsePosition', {
-    raw_text: String(raw_text),
-  }, safeImages.length > 0 ? { images: safeImages, timeoutMs: 120000 } : undefined);
-  res.json({ data: result });
+
+  // 开启 SSE
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // 禁用 nginx/Caddy 缓冲，确保 chunk 实时下发
+  if (typeof (res as any).flushHeaders === 'function') (res as any).flushHeaders();
+
+  const send = (event: string, data: unknown) => {
+    try {
+      res.write(`event: ${event}\n`);
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    } catch {
+      /* 客户端已断开，忽略 */
+    }
+  };
+
+  try {
+    const result = await callByPromptKey('parsePosition', {
+      raw_text: String(raw_text),
+    }, {
+      ...(safeImages.length > 0 ? { images: safeImages } : {}),
+      timeoutMs: 120000,
+      onChunk: (delta: string) => send('chunk', { delta }),
+    });
+    send('done', { data: result });
+  } catch (err: any) {
+    send('error', { message: err?.message || 'AI 解析失败' });
+  } finally {
+    res.end();
+  }
 }));
 
 // POST /api/ai/parse-resume（员工，支持多模态）

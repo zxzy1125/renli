@@ -134,6 +134,8 @@ export default function PositionForm() {
   const [inputMode, setInputMode] = useState<InputMode>('paste');
   const [parsing, setParsing] = useState(false);
   const [parseMsg, setParseMsg] = useState('');
+  // SSE 流式解析进度：AI 已生成的字符数
+  const [streamChars, setStreamChars] = useState(0);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -262,15 +264,24 @@ export default function PositionForm() {
       return;
     }
     setParsing(true);
-    setParseMsg('');
+    setParseMsg('AI 正在解析...');
     setError('');
     setMultiPositions(null);
+    setStreamChars(0);
     try {
       // 把上传时拿到的图片资产一起传给 AI（多模态）
       const imgs = uploadImages.length > 0
         ? uploadImages.map((i) => ({ name: i.name, mime: i.mime, base64: i.base64 }))
         : undefined;
-      const res = await aiApi.parsePosition(form.raw_text, imgs);
+      // SSE 流式调用：AI 边生成边推送 delta，前端实时显示已生成字符数
+      const res = await aiApi.parsePositionStream(
+        form.raw_text,
+        imgs,
+        (_delta, fullText) => {
+          setStreamChars(fullText.length);
+          setParseMsg(`AI 正在解析... 已生成 ${fullText.length} 字符`);
+        },
+      );
       const data = (res as { data?: Record<string, unknown> }).data ?? (res as Record<string, unknown>);
 
       // 检测多职位响应：AI 返回 positions 数组
@@ -861,13 +872,25 @@ export default function PositionForm() {
                 disabled={parsing || (!form.raw_text.trim() && uploadImages.length === 0)}
                 className="btn-ai flex items-center gap-1 disabled:opacity-50"
               >
-                <Sparkles className="w-4 h-4" />
+                <Sparkles className={`w-4 h-4 ${parsing ? 'animate-pulse' : ''}`} />
                 {parsing ? 'AI 解析中...' : 'AI 解析'}
               </button>
               {parseMsg && (
                 <span className="text-xs text-forest-500 dark:text-forest-400">{parseMsg}</span>
               )}
             </div>
+
+            {/* SSE 流式解析进度条 */}
+            {parsing && streamChars > 0 && (
+              <div className="mt-2">
+                <div className="h-1.5 rounded-full bg-forest-100 dark:bg-forest-800 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-ochre-400 to-ochre-600 rounded-full transition-all duration-300 animate-pulse"
+                    style={{ width: `${Math.min(95, 15 + streamChars / 40)}%` }}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* AI 解析结果摘要 */}
             {form.ai_meta && (

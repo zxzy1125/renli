@@ -331,6 +331,66 @@ export const aiApi = {
       .then((r) => r.data),
   parsePosition: (raw_text: string, images?: Array<{ name: string; mime: string; base64: string }>) =>
     api.post<unknown, { data: unknown }>('/ai/parse-position', { raw_text, images }),
+  // 流式调用 AI 解析职位（SSE）：AI 边生成边推送 delta，最后返回完整解析结果
+  // onChunk(delta, fullText) 实时回调，供前端显示"AI 正在输出... 已生成 N 字符"
+  parsePositionStream: async (
+    raw_text: string,
+    images: Array<{ name: string; mime: string; base64: string }> | undefined,
+    onChunk: (delta: string, fullText: string) => void,
+    signal?: AbortSignal,
+  ): Promise<unknown> => {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/ai/parse-position', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ raw_text, images }),
+      signal,
+    });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try { const j = await res.json(); msg = j?.error || j?.message || msg; } catch { /* ignore */ }
+      throw new Error(msg);
+    }
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullText = '';
+    let finalData: unknown = null;
+    let errorMsg: string | null = null;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      // SSE 事件以空行分隔
+      const events = buffer.split('\n\n');
+      buffer = events.pop() || '';
+      for (const evt of events) {
+        if (!evt.trim()) continue;
+        let event = 'message';
+        let dataStr = '';
+        for (const line of evt.split('\n')) {
+          if (line.startsWith('event:')) event = line.slice(6).trim();
+          else if (line.startsWith('data:')) dataStr += line.slice(5).trim();
+        }
+        if (!dataStr) continue;
+        let data: any;
+        try { data = JSON.parse(dataStr); } catch { continue; }
+        if (event === 'chunk' && data?.delta) {
+          fullText += data.delta;
+          onChunk(data.delta, fullText);
+        } else if (event === 'done') {
+          finalData = data?.data ?? data;
+        } else if (event === 'error') {
+          errorMsg = data?.message || 'AI 解析失败';
+        }
+      }
+    }
+    if (errorMsg) throw new Error(errorMsg);
+    return finalData;
+  },
   parseResume: (raw_text: string, images?: Array<{ name: string; mime: string; base64: string }>) =>
     api.post<unknown, { data: unknown }>('/ai/parse-resume', { raw_text, images }),
   generateBossPosting: (position_id: string, industry?: string, city?: string, style?: string) =>

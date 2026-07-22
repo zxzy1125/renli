@@ -74,12 +74,15 @@ const SUPPORTED_EXT = Object.keys(MIME_MAP);
 // 图片扩展名（用于识别 docx/xlsx 内嵌的图片类型）
 const IMAGE_EXT = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
 
-// 限制单张图片大小（避免 base64 过大撑爆 AI 上下文）：2MB
+// 限制单张图片原始大小（读取时跳过超大图，避免内存爆炸）：2MB
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 // 限制返回的图片总数（按顺序保留前 N 张）：12 张
 const MAX_IMAGES = 12;
 // 限制递归解析嵌入附件的深度：3 层
 const MAX_RECURSION_DEPTH = 3;
+// 图片压缩目标：最长边 ≤1024px、压缩后 ≤500KB（多模态调用时减少 base64 传输量）
+const COMPRESS_MAX_DIMENSION = 1024;
+const COMPRESS_TARGET_BYTES = 500 * 1024;
 
 /**
  * 把上传的文件解析为「文本 + 图片 + 附件」。
@@ -142,6 +145,8 @@ export async function parseFileToText(
   text = (text || '').trim();
   // 限制图片总数 + 单图大小已经在 readImageAsBase64 内做
   images = images.slice(0, MAX_IMAGES);
+  // 统一压缩：缩放到 ≤1024px、转 JPEG、≤500KB，降低多模态调用 base64 传输量
+  images = await compressImages(images);
 
   if (!text && images.length === 0) {
     throw new Error('文件解析成功但未提取到任何文本或图片，可能是扫描件 PDF，请直接粘贴文本或换用支持视觉的 AI 模型');
@@ -546,4 +551,69 @@ function readImageAsBase64(
 function guessMime(name: string): string {
   const ext = path.extname(name).toLowerCase();
   return MIME_MAP[ext] || 'application/octet-stream';
+}
+
+/**
+ * 批量压缩图片：每张缩放到最长边 ≤1024px、转 JPEG、控制在 ≤500KB。
+ * 用 skia-canvas（已安装）做解码/缩放/编码，失败时回退原图（已有 2MB 上限兜底）。
+ * 目的：多模态调用时单图 base64 从 ~2MB 降到 ~500KB，12 张从 24MB 降到 6MB。
+ */
+async function compressImages(images: ParsedImage[]): Promise<ParsedImage[]> {
+  if (images.length === 0) return images;
+  let loadImage: any;
+  let Canvas: any;
+  try {
+    const skia = await import('skia-canvas');
+    loadImage = skia.loadImage;
+    Canvas = skia.Canvas;
+    if (typeof loadImage !== 'function' || typeof Canvas !== 'function') {
+      return images; // skia-canvas 不可用，跳过压缩
+    }
+  } catch {
+    return images; // 模块未安装，跳过
+  }
+
+  const out: ParsedImage[] = [];
+  for (const img of images) {
+    try {
+      const raw = Buffer.from(img.base64, 'base64');
+      // 已经足够小且是 JPEG，跳过压缩省 CPU
+      if (raw.length <= COMPRESS_TARGET_BYTES && (img.mime === 'image/jpeg' || img.ext === '.jpg' || img.ext === '.jpeg')) {
+        out.push(img);
+        continue;
+      }
+      const decoded = await loadImage(raw);
+      const w = decoded.width;
+      const h = decoded.height;
+      if (!w || !h) {
+        out.push(img); // 无法读取尺寸，保留原图
+        continue;
+      }
+      const scale = Math.min(1, COMPRESS_MAX_DIMENSION / Math.max(w, h));
+      const tw = Math.max(1, Math.round(w * scale));
+      const th = Math.max(1, Math.round(h * scale));
+      const canvas = new Canvas(tw, th);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(decoded, 0, 0, tw, th);
+      // 逐档降低质量直到 ≤500KB
+      let buf: Buffer | null = null;
+      for (const quality of [0.8, 0.6, 0.4, 0.25]) {
+        const b = canvas.toBuffer('jpg', { quality });
+        if (b && b.length <= COMPRESS_TARGET_BYTES) { buf = b; break; }
+        buf = b; // 保留最后一档作为兜底
+      }
+      if (!buf) { out.push(img); continue; }
+      out.push({
+        name: img.name,
+        ext: '.jpg',
+        mime: 'image/jpeg',
+        base64: buf.toString('base64'),
+        source: img.source,
+      });
+    } catch {
+      // 单张压缩失败，保留原图（已有 2MB 上限兜底）
+      out.push(img);
+    }
+  }
+  return out;
 }
