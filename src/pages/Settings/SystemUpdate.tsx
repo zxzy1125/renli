@@ -28,7 +28,9 @@ export default function SystemUpdatePage() {
   const [loading, setLoading] = useState(true);
   const [triggering, setTriggering] = useState(false);
   const [error, setError] = useState('');
+  const [refreshIn, setRefreshIn] = useState(-1);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchGit = useCallback(async () => {
     try {
@@ -60,27 +62,61 @@ export default function SystemUpdatePage() {
     return () => { cancelled = true; };
   }, [fetchGit, fetchStatus]);
 
-  // 轮询逻辑
+  // 启动自动刷新倒计时（硬刷新，清除缓存）
+  const startAutoRefresh = useCallback((seconds: number) => {
+    setRefreshIn(seconds);
+    if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
+    refreshTimerRef.current = setInterval(() => {
+      setRefreshIn((prev) => {
+        if (prev <= 1) {
+          if (refreshTimerRef.current) { clearInterval(refreshTimerRef.current); refreshTimerRef.current = null; }
+          window.location.reload();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  // 轮询逻辑：重启步骤进行中时继续轮询，连续失败 3 次则自动刷新
   const startPolling = useCallback(() => {
     if (pollingRef.current) return;
+    let failCount = 0;
     pollingRef.current = setInterval(async () => {
       const data = await fetchStatus();
-      if (data && data.status !== 'running') {
-        if (pollingRef.current) {
-          clearInterval(pollingRef.current);
-          pollingRef.current = null;
+      if (!data) {
+        // API 失败（pm2 重启期间服务不可用）
+        if (status.step === 'restart') {
+          failCount++;
+          if (failCount >= 3) {
+            if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+            startAutoRefresh(3);
+          }
         }
-        // 更新完成后刷新 git 状态
+        return;
+      }
+      failCount = 0;
+      if (data.status !== 'running') {
+        const restartDone = data.steps?.restart?.status === 'success' || data.steps?.restart?.status === 'error';
+        if (data.status === 'completed' && !restartDone) {
+          // 重启进行中，继续轮询
+          return;
+        }
+        // 更新结束，停止轮询
+        if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
         fetchGit();
+        // 成功完成 → 5 秒后自动刷新页面
+        if (data.status === 'completed' && data.steps?.restart?.status === 'success') {
+          startAutoRefresh(5);
+        }
       }
     }, 2000);
-  }, [fetchStatus, fetchGit]);
+  }, [fetchStatus, fetchGit, status.step, startAutoRefresh]);
 
   useEffect(() => {
     return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
     };
   }, []);
 
@@ -111,6 +147,8 @@ export default function SystemUpdatePage() {
   const isRunning = status.status === 'running';
   const isCompleted = status.status === 'completed';
   const isError = status.status === 'error';
+  const restartRunning = isCompleted && status.steps?.restart?.status !== 'success';
+  const autoRefreshing = refreshIn >= 0;
 
   return (
     <div>
@@ -169,11 +207,11 @@ export default function SystemUpdatePage() {
       <div className="mb-4">
         <button
           onClick={handleUpdate}
-          disabled={triggering || isRunning || (!git || git.behind === 0)}
+          disabled={triggering || isRunning || restartRunning || autoRefreshing || (!git || git.behind === 0)}
           className="btn-primary flex items-center gap-1.5 disabled:opacity-60"
         >
-          <RefreshCcw className={`w-4 h-4 ${isRunning ? 'animate-spin' : ''}`} />
-          {triggering ? '触发中...' : isRunning ? '更新中...' : isCompleted ? '更新完成' : '开始更新'}
+          <RefreshCcw className={`w-4 h-4 ${isRunning || restartRunning ? 'animate-spin' : ''}`} />
+          {triggering ? '触发中...' : isRunning || restartRunning ? '更新中...' : isCompleted ? '更新完成' : '开始更新'}
         </button>
         {git && git.behind === 0 && !isRunning && !isCompleted && (
           <p className="text-xs text-forest-400 dark:text-forest-500 mt-1.5">
@@ -217,10 +255,15 @@ export default function SystemUpdatePage() {
             })}
           </div>
 
-          {isCompleted && (
+          {(isCompleted || autoRefreshing) && (
             <div className="mt-3 px-3 py-2 rounded-lg bg-forest-50 dark:bg-forest-800/50 border border-forest-100 dark:border-forest-800 text-sm text-forest-700 dark:text-cream-200">
               <Check className="w-4 h-4 inline mr-1" />
-              更新完成！请按 <kbd className="px-1 py-0.5 rounded bg-forest-100 dark:bg-forest-700 font-mono text-xs">Ctrl+Shift+R</kbd> 硬刷新浏览器以加载最新版本。
+              {autoRefreshing
+                ? <>更新完成！页面将在 <span className="font-semibold">{refreshIn}</span> 秒后自动刷新...</>
+                : restartRunning
+                  ? '正在重启服务，完成后页面将自动刷新...'
+                  : '更新完成！页面将自动刷新...'
+              }
             </div>
           )}
 
