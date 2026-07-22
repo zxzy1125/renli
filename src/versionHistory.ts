@@ -12,10 +12,34 @@ export interface VersionEntry {
 }
 
 // 当前版本（取版本历史首条）
-export const CURRENT_VERSION = '0.3.1';
+export const CURRENT_VERSION = '0.4.0';
 
 // 版本历史（新版本在前面）
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '0.4.0',
+    date: '2026-07-22',
+    title: '系统全面升级：安全加固 + 功能扩展',
+    type: 'feature',
+    changes: [
+      '安全修复：移除 JWT 硬编码回退密钥、登录限流 5次/15分钟、CORS 白名单、输入 Zod 校验、密码强度校验、500 错误不再泄露内部信息、bcrypt 异步化',
+      '基础设施：新增审计日志服务、请求日志中间件、数据库启动自动备份（保留 7 天）',
+      '全局搜索：TopBar 搜索框支持跨职位/简历/客户实时搜索，防抖下拉分组展示',
+      '简历批量导入：POST /api/resumes/batch-import 支持 JSON 数组批量导入',
+      '批量 AI 匹配：POST /api/ai/batch-match 支持一个职位对多份简历并行匹配',
+      '数据导出：职位/简历/匹配列表支持导出 Excel（.xlsx）和 PDF',
+      '通知系统：新增 notifications 表 + 通知列表页 + 未读计数轮询',
+      '模糊简历去重：Levenshtein 距离 + 同音字匹配，阈值 distance ≤ 2 或 ratio > 0.8',
+      'Dashboard 增强：新增转化漏斗图、月度趋势折线图、员工业绩对比柱状图（Recharts）',
+      '聊天助手增强：注入简历历史和岗位要求上下文，AI 回复下方增加建议操作',
+      '暗色模式全面覆盖：30+ 页面、19+ 组件适配 dark: 变体，TopBar 新增主题切换',
+      'Chrome 插件：BOSS 直聘简历页一键导入候选人（Manifest V3）',
+      '修复 TopBar 搜索下拉 p.client?.name 类型错误（Position 无 client 属性）',
+      '修复 Dashboard Promise.allSettled 返回 unknown 类型断言问题',
+      '修复 resumeRepo 缺失 findAllResumes 导出导致服务端启动崩溃',
+      'Nginx 代理端口对齐（3001 → 3002，与 pm2 ecosystem 配置一致）',
+    ],
+  },
   {
     version: '0.3.1',
     date: '2026-07-21',
