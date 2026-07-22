@@ -42,6 +42,7 @@ import Settings from '@/pages/Settings/Settings';
 import ProfileSettings from '@/pages/Settings/ProfileSettings';
 import TeamSettings from '@/pages/Settings/TeamSettings';
 import AIConfig from '@/pages/Settings/AIConfig';
+import SystemUpdate from '@/pages/Settings/SystemUpdate';
 import Guidelines from '@/pages/Settings/Guidelines';
 import VersionLog from '@/pages/Settings/VersionLog';
 
@@ -139,6 +140,14 @@ export default function App() {
                 element={
                   <ProtectedRoute requireAdmin>
                     <AIConfig />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="system"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <SystemUpdate />
                   </ProtectedRoute>
                 }
               />

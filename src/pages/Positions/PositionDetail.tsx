@@ -54,6 +54,80 @@ import {
   getOptionLabel,
 } from './constants';
 
+function isExcelFile(ext?: string | null): boolean {
+  if (!ext) return false;
+  const e = ext.toLowerCase().replace('.', '');
+  return ['xlsx', 'xlsm', 'xls', 'csv'].includes(e);
+}
+
+function ExcelTableView({ rawText }: { rawText: string }) {
+  const sheets = rawText.split(/={10,}\s*\[Excel 工作表：([^\]]+)\]\s*={10,}/);
+  const parsed: { name: string; rows: string[][] }[] = [];
+  if (sheets.length > 1) {
+    for (let i = 1; i < sheets.length; i += 2) {
+      const name = sheets[i];
+      const content = sheets[i + 1] || '';
+      const rows = content.split('\n').filter(r => r.trim()).map(r => r.split('\t'));
+      if (rows.length) parsed.push({ name, rows });
+    }
+  } else {
+    const rows = rawText.split('\n').filter(r => r.trim()).map(r => r.split('\t'));
+    if (rows.length) parsed.push({ name: '数据', rows });
+  }
+
+  if (!parsed.length) {
+    return (
+      <pre className="mt-3 p-3 bg-forest-900 text-cream-50 rounded-lg text-xs overflow-x-auto whitespace-pre-wrap max-h-96 overflow-y-auto">
+        {rawText}
+      </pre>
+    );
+  }
+
+  return (
+    <div className="mt-3 space-y-4">
+      {parsed.map((sheet, si) => {
+        const maxCols = Math.max(...sheet.rows.map(r => r.length));
+        return (
+          <div key={si}>
+            {parsed.length > 1 && (
+              <div className="text-sm font-semibold text-forest-700 dark:text-cream-200 mb-2 flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5" />
+                {sheet.name}
+              </div>
+            )}
+            <div className="overflow-x-auto rounded-lg border border-forest-200 dark:border-forest-700">
+              <table className="w-full text-xs">
+                {sheet.rows.length > 0 && (
+                  <thead>
+                    <tr className="bg-forest-100 dark:bg-forest-800">
+                      {Array.from({ length: maxCols }, (_, ci) => (
+                        <th key={ci} className="px-2.5 py-2 text-left font-semibold text-forest-700 dark:text-cream-200 border-b border-forest-200 dark:border-forest-700 whitespace-nowrap">
+                          {sheet.rows[0][ci]?.trim() || ''}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                )}
+                <tbody>
+                  {sheet.rows.slice(1).map((row, ri) => (
+                    <tr key={ri} className={ri % 2 === 0 ? 'bg-white dark:bg-forest-900' : 'bg-forest-50/50 dark:bg-forest-800/50'}>
+                      {Array.from({ length: maxCols }, (_, ci) => (
+                        <td key={ci} className="px-2.5 py-1.5 text-forest-700 dark:text-cream-300 border-b border-forest-100 dark:border-forest-800 whitespace-pre-wrap break-words max-w-xs">
+                          {row[ci]?.trim() || ''}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function PositionDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -337,9 +411,13 @@ export default function PositionDetail() {
                 )}
               </button>
               {rawOpen && (
-                <pre className="mt-3 p-3 bg-forest-900 text-cream-50 rounded-lg text-xs overflow-x-auto whitespace-pre-wrap max-h-96 overflow-y-auto">
-                  {position.raw_text}
-                </pre>
+                isExcelFile(position.source_ext) ? (
+                  <ExcelTableView rawText={position.raw_text} />
+                ) : (
+                  <pre className="mt-3 p-3 bg-forest-900 text-cream-50 rounded-lg text-xs overflow-x-auto whitespace-pre-wrap max-h-96 overflow-y-auto">
+                    {position.raw_text}
+                  </pre>
+                )
               )}
             </section>
           )}

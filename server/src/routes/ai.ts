@@ -46,9 +46,12 @@ aiRouter.post('/parse-resume', asyncHandler(async (req, res) => {
         .map((img: any) => ({ name: String(img.name || 'image'), mime: String(img.mime), base64: String(img.base64) }))
         .slice(0, 12)
     : [];
+  const opts = safeImages.length > 0
+    ? { images: safeImages, timeoutMs: 120000 }
+    : { timeoutMs: 120000 };
   const result = await callByPromptKey('parseResume', {
     raw_text: String(raw_text),
-  }, safeImages.length > 0 ? { images: safeImages, timeoutMs: 120000 } : undefined);
+  }, opts);
   res.json({ data: result });
 }));
 

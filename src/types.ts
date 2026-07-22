@@ -200,10 +200,10 @@ export interface Match {
   owner_id: string;
   status: MatchStatus;
   score: number;
-  highlights: string[];
-  concerns: string[];
-  salary_analysis: string;
-  conversion_probability: number;
+  highlights: Array<string | Record<string, string>>;
+  concerns: Array<string | Record<string, string>>;
+  salary_analysis: string | Record<string, string>;
+  conversion_probability?: number | null;
   position?: Position;
   resume?: Resume;
   created_at: string;

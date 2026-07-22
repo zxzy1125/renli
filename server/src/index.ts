@@ -30,6 +30,7 @@ import { chatRouter } from './routes/chat.js';
 import { bossAutoRouter } from './routes/boss-auto.js';
 import { searchRouter } from './routes/search.js';
 import { notificationsRouter } from './routes/notifications.js';
+import { systemRouter } from './routes/system.js';
 
 // Boss 自动化：Agent WebSocket 服务
 import { setupAgentWebSocket } from './boss/agent-ws.js';
@@ -120,6 +121,7 @@ app.use('/api/chat', aiLimiter, chatRouter);
 app.use('/api/boss-auto', bossAutoRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/notifications', notificationsRouter);
+app.use('/api/system', systemRouter);
 
 // 404
 app.use(notFoundHandler);

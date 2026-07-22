@@ -223,6 +223,31 @@ export const aiConfigApi = {
   testMultimodal: () => api.post<unknown, { data: unknown }>('/ai-config/test-multimodal'),
 };
 
+// ===== 系统管理 API（管理员） =====
+export interface UpdateStatus {
+  status: 'idle' | 'running' | 'completed' | 'error';
+  step?: string;
+  steps?: Record<string, { status: string; message?: string }>;
+  startedAt?: string;
+  updatedAt?: string;
+  completedAt?: string;
+}
+
+export interface GitStatus {
+  currentBranch: string;
+  behind: number;
+  commits: string[];
+}
+
+export const systemApi = {
+  triggerUpdate: () =>
+    api.post<unknown, { ok: boolean; message: string }>('/system/update'),
+  getUpdateStatus: () =>
+    api.get<unknown, UpdateStatus>('/system/update-status'),
+  getGitStatus: () =>
+    api.get<unknown, GitStatus>('/system/git-status'),
+};
+
 // ===== 报表 API（管理员） =====
 // 注意：响应拦截器已自动解包 axios 的 res.data，所以 api.get 返回的就是后端响应体 {data: ...}
 // 这里再 .then(r => r.data) 解包内层 data 字段，让调用方直接拿到数组

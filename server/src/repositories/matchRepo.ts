@@ -39,9 +39,74 @@ function toMatch(row: MatchRow): Match {
   };
 }
 
+// 批量填充关联的 resume 和 position 信息
+function enrichMatches(matches: Match[]): Match[] {
+  if (matches.length === 0) return matches;
+
+  const resumeIds = [...new Set(matches.map(m => m.resume_id))];
+  const positionIds = [...new Set(matches.map(m => m.position_id))];
+
+  const resumeMap = new Map<string, any>();
+  if (resumeIds.length > 0) {
+    const placeholders = resumeIds.map(() => '?').join(',');
+    const rows = db.prepare(
+      `SELECT id, name, age, education, current_company, current_title,
+              skills, expected_city, candidate_status, risk_warning, tags, owner_id
+       FROM resumes WHERE id IN (${placeholders})`
+    ).all(...resumeIds) as any[];
+    for (const r of rows) {
+      resumeMap.set(r.id, {
+        id: r.id,
+        name: r.name,
+        age: r.age,
+        education: r.education,
+        current_company: r.current_company,
+        current_title: r.current_title,
+        skills: r.skills,
+        expected_city: r.expected_city,
+        candidate_status: r.candidate_status,
+        risk_warning: parseAny(r.risk_warning, null),
+        tags: parseAny(r.tags, []),
+        owner_id: r.owner_id,
+      });
+    }
+  }
+
+  const positionMap = new Map<string, any>();
+  if (positionIds.length > 0) {
+    const placeholders = positionIds.map(() => '?').join(',');
+    const rows = db.prepare(
+      `SELECT id, title, client_id, department, location, salary_min, salary_max,
+              experience, education, status
+       FROM positions WHERE id IN (${placeholders})`
+    ).all(...positionIds) as any[];
+    for (const p of rows) {
+      positionMap.set(p.id, {
+        id: p.id,
+        title: p.title,
+        client_id: p.client_id,
+        department: p.department,
+        location: p.location,
+        salary_min: p.salary_min,
+        salary_max: p.salary_max,
+        experience: p.experience,
+        education: p.education,
+        status: p.status,
+      });
+    }
+  }
+
+  return matches.map(m => ({
+    ...m,
+    resume: resumeMap.get(m.resume_id) ?? undefined,
+    position: positionMap.get(m.position_id) ?? undefined,
+  }));
+}
+
 export function findMatchById(id: string): Match | null {
   const row = db.prepare('SELECT * FROM matches WHERE id = ?').get(id) as MatchRow | undefined;
-  return row ? toMatch(row) : null;
+  if (!row) return null;
+  return enrichMatches([toMatch(row)])[0];
 }
 
 export interface MatchQuery {
@@ -67,7 +132,7 @@ export function listMatches(query: MatchQuery = {}): { data: Match[]; total: num
   const totalRow = db.prepare(`SELECT COUNT(*) as cnt FROM matches ${whereSql}`).get(...params) as { cnt: number };
   const rows = db.prepare(`SELECT * FROM matches ${whereSql} ORDER BY created_at DESC LIMIT ? OFFSET ?`)
     .all(...params, pageSize, offset) as MatchRow[];
-  return { data: rows.map(toMatch), total: totalRow.cnt };
+  return { data: enrichMatches(rows.map(toMatch)), total: totalRow.cnt };
 }
 
 export interface CreateMatchInput {

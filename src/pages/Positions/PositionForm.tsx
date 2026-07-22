@@ -12,6 +12,8 @@ import {
   FileText,
   AlertTriangle,
   CheckCircle2,
+  SquareCheck,
+  Square,
 } from 'lucide-react';
 import { positionsApi, clientsApi, aiApi, getErrorMsg } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
@@ -101,7 +103,7 @@ const EMPTY_FORM: FormState = {
   salary_max: '',
   experience: '',
   education: '',
-  job_type: 'full_time',
+  job_type: 'fulltime',
   work_mode: 'onsite',
   priority: 'medium',
   status: 'open',
@@ -144,6 +146,12 @@ export default function PositionForm() {
     attachmentCount: number;
   } | null>(null);
 
+  // 多职位模式：AI 解析发现多个职位时使用
+  const [multiPositions, setMultiPositions] = useState<Record<string, unknown>[] | null>(null);
+  const [selectedMulti, setSelectedMulti] = useState<Set<number>>(new Set());
+  const [batchCreating, setBatchCreating] = useState(false);
+  const [batchProgress, setBatchProgress] = useState({ done: 0, total: 0 });
+
   // 权限校验：仅管理员
   useEffect(() => {
     if (user && user.role !== 'admin') {
@@ -175,8 +183,8 @@ export default function PositionForm() {
           salary_max: p.salary_max || '',
           experience: p.experience || '',
           education: p.education || '',
-          job_type: p.job_type || 'full_time',
-          work_mode: p.work_mode || 'onsite',
+          job_type: normalizeEnum(JOB_TYPE_NORM, p.job_type || 'fulltime'),
+          work_mode: normalizeEnum(WORK_MODE_NORM, p.work_mode || 'onsite'),
           priority: p.priority || 'medium',
           status: p.status || 'open',
           jd: p.jd || '',
@@ -256,6 +264,7 @@ export default function PositionForm() {
     setParsing(true);
     setParseMsg('');
     setError('');
+    setMultiPositions(null);
     try {
       // 把上传时拿到的图片资产一起传给 AI（多模态）
       const imgs = uploadImages.length > 0
@@ -263,7 +272,27 @@ export default function PositionForm() {
         : undefined;
       const res = await aiApi.parsePosition(form.raw_text, imgs);
       const data = (res as { data?: Record<string, unknown> }).data ?? (res as Record<string, unknown>);
-      // 完整消费所有 AI 字段：填充表单空字段 + 保存 AI 完整结果到 ai_meta
+
+      // 检测多职位响应：AI 返回 positions 数组
+      const positions = data.positions;
+      if (Array.isArray(positions)) {
+        if (positions.length > 1) {
+          // 多个职位：展示选择面板
+          setMultiPositions(positions as Record<string, unknown>[]);
+          setSelectedMulti(new Set(positions.map((_: unknown, i: number) => i)));
+          setParseMsg(`AI 发现 ${positions.length} 个职位，请选择要创建的职位`);
+          return;
+        }
+        if (positions.length === 1) {
+          // AI 返回了 positions 数组但只有 1 个：直接取第一个合并
+          const single = positions[0] as Record<string, unknown>;
+          setForm((f) => mergeParseResult(f, single, clients));
+          setParseMsg('AI 解析完成，已自动填充表单空字段，请核对后保存');
+          return;
+        }
+      }
+
+      // 单职位：走原来的合并流程
       setForm((f) => mergeParseResult(f, data, clients));
       const extra = uploadImages.length > 0 ? `（含 ${uploadImages.length} 张图片多模态识别）` : '';
       setParseMsg(`AI 解析完成${extra}，已自动填充表单空字段，请核对后保存`);
@@ -325,6 +354,168 @@ export default function PositionForm() {
     }
   };
 
+  // 批量创建多个职位（多职位模式）
+  const handleBatchCreate = async () => {
+    if (!multiPositions || selectedMulti.size === 0) return;
+    setBatchCreating(true);
+    setBatchProgress({ done: 0, total: selectedMulti.size });
+    const results: Array<{ id: string; title: string }> = [];
+    try {
+      for (const idx of selectedMulti) {
+        const raw = multiPositions[idx];
+        const tempForm: FormState = mergeParseResult({ ...EMPTY_FORM }, raw, clients);
+        const payload: Partial<Position> = {
+          title: tempForm.title.trim(),
+          client_id: tempForm.client_id || null,
+          department: tempForm.department || null,
+          location: tempForm.location || null,
+          headcount: tempForm.headcount ? Number(tempForm.headcount) : null,
+          salary_min: tempForm.salary_min || null,
+          salary_max: tempForm.salary_max || null,
+          experience: tempForm.experience || null,
+          education: tempForm.education || null,
+          job_type: tempForm.job_type,
+          work_mode: tempForm.work_mode,
+          priority: tempForm.priority,
+          status: tempForm.status,
+          jd: tempForm.jd || null,
+          requirements: tempForm.requirements || null,
+          bonus: tempForm.bonus || null,
+          keywords: tempForm.keywords,
+          raw_text: form.raw_text || null,
+          ai_meta: tempForm.ai_meta || null,
+          source_filename: form.source_filename || null,
+          source_ext: form.source_ext || null,
+        };
+        if (!payload.title) continue;
+        const created = await positionsApi.create(payload);
+        results.push({ id: created.id, title: created.title });
+        setBatchProgress((p) => ({ ...p, done: p.done + 1 }));
+      }
+      navigate('/positions', {
+        state: { flash: `成功创建 ${results.length} 个职位` },
+      });
+    } catch (err) {
+      setError(`批量创建失败：${getErrorMsg(err)}（已创建 ${results.length} 个）`);
+    } finally {
+      setBatchCreating(false);
+    }
+  };
+
+  // 多职位选择面板
+  const renderMultiPositionPanel = () => {
+    if (!multiPositions) return null;
+    const toggle = (idx: number) => {
+      setSelectedMulti((prev) => {
+        const next = new Set(prev);
+        if (next.has(idx)) next.delete(idx); else next.add(idx);
+        return next;
+      });
+    };
+    const toggleAll = () => {
+      if (selectedMulti.size === multiPositions.length) {
+        setSelectedMulti(new Set());
+      } else {
+        setSelectedMulti(new Set(multiPositions.map((_: unknown, i: number) => i)));
+      }
+    };
+    return (
+      <div className="mb-6 rounded-xl border border-ochre-200 dark:border-ochre-800 bg-ochre-50/30 dark:bg-ochre-900/10 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-serif text-lg font-bold text-forest-800 dark:text-cream-100 flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-ochre-500" />
+            发现 {multiPositions.length} 个职位，请选择要创建的职位
+          </h3>
+          <button
+            type="button"
+            onClick={toggleAll}
+            className="text-xs text-forest-600 dark:text-forest-400 hover:text-ochre-600"
+          >
+            {selectedMulti.size === multiPositions.length ? '取消全选' : '全选'}
+          </button>
+        </div>
+        <div className="space-y-3 mb-4">
+          {multiPositions.map((pos, idx) => {
+            const selected = selectedMulti.has(idx);
+            return (
+              <div
+                key={idx}
+                onClick={() => toggle(idx)}
+                className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                  selected
+                    ? 'border-ochre-300 dark:border-ochre-700 bg-white dark:bg-forest-900 shadow-sm'
+                    : 'border-forest-200 dark:border-forest-800 bg-forest-50/50 dark:bg-forest-900/50 opacity-60'
+                }`}
+              >
+                <div className="pt-0.5 flex-shrink-0">
+                  {selected
+                    ? <SquareCheck className="w-5 h-5 text-ochre-500" />
+                    : <Square className="w-5 h-5 text-forest-400" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-forest-800 dark:text-cream-100 text-sm mb-1.5">
+                    {String(pos.title || '未命名职位')}
+                    {pos.department && <span className="text-forest-500 font-normal ml-2">· {String(pos.department)}</span>}
+                  </div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-forest-600 dark:text-forest-400">
+                    {(pos.clientCompany || pos.client_company) && <span>{String(pos.clientCompany || pos.client_company)}</span>}
+                    {pos.location && <span>{String(pos.location)}</span>}
+                    {(pos.salaryMin || pos.salary_min) && (
+                      <span>
+                        {String(pos.salaryMin || pos.salary_min)}-{String(pos.salaryMax || pos.salary_max || pos.salaryMin || pos.salary_min)}K
+                      </span>
+                    )}
+                    {(pos.experience) && <span>{String(pos.experience)}</span>}
+                    {(pos.education) && <span>{String(pos.education)}</span>}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {batchCreating && (
+          <div className="mb-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Loader2 className="w-4 h-4 animate-spin text-ochre-500" />
+              <span className="text-sm text-forest-700 dark:text-forest-300">
+                正在创建 {batchProgress.done}/{batchProgress.total}...
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-forest-200 dark:bg-forest-800 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-ochre-400 to-ochre-600 rounded-full transition-all duration-300"
+                style={{ width: `${batchProgress.total ? (batchProgress.done / batchProgress.total) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleBatchCreate}
+            disabled={selectedMulti.size === 0 || batchCreating}
+            className="btn-primary inline-flex items-center gap-1.5"
+          >
+            {batchCreating ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4" />
+            )}
+            创建选中的 {selectedMulti.size} 个职位
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMultiPositions(null); setSelectedMulti(new Set()); }}
+            className="btn-ghost text-sm"
+            disabled={batchCreating}
+          >
+            取消
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) return <Loading className="py-20" />;
 
   return (
@@ -353,6 +544,8 @@ export default function PositionForm() {
           {error}
         </div>
       )}
+
+      {renderMultiPositionPanel()}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* 左栏：基本信息 */}
@@ -807,6 +1000,9 @@ function mergeParseResult(
   setIfEmpty('job_type', data.job_type ?? data.jobType);
   setIfEmpty('work_mode', data.work_mode ?? data.workMode);
   setIfEmpty('priority', data.priority);
+  // 规范化枚举值（AI 可能返回旧格式或中文）
+  if (next.job_type) next.job_type = normalizeEnum(JOB_TYPE_NORM, next.job_type);
+  if (next.work_mode) next.work_mode = normalizeEnum(WORK_MODE_NORM, next.work_mode);
   setIfEmpty('jd', data.jd ?? data.responsibilities ?? data.description);
   setIfEmpty('requirements', data.requirements);
   setIfEmpty('bonus', data.bonus);
@@ -857,6 +1053,23 @@ function pickStringArray(v: unknown): string[] {
   if (Array.isArray(v)) return v.map(String).filter(Boolean);
   if (typeof v === 'string' && v.trim()) return [v.trim()];
   return [];
+}
+
+// 规范化枚举值：AI 返回的旧格式 → 新格式
+const JOB_TYPE_NORM: Record<string, string> = {
+  full_time: 'fulltime', fulltime: 'fulltime', '全职': 'fulltime',
+  part_time: 'parttime', parttime: 'parttime', '兼职': 'parttime',
+  intern: 'intern', '实习': 'intern',
+  outsourcing: 'outsourcing', '外包': 'outsourcing',
+};
+const WORK_MODE_NORM: Record<string, string> = {
+  onsite: 'onsite', '坐班': 'onsite',
+  remote: 'remote', '远程': 'remote',
+  hybrid: 'hybrid', '混合': 'hybrid',
+};
+function normalizeEnum(normMap: Record<string, string>, val: string): string {
+  const key = val.toLowerCase().replace(/[\s-]/g, '_');
+  return normMap[key] ?? val;
 }
 
 // AI 解析结果摘要面板：显示 confidence、uncertainFields、highlights、rawTextSummary

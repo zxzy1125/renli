@@ -109,6 +109,8 @@ export interface Match {
   conversion_probability?: number | null;
   created_at: string;
   updated_at: string;
+  resume?: any; // 关联的简历摘要（enrichMatches 填充）
+  position?: any; // 关联的职位摘要（enrichMatches 填充）
 }
 
 // 话术

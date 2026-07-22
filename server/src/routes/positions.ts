@@ -141,11 +141,15 @@ positionsRouter.post('/upload', upload.single('file'), asyncHandler(async (req, 
   if (!req.file) throw new ApiError(400, '请上传文件');
   // 临时文件读完即删，避免 uploads 目录无限累积
   try {
-    const parsed = await parseFileToText(req.file.path, req.file.originalname);
+    const rawName = req.file.originalname;
+    const originalName = /[-￿]/.test(rawName)
+      ? rawName
+      : Buffer.from(rawName, 'latin1').toString('utf8');
+    const parsed = await parseFileToText(req.file.path, originalName);
     res.json({
       data: {
         text: parsed.text,
-        filename: parsed.meta.filename,
+        filename: originalName,
         ext: parsed.meta.ext,
         mime: parsed.meta.mime,
         charCount: parsed.meta.charCount,

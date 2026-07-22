@@ -1,6 +1,6 @@
 // 设置入口：左侧 Tab 导航
 import { NavLink, Outlet } from 'react-router-dom';
-import { User, Users, Sparkles, BookOpen, Package } from 'lucide-react';
+import { User, Users, Sparkles, BookOpen, Package, RefreshCcw } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +14,7 @@ export default function Settings() {
       ? [
           { to: '/settings/team', label: '团队管理', icon: Users },
           { to: '/settings/ai', label: 'AI 配置', icon: Sparkles },
+          { to: '/settings/system', label: '系统更新', icon: RefreshCcw },
         ]
       : []),
     { to: '/settings/guidelines', label: '运营规范知识库', icon: BookOpen },

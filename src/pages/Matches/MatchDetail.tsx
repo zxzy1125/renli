@@ -48,6 +48,22 @@ const PITCH_TONE_CLASS: Record<string, string> = {
   red: 'bg-risk-100 text-risk-700 dark:bg-risk-900/20 dark:text-risk-400',
 };
 
+// 安全渲染 salary_analysis（可能是字符串或对象）
+function renderSalaryAnalysis(sa: unknown): string {
+  if (typeof sa === 'string') return sa || '暂无薪资分析';
+  if (sa && typeof sa === 'object') {
+    const obj = sa as Record<string, string>;
+    const parts = [
+      obj.candidateExpectation && `期望：${obj.candidateExpectation}`,
+      obj.positionRange && `职位范围：${obj.positionRange}`,
+      obj.gap && `差距：${obj.gap}`,
+      obj.recommendation && `建议：${obj.recommendation}`,
+    ].filter(Boolean);
+    return parts.length > 0 ? parts.join('；') : '暂无薪资分析';
+  }
+  return '暂无薪资分析';
+}
+
 export default function MatchDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -467,7 +483,7 @@ export default function MatchDetail() {
                   {match.highlights.map((h, i) => (
                     <li key={i} className="text-sm text-forest-700 dark:text-cream-200 flex items-start gap-1.5">
                       <Check className="w-3.5 h-3.5 text-forest-500 dark:text-forest-400 flex-shrink-0 mt-0.5" />
-                      <span>{h}</span>
+                      <span>{typeof h === 'string' ? h : h.point || JSON.stringify(h)}</span>
                     </li>
                   ))}
                 </ul>
@@ -486,7 +502,7 @@ export default function MatchDetail() {
                   {match.concerns.map((c, i) => (
                     <li key={i} className="text-sm text-forest-700 dark:text-cream-200 flex items-start gap-1.5">
                       <AlertTriangle className="w-3.5 h-3.5 text-ochre-500 flex-shrink-0 mt-0.5" />
-                      <span>{c}</span>
+                      <span>{typeof c === 'string' ? c : c.point || JSON.stringify(c)}</span>
                     </li>
                   ))}
                 </ul>
@@ -505,7 +521,7 @@ export default function MatchDetail() {
               薪资分析
             </div>
             <p className="text-sm text-forest-700 dark:text-cream-200 leading-relaxed">
-              {match.salary_analysis || '暂无薪资分析'}
+              {renderSalaryAnalysis(match.salary_analysis)}
             </p>
           </div>
           <div className="bg-cream-50 dark:bg-forest-800 rounded-lg p-4">
@@ -515,7 +531,7 @@ export default function MatchDetail() {
             </div>
             <div className="flex items-baseline gap-2 mb-1">
               <span className="font-mono font-bold text-3xl text-forest-700 dark:text-cream-200">
-                {match.conversion_probability}%
+                {match.conversion_probability ?? '-'}%
               </span>
             </div>
             <p className="text-xs text-forest-500 dark:text-forest-400">

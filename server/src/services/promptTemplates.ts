@@ -222,7 +222,17 @@ export const PARSE_POSITION_PROMPT = {
 12. 输出必须是合法 JSON，不要包裹 markdown 代码块
 13. **Excel 多 sheet 处理**：必须把所有 sheet 信息整合，不漏任一 sheet
 14. **图片识别**：必须把图片内文字纳入解析
-15. **原话原则**：benefits/salaryDetails/trainingPeriod/probation/performanceMetrics/workLifeBalance/teamInfo/growthPath/interviewProcess/companyInsights 中的文本字段，尽量使用原文原话或原文原意的精简版，禁止扩写美化`,
+15. **原话原则**：benefits/salaryDetails/trainingPeriod/probation/performanceMetrics/workLifeBalance/teamInfo/growthPath/interviewProcess/companyInsights 中的文本字段，尽量使用原文原话或原文原意的精简版，禁止扩写美化
+16. **多职位识别**：如果原文包含多个不同的职位（不同标题、不同部门、或明显是多个独立岗位描述拼接在一起），必须按职位拆分，输出格式改为：
+\`\`\`
+{
+  "positions": [
+    { "title": "职位1", ...完整字段... },
+    { "title": "职位2", ...完整字段... }
+  ]
+}
+\`\`\`
+每个职位对象的字段结构与上述完全相同。如果原文只描述了一个职位，直接输出单个对象即可，无需包裹 positions 数组`,
 };
 
 // 提示词 2：简历文件解析
