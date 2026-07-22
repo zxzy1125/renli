@@ -13,6 +13,7 @@ import {
   FileSpreadsheet,
   FileText,
   ChevronDown,
+  Sparkles,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { matchesApi, reportsApi } from '@/lib/api';
@@ -126,6 +127,14 @@ export default function MatchList() {
               </div>
             )}
           </div>
+          <button
+            type="button"
+            onClick={() => navigate('/matches/smart')}
+            className="btn-secondary flex items-center gap-1 text-sm"
+          >
+            <Sparkles className="w-4 h-4" />
+            AI 智能匹配
+          </button>
           <button
             type="button"
             onClick={() => navigate('/matches/new')}

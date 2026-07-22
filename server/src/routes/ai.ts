@@ -4,9 +4,10 @@ import { nanoid } from 'nanoid';
 import { requireAuth, requireAdmin, isAdmin } from '../middleware/auth.js';
 import { asyncHandler, ApiError } from '../middleware/error.js';
 import { callByPromptKey } from '../services/aiService.js';
-import { findPositionById } from '../repositories/positionRepo.js';
-import { findResumeById } from '../repositories/resumeRepo.js';
-import { findMatchById } from '../repositories/matchRepo.js';
+import { findPositionById, findAllPositionsByStatus } from '../repositories/positionRepo.js';
+import { findResumeById, findResumesByCandidateStatuses } from '../repositories/resumeRepo.js';
+import { findMatchById, findExistingMatchKeys } from '../repositories/matchRepo.js';
+import { prefilterResumes, executeSmartMatch } from '../services/smartMatchService.js';
 import { listPitchesByMatch } from '../repositories/pitchRepo.js';
 import { createAnalysis } from '../repositories/aiAnalysisRepo.js';
 
@@ -337,4 +338,84 @@ aiRouter.post('/batch-match', asyncHandler(async (req, res) => {
   });
 
   res.json({ data });
+}));
+
+// GET /api/ai/smart-match/stats — 获取智能匹配预估统计
+aiRouter.get('/smart-match/stats', asyncHandler(async (_req, res) => {
+  const openPositions = findAllPositionsByStatus('open');
+  const availableResumes = findResumesByCandidateStatuses(['looking', 'unemployed']);
+  const existingKeys = findExistingMatchKeys();
+
+  // 预估去重后的对数
+  let estimatedPairs = 0;
+  for (const pos of openPositions) {
+    for (const resume of availableResumes) {
+      if (!existingKeys.has(`${pos.id}:${resume.id}`)) {
+        estimatedPairs++;
+      }
+    }
+  }
+
+  res.json({
+    data: {
+      open_positions: openPositions.length,
+      available_resumes: availableResumes.length,
+      existing_matches: existingKeys.size,
+      estimated_pairs: estimatedPairs,
+    },
+  });
+}));
+
+// POST /api/ai/smart-match — 智能匹配（SSE 推送进度）
+aiRouter.post('/smart-match', asyncHandler(async (req, res) => {
+  const { position_ids, status_filter } = req.body ?? {};
+
+  // 确定简历范围
+  const resumeStatuses = Array.isArray(status_filter) && status_filter.length > 0
+    ? status_filter
+    : ['looking', 'unemployed'];
+  const resumes = findResumesByCandidateStatuses(resumeStatuses);
+  if (resumes.length === 0) throw new ApiError(400, '暂无可匹配的空闲人才');
+
+  // 确定职位范围
+  let positions;
+  if (Array.isArray(position_ids) && position_ids.length > 0) {
+    positions = position_ids
+      .map((id: string) => findPositionById(String(id)))
+      .filter((p): p is NonNullable<typeof p> => p !== null && p.status === 'open');
+  } else {
+    positions = findAllPositionsByStatus('open');
+  }
+  if (positions.length === 0) throw new ApiError(400, '暂无开放职位');
+
+  // 去重 + 预筛选
+  const existingKeys = findExistingMatchKeys();
+  const pairs = positions
+    .map(pos => ({
+      position: pos,
+      resumes: prefilterResumes(pos, resumes, existingKeys),
+    }))
+    .filter(p => p.resumes.length > 0);
+
+  if (pairs.length === 0) {
+    throw new ApiError(400, '所有职位与简历组合已匹配过，暂无新的匹配对');
+  }
+
+  // SSE 响应头
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  try {
+    const result = await executeSmartMatch(pairs, req.user!.id, (progress) => {
+      res.write(`data: ${JSON.stringify(progress)}\n\n`);
+    });
+    // 最终结果（冗余推送一次 complete，确保前端收到）
+    res.write(`data: ${JSON.stringify({ type: 'complete', result })}\n\n`);
+  } catch (err: any) {
+    res.write(`data: ${JSON.stringify({ type: 'error', error: err?.message || '智能匹配失败' })}\n\n`);
+  } finally {
+    res.end();
+  }
 }));

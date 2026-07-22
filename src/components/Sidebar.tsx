@@ -14,6 +14,7 @@ import {
   Bot,
   Bell,
   X,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CURRENT_VERSION } from '@/versionHistory';
@@ -38,6 +39,7 @@ const adminMenus: MenuItem[] = [
   { to: '/clients', label: '客户公司', icon: Building2 },
   { to: '/resumes', label: '简历库', icon: FileText },
   { to: '/matches', label: '匹配管理', icon: GitCompareArrows },
+  { to: '/matches/smart', label: '智能匹配', icon: Sparkles },
   { to: '/chat', label: '对话辅助', icon: MessageCircle },
   { to: '/followups', label: '跟进管理', icon: CalendarClock },
   { to: '/conversions', label: '转化跟踪', icon: TrendingUp },
@@ -53,6 +55,7 @@ const consultantMenus: MenuItem[] = [
   { to: '/positions', label: '职位库', icon: Briefcase },
   { to: '/resumes', label: '简历库', icon: FileText },
   { to: '/matches', label: '匹配管理', icon: GitCompareArrows },
+  { to: '/matches/smart', label: '智能匹配', icon: Sparkles },
   { to: '/chat', label: '对话辅助', icon: MessageCircle },
   { to: '/followups', label: '跟进管理', icon: CalendarClock },
   { to: '/conversions', label: '转化跟踪', icon: TrendingUp },
@@ -107,6 +110,7 @@ export default function Sidebar({ role, open, onClose }: SidebarProps) {
                 <li key={item.to}>
                   <NavLink
                     to={item.to}
+                    end
                     onClick={onClose}
                     className={({ isActive }) =>
                       cn(

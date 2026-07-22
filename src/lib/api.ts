@@ -266,6 +266,38 @@ export const notificationsApi = {
     api.put('/notifications/read-all'),
 };
 
+// 智能匹配 SSE 事件类型
+export interface SmartMatchEvent {
+  type: 'start' | 'progress' | 'complete' | 'error';
+  total_pairs?: number;
+  current?: number;
+  position_title?: string;
+  resume_name?: string;
+  matched?: number;
+  skipped?: number;
+  failed?: number;
+  result?: SmartMatchResult;
+  error?: string;
+}
+
+export interface SmartMatchResult {
+  total_pairs: number;
+  matched: number;
+  skipped: number;
+  failed: number;
+  results: Array<{
+    position_id: string;
+    position_title: string;
+    matches: Array<{
+      resume_id: string;
+      resume_name: string;
+      match_id: string;
+      score: number | null;
+      recommendation: string;
+    }>;
+  }>;
+}
+
 // ===== AI 调用 API（员工/管理员） =====
 export const aiApi = {
   batchMatch: (position_id: string, resume_ids: string[]) =>
@@ -339,6 +371,46 @@ export const aiApi = {
           )
           .then((r) => r.data)
       ),
+  // 智能匹配统计
+  smartMatchStats: () =>
+    api.get<unknown, { data: { open_positions: number; available_resumes: number; existing_matches: number; estimated_pairs: number } }>('/ai/smart-match/stats').then((r) => r.data),
+  // 智能匹配（SSE 流式）
+  smartMatch: async (
+    body: { position_ids?: string[]; status_filter?: string[] },
+    onProgress: (e: SmartMatchEvent) => void
+  ) => {
+    const token = localStorage.getItem('token');
+    const resp = await fetch('/api/ai/smart-match', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || `请求失败 (${resp.status})`);
+    }
+    const reader = resp.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop()!;
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const event = JSON.parse(line.slice(6)) as SmartMatchEvent;
+            onProgress(event);
+          } catch { /* ignore malformed */ }
+        }
+      }
+    }
+  },
 };
 
 // ===== 匹配 API =====

@@ -132,3 +132,9 @@ export function updateMatch(id: string, input: Partial<CreateMatchInput>): Match
 export function deleteMatch(id: string): void {
   db.prepare('DELETE FROM matches WHERE id = ?').run(id);
 }
+
+// 返回所有已存在的 positionId:resumeId 组合，用于智能匹配去重
+export function findExistingMatchKeys(): Set<string> {
+  const rows = db.prepare('SELECT position_id, resume_id FROM matches').all() as Array<{ position_id: string; resume_id: string }>;
+  return new Set(rows.map(r => `${r.position_id}:${r.resume_id}`));
+}

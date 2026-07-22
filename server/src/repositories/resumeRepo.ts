@@ -303,3 +303,11 @@ export function updateResume(id: string, input: UpdateResumeInput): Resume | nul
 export function deleteResume(id: string): void {
   deleteById('resumes', id);
 }
+
+// 按多个 candidate_status 查询（无分页，用于智能匹配）
+export function findResumesByCandidateStatuses(statuses: string[]): Resume[] {
+  if (statuses.length === 0) return [];
+  const placeholders = statuses.map(() => '?').join(',');
+  const rows = db.prepare(`SELECT * FROM resumes WHERE candidate_status IN (${placeholders}) ORDER BY created_at DESC`).all(...statuses) as ResumeRow[];
+  return rows.map(toResume);
+}

@@ -25,6 +25,7 @@ import NotificationList from '@/pages/Notifications/NotificationList';
 
 import MatchList from '@/pages/Matches/MatchList';
 import MatchNew from '@/pages/Matches/MatchNew';
+import SmartMatch from '@/pages/Matches/SmartMatch';
 import MatchDetail from '@/pages/Matches/MatchDetail';
 
 import FollowupHome from '@/pages/Followups/FollowupHome';
@@ -95,6 +96,7 @@ export default function App() {
             {/* 匹配 / 跟进 / 转化 */}
             <Route path="/matches" element={<MatchList />} />
             <Route path="/matches/new" element={<MatchNew />} />
+            <Route path="/matches/smart" element={<SmartMatch />} />
             <Route path="/matches/:id" element={<MatchDetail />} />
             <Route path="/followups" element={<FollowupHome />} />
             <Route path="/followups/:id" element={<PlanDetail />} />

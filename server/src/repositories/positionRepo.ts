@@ -243,3 +243,9 @@ export function updatePositionStatus(id: string, status: string): Position | nul
 export function deletePosition(id: string): void {
   deleteById('positions', id);
 }
+
+// 按状态查询全部职位（无分页，用于智能匹配）
+export function findAllPositionsByStatus(status: string): Position[] {
+  const rows = db.prepare('SELECT * FROM positions WHERE status = ? ORDER BY created_at DESC').all(status) as PositionRow[];
+  return rows.map(toPosition);
+}
