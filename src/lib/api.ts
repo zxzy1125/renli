@@ -231,12 +231,14 @@ export interface UpdateStatus {
   startedAt?: string;
   updatedAt?: string;
   completedAt?: string;
+  dockerMode?: boolean;
 }
 
 export interface GitStatus {
   currentBranch: string;
   behind: number;
   commits: string[];
+  dockerMode?: boolean;
 }
 
 export const systemApi = {

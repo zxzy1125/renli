@@ -12,10 +12,25 @@ export interface VersionEntry {
 }
 
 // 当前版本（取版本历史首条）
-export const CURRENT_VERSION = '0.5.0';
+export const CURRENT_VERSION = '0.6.0';
 
 // 版本历史（新版本在前面）
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '0.6.0',
+    date: '2026-07-23',
+    title: 'Docker 化部署 + 在线更新架构重构',
+    type: 'feature',
+    changes: [
+      'Docker 化部署：完整多阶段 Dockerfile（builder→backend→caddy），环境隔离、原生模块在容器内编译、Caddy 自动管理 HTTPS',
+      '后台在线更新支持 Docker 模式：git pull → docker compose build → 独立容器执行 docker compose up -d，解决 backend 容器自更新难题',
+      'Dockerfile 集成 docker CLI + compose 插件，通过 docker socket 挂载实现容器内自更新',
+      'docker-compose.yml 完善：docker socket 挂载、健康检查、域名配置、数据卷持久化、网络隔离',
+      'GitHub Actions CI：push 到 main 自动构建镜像推到 ghcr.io，服务器可 docker compose pull 秒级更新',
+      '前端更新页面适配 Docker 模式：步骤标签动态切换（构建镜像/重建容器）、模式标识',
+      'PM2 模式完全保留：通过 DOCKER_MODE 环境变量自动切换，向后兼容',
+    ],
+  },
   {
     version: '0.5.0',
     date: '2026-07-23',

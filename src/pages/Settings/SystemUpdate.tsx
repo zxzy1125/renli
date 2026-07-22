@@ -5,12 +5,20 @@ import { systemApi, getErrorMsg } from '@/lib/api';
 import Loading from '@/components/Loading';
 import type { UpdateStatus, GitStatus } from '@/lib/api';
 
-const STEPS = [
+const STEPS_PM2 = [
   { key: 'pull', label: '拉取代码' },
   { key: 'install', label: '安装依赖' },
   { key: 'build', label: '构建前端' },
   { key: 'copy', label: '复制文件' },
   { key: 'restart', label: '重启服务' },
+] as const;
+
+const STEPS_DOCKER = [
+  { key: 'pull', label: '拉取代码' },
+  { key: 'install', label: '安装依赖' },
+  { key: 'build', label: '构建镜像' },
+  { key: 'copy', label: '部署前端' },
+  { key: 'restart', label: '重建容器' },
 ] as const;
 
 function StepIcon({ status }: { status?: string }) {
@@ -158,6 +166,11 @@ export default function SystemUpdatePage() {
       </h2>
       <p className="text-sm text-forest-500 dark:text-forest-400 mb-4">
         检查 GitHub 远程仓库更新，一键部署最新代码到服务器
+        {status.dockerMode && (
+          <span className="ml-2 px-1.5 py-0.5 rounded text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+            Docker 模式
+          </span>
+        )}
       </p>
 
       {error && (
@@ -227,7 +240,7 @@ export default function SystemUpdatePage() {
             更新进度
           </div>
           <div className="space-y-2">
-            {STEPS.map((s) => {
+            {(status.dockerMode ? STEPS_DOCKER : STEPS_PM2).map((s) => {
               const stepData = status.steps?.[s.key];
               return (
                 <div key={s.key}>

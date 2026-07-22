@@ -1,6 +1,7 @@
 services:
   # ============================================================
   #  Backend - Express API server (port 3001, internal only)
+  #  挂载 docker socket 实现容器内自更新（docker compose build/up）
   # ============================================================
   backend:
     build:
@@ -9,15 +10,27 @@ services:
     container_name: recruit-backend
     restart: unless-stopped
     volumes:
-      # SQLite database persistence
+      # SQLite 数据库持久化
       - app-data:/app/server/data
-      # Uploaded files persistence
+      # 上传文件持久化
       - app-uploads:/app/server/uploads
+      # 挂载 docker socket：允许后端容器内触发宿主机 docker compose 自更新
+      - /var/run/docker.sock:/var/run/docker.sock
+      # 挂载项目目录：git pull + docker compose 命令在此执行
+      - ${PROJECT_ROOT:-/opt/recruit-tool}:/opt/recruit-tool
     environment:
       - NODE_ENV=production
       - JWT_SECRET=${JWT_SECRET:-trae-recruit-secret-key-2026}
+      - DOCKER_MODE=true
+      - PROJECT_ROOT=/opt/recruit-tool
     expose:
       - "3001"
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     networks:
       - recruit-net
 
@@ -37,10 +50,11 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     environment:
-      - DOMAIN=${DOMAIN:-localhost}
+      - DOMAIN=${DOMAIN:-renli.xiaoqingai.top}
       - ACME_AGREE=true
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - recruit-net
 

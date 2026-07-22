@@ -1,4 +1,10 @@
 # ============================================================
+#  Stage 0: Docker CLI（用于后端容器内触发宿主机 docker compose 更新）
+# ============================================================
+FROM docker:27-cli AS docker-cli
+
+
+# ============================================================
 #  Stage 1: Builder - build frontend + compile backend
 # ============================================================
 FROM node:22-bookworm-slim AS builder
@@ -29,20 +35,22 @@ FROM node:22-bookworm-slim AS backend
 
 WORKDIR /app
 
-# Install build tools for native modules (better-sqlite3), then clean up
+# Install build tools for native modules (better-sqlite3) + git（更新脚本需要）
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends python3 make g++ && \
+    apt-get install -y --no-install-recommends python3 make g++ git curl && \
     rm -rf /var/lib/apt/lists/*
 
+# 复制 docker CLI + compose 插件（用于容器内触发宿主机 docker compose 自更新）
+COPY --from=docker-cli /usr/local/bin/docker /usr/local/bin/docker
+RUN mkdir -p /usr/local/lib/docker/cli-plugins && \
+    curl -fsSL https://github.com/docker/compose/releases/download/v2.29.2/docker-compose-linux-x86_64 \
+      -o /usr/local/lib/docker/cli-plugins/docker-compose && \
+    chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
 # Copy package files and install production dependencies only
+# --omit=optional 跳过 skia-canvas 等原生可选依赖（运行时有 try/catch 回退）
 COPY package.json package-lock.json ./
-RUN npm ci --production && \
-    # Remove ppt-only heavy native packages not needed by the web app
-    rm -rf node_modules/skia-canvas \
-           node_modules/fontkit \
-           node_modules/pptxgenjs \
-           node_modules/linebreak \
-           node_modules/mathjax-full && \
+RUN npm ci --production --omit=optional && \
     # Clean up build tools (no longer needed at runtime)
     apt-get purge -y --auto-remove python3 make g++ && \
     rm -rf /var/lib/apt/lists/*
@@ -56,6 +64,10 @@ RUN mkdir -p server/data server/uploads
 ENV NODE_ENV=production
 
 EXPOSE 3001
+
+# 健康检查：每 30 秒探测 /api/health，连续 3 次失败标记为 unhealthy
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=10s \
+    CMD curl -fs http://localhost:3001/api/health || exit 1
 
 CMD ["node", "server/dist/index.js"]
 
