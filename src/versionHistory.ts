@@ -12,10 +12,20 @@ export interface VersionEntry {
 }
 
 // 当前版本（取版本历史首条）
-export const CURRENT_VERSION = '0.6.4';
+export const CURRENT_VERSION = '0.6.5';
 
 // 版本历史（新版本在前面）
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '0.6.5',
+    date: '2026-07-23',
+    title: '修复 Docker 容器 PDF 解析（@napi-rs/canvas 原生 binding）',
+    type: 'fix',
+    changes: [
+      'Dockerfile: 去掉 --omit=optional，让 @napi-rs/canvas 的预编译平台包正常安装（pdf-parse 依赖它做文本提取）',
+      'skia-canvas 仍是 optional，安装失败会被 npm 跳过，运行时有 try/catch 回退原图',
+    ],
+  },
   {
     version: '0.6.4',
     date: '2026-07-23',

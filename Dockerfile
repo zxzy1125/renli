@@ -50,9 +50,13 @@ COPY --from=compose-bin /docker-compose /usr/local/lib/docker/cli-plugins/docker
 RUN chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
 # Copy package files and install production dependencies only
-# --omit=optional 跳过 skia-canvas 等原生可选依赖（运行时有 try/catch 回退）
+# 注意：不加 --omit=optional！
+# - @napi-rs/canvas（pdf-parse 依赖）的预编译二进制通过 optionalDependencies 分发，
+#   加 --omit=optional 会跳过平台包导致 "Failed to load native binding"
+# - skia-canvas 也是 optionalDependencies，安装失败会被 npm 自动跳过（不影响整体），
+#   运行时有 try/catch 回退到原图
 COPY package.json package-lock.json ./
-RUN npm ci --production --omit=optional && \
+RUN npm ci --production && \
     # Clean up build tools (no longer needed at runtime)
     apt-get purge -y --auto-remove python3 make g++ && \
     rm -rf /var/lib/apt/lists/*
