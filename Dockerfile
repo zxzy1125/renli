@@ -1,7 +1,9 @@
 # ============================================================
-#  Stage 0: Docker CLI（用于后端容器内触发宿主机 docker compose 更新）
+#  Stage 0: Docker CLI + Compose 插件（用于后端容器内触发宿主机 docker compose 更新）
+#  docker:cli 镜像自带 docker 二进制；compose 插件从 docker/compose-bin 官方镜像复制
 # ============================================================
 FROM docker:27-cli AS docker-cli
+FROM docker/compose-bin:v2.29.2 AS compose-bin
 
 
 # ============================================================
@@ -41,11 +43,11 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # 复制 docker CLI + compose 插件（用于容器内触发宿主机 docker compose 自更新）
+# 直接从官方镜像复制二进制，避免 curl 下载（slim 镜像缺 ca-certificates 导致 HTTPS 失败）
 COPY --from=docker-cli /usr/local/bin/docker /usr/local/bin/docker
-RUN mkdir -p /usr/local/lib/docker/cli-plugins && \
-    curl -fsSL https://github.com/docker/compose/releases/download/v2.29.2/docker-compose-linux-x86_64 \
-      -o /usr/local/lib/docker/cli-plugins/docker-compose && \
-    chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+RUN mkdir -p /usr/local/lib/docker/cli-plugins
+COPY --from=compose-bin /docker-compose /usr/local/lib/docker/cli-plugins/docker-compose
+RUN chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
 # Copy package files and install production dependencies only
 # --omit=optional 跳过 skia-canvas 等原生可选依赖（运行时有 try/catch 回退）

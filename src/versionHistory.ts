@@ -12,10 +12,19 @@ export interface VersionEntry {
 }
 
 // 当前版本（取版本历史首条）
-export const CURRENT_VERSION = '0.6.0';
+export const CURRENT_VERSION = '0.6.1';
 
 // 版本历史（新版本在前面）
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '0.6.1',
+    date: '2026-07-23',
+    title: '修复 Dockerfile 构建失败（compose 插件获取方式）',
+    type: 'fix',
+    changes: [
+      'Dockerfile: compose 插件改从 docker/compose-bin 官方镜像复制，避免 slim 基础镜像缺 ca-certificates 导致 curl HTTPS 下载失败',
+    ],
+  },
   {
     version: '0.6.0',
     date: '2026-07-23',
