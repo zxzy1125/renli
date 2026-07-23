@@ -12,10 +12,19 @@ export interface VersionEntry {
 }
 
 // 当前版本（取版本历史首条）
-export const CURRENT_VERSION = '0.6.2';
+export const CURRENT_VERSION = '0.6.3';
 
 // 版本历史（新版本在前面）
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '0.6.3',
+    date: '2026-07-23',
+    title: '修复 Caddy 拦截 API 请求导致登录 405',
+    type: 'fix',
+    changes: [
+      'Caddyfile: try_files 和 file_server 包进独立 handle 块，与 /api/* handle 真正互斥，修复 POST /api/auth/login 被 try_files 重写成 index.html 返回 405 的问题',
+    ],
+  },
   {
     version: '0.6.2',
     date: '2026-07-23',
