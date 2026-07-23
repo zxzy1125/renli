@@ -12,10 +12,19 @@ export interface VersionEntry {
 }
 
 // 当前版本（取版本历史首条）
-export const CURRENT_VERSION = '0.6.1';
+export const CURRENT_VERSION = '0.6.2';
 
 // 版本历史（新版本在前面）
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '0.6.2',
+    date: '2026-07-23',
+    title: '修复 Caddy SPA 路由 404',
+    type: 'fix',
+    changes: [
+      'Caddyfile: 加 try_files {path} /index.html 兜底，非文件请求回退到 index.html，修复 /login 等前端路由 404',
+    ],
+  },
   {
     version: '0.6.1',
     date: '2026-07-23',
