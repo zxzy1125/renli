@@ -12,10 +12,21 @@ export interface VersionEntry {
 }
 
 // 当前版本（取版本历史首条）
-export const CURRENT_VERSION = '0.6.3';
+export const CURRENT_VERSION = '0.6.4';
 
 // 版本历史（新版本在前面）
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: '0.6.4',
+    date: '2026-07-23',
+    title: '修复 Docker 容器内 PDF 解析失败（DOMMatrix is not defined）',
+    type: 'fix',
+    changes: [
+      'fileParser: pdf-parse v2 依赖 @napi-rs/canvas 做 Canvas polyfill，Docker 容器缺原生 binding 时抛 DOMMatrix is not defined 导致上传 PDF 返回 400',
+      '加 try/catch 回退：pdf-parse 失败时用纯二进制文本扫描（Tj/TJ 文本对象 + 未压缩 stream），保证 PDF 文本至少能提取',
+      '图片魔数扫描不依赖任何原生模块，照常工作',
+    ],
+  },
   {
     version: '0.6.3',
     date: '2026-07-23',

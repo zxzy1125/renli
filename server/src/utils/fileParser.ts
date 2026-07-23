@@ -169,61 +169,121 @@ export async function parseFileToText(
 }
 
 // ===== PDF 解析（pdf-parse v2 + 嵌入图片/附件） =====
+// 注意：pdf-parse v2 依赖 @napi-rs/canvas 做 Canvas polyfill，
+// 在缺少原生 binding 的环境（如精简 Docker 容器）会抛 "DOMMatrix is not defined"。
+// 因此用 try/catch 包裹，失败时回退到纯二进制文本扫描，保证文本至少能提取。
 async function parsePdf(filePath: string): Promise<{
   text: string;
   images: ParsedImage[];
   attachments: ParsedAttachment[];
 }> {
-  const { PDFParse } = await import('pdf-parse');
-  const data = new Uint8Array(fs.readFileSync(filePath));
-  const parser = new PDFParse({ data });
   let text = '';
   const images: ParsedImage[] = [];
   const attachments: ParsedAttachment[] = [];
+  const buf = fs.readFileSync(filePath);
+
+  // 1. 尝试用 pdf-parse 提取文本（可能因原生 binding 缺失而失败）
   try {
-    const result = await parser.getText();
-    text = (result && (result as any).text) || '';
-
-    // 尝试通过解压 PDF 提取嵌入图片与附件
-    // PDF 结构里：图片通常以 /Image XObject 形式嵌入流；附件以 /EmbeddedFiles 形式存在
-    // 这里用最简单的方式：扫描 PDF 二进制中的 stream，提取 JPEG/PNG/GIF 头部
-    const buf = fs.readFileSync(filePath);
-    const scanned = scanPdfForEmbeddedImages(buf);
-    images.push(...scanned.images);
-
-    // 提取 PDF 附件（EmbeddedFiles）—— 这里仅做尽力而为的提取
-    const files = extractPdfEmbeddedFiles(buf);
-    for (const f of files) {
-      const att: ParsedAttachment = {
-        name: f.name,
-        ext: path.extname(f.name).toLowerCase(),
-        mime: guessMime(f.name),
-        size: f.data.length,
-        source: 'pdf-embedded-files',
-      };
-      // 递归解析可识别的文本类附件
-      if (att.ext && SUPPORTED_EXT.includes(att.ext) && att.ext !== '.pdf') {
-        try {
-          const tmpPath = path.join(os.tmpdir(), `pdf-embed-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${att.ext}`);
-          fs.writeFileSync(tmpPath, f.data);
-          try {
-            const sub = await parseFileToText(tmpPath, att.name, { depth: 1 });
-            att.extractedText = sub.text;
-            // 把子附件的图片也并入主图集
-            images.push(...sub.images);
-          } finally {
-            try { fs.unlinkSync(tmpPath); } catch { /* ignore */ }
-          }
-        } catch {
-          // 子附件解析失败，忽略
-        }
-      }
-      attachments.push(att);
+    const { PDFParse } = await import('pdf-parse');
+    const data = new Uint8Array(buf);
+    const parser = new PDFParse({ data });
+    try {
+      const result = await parser.getText();
+      text = (result && (result as any).text) || '';
+    } finally {
+      await parser.destroy().catch(() => {});
     }
-  } finally {
-    await parser.destroy().catch(() => {});
+  } catch (err: any) {
+    // pdf-parse 不可用（通常是 @napi-rs/canvas 原生 binding 缺失），
+    // 回退到纯二进制文本扫描
+    console.warn(`[fileParser] pdf-parse 失败，回退到二进制文本扫描: ${err?.message || err}`);
+    text = scanPdfForText(buf);
+  }
+
+  // 2. 扫描嵌入图片（魔数扫描，不依赖任何原生模块）
+  const scanned = scanPdfForEmbeddedImages(buf);
+  images.push(...scanned.images);
+
+  // 3. 提取 PDF 附件（EmbeddedFiles）—— 尽力而为
+  const files = extractPdfEmbeddedFiles(buf);
+  for (const f of files) {
+    const att: ParsedAttachment = {
+      name: f.name,
+      ext: path.extname(f.name).toLowerCase(),
+      mime: guessMime(f.name),
+      size: f.data.length,
+      source: 'pdf-embedded-files',
+    };
+    // 递归解析可识别的文本类附件
+    if (att.ext && SUPPORTED_EXT.includes(att.ext) && att.ext !== '.pdf') {
+      try {
+        const tmpPath = path.join(os.tmpdir(), `pdf-embed-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${att.ext}`);
+        fs.writeFileSync(tmpPath, f.data);
+        try {
+          const sub = await parseFileToText(tmpPath, att.name, { depth: 1 });
+          att.extractedText = sub.text;
+          images.push(...sub.images);
+        } finally {
+          try { fs.unlinkSync(tmpPath); } catch { /* ignore */ }
+        }
+      } catch {
+        // 子附件解析失败，忽略
+      }
+    }
+    attachments.push(att);
   }
   return { text, images, attachments };
+}
+
+// 纯二进制 PDF 文本扫描兜底（不依赖 pdf-parse / canvas）
+// 提取 BT...ET 块中的 (...) 文本，以及未压缩 stream 中的可读 ASCII 文本
+function scanPdfForText(buf: Buffer): string {
+  const chunks: string[] = [];
+  const text = buf.toString('latin1');
+  // 匹配 PDF 文本对象：(字符) Tj 或 [(字符)...] TJ
+  const tjRegex = /\(((?:\\.|[^()\\])*)\)\s*Tj/g;
+  const tjArrRegex = /\[(.*?)\]\s*TJ/g;
+  let m: RegExpExecArray | null;
+  while ((m = tjRegex.exec(text)) !== null) {
+    chunks.push(decodePdfString(m[1]));
+  }
+  while ((m = tjArrRegex.exec(text)) !== null) {
+    // TJ 数组里提取每个括号内的字符串
+    const inner = m[1];
+    const innerRe = /\(((?:\\.|[^()\\])*)\)/g;
+    let im: RegExpExecArray | null;
+    while ((im = innerRe.exec(inner)) !== null) {
+      chunks.push(decodePdfString(im[1]));
+    }
+  }
+  let result = chunks.join('\n').trim();
+  if (!result) {
+    // 兜底：提取 stream 中未压缩的可读 ASCII 文本段
+    const streamRe = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
+    let sm: RegExpExecArray | null;
+    while ((sm = streamRe.exec(text)) !== null) {
+      const seg = sm[1];
+      // 只保留 ASCII 可打印字符占多数的段
+      const printable = seg.replace(/[^\x20-\x7E]/g, '');
+      if (printable.length > 20 && printable.length / seg.length > 0.6) {
+        chunks.push(printable);
+      }
+    }
+    result = chunks.join('\n').trim();
+  }
+  return result;
+}
+
+// 解码 PDF 字符串（处理转义和部分 WinAnsi 编码）
+function decodePdfString(s: string): string {
+  return s
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\r')
+    .replace(/\\t/g, '\t')
+    .replace(/\\\(/g, '(')
+    .replace(/\\\)/g, ')')
+    .replace(/\\\\/g, '\\')
+    .replace(/\\(\d{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)));
 }
 
 // 扫描 PDF 二进制，提取嵌入的 JPEG/PNG/GIF 图片
